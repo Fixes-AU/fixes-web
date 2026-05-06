@@ -166,6 +166,29 @@ export interface Job {
   disputeId?: string | null
   completedAt: string | null
   completionOtpExpiry: string | null
+activeScopeChangeId: string | ScopeChange | null
+  scopeChangeHistory: (string | ScopeChange)[]
+  createdAt: string
+  updatedAt: string
+}
+
+
+export type ScopeChangeStatus = 'pending_client' | 'accepted' | 'declined' | 'proof_submitted'
+
+export interface ScopeChange {
+  _id: string
+  jobId: string | Job
+  requestedBy: string | User
+  status: ScopeChangeStatus
+  description: string
+  photos: JobImage[]
+  originalPrice: number
+  newPrice: number
+  priceDifference: number
+  newQuoteOptions: QuoteOption[]
+  selectedNewTier: SkillLevel | null
+  proofPhotos: JobImage[]
+  proofDescription: string | null
   createdAt: string
   updatedAt: string
 }

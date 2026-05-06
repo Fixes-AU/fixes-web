@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS } from '@/lib/constants'
 import { SkeletonJobDetail, SkeletonChatMessages } from '../../_components/skeletons'
+import ScopeChangeBanner from './_components/ScopeChangeBanner'
 import { connectSocket, joinJobRoom, leaveJobRoom } from '@/lib/socket'
 import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api'
 import type {
@@ -399,15 +400,16 @@ interface LiveTrackingMapProps {
   jobCode: string
   jobLocation: { lat: number; lng: number }
   initialTradieLocation: { lat: number; lng: number } | null
+  isAlreadyInProgress?: boolean
 }
 
-function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }: LiveTrackingMapProps) {
+function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation, isAlreadyInProgress }: LiveTrackingMapProps) {
   const [tradiePos, setTradiePos] = useState<{ lat: number; lng: number } | null>(initialTradieLocation)
   const [routePath, setRoutePath] = useState<{ lat: number; lng: number }[]>([])
   const [routeKey, setRouteKey] = useState(0)   
   const [eta, setEta] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const [arrived, setArrived] = useState(false)
+  const [arrived, setArrived] = useState(!!isAlreadyInProgress)
   const lastCalcPos = useRef<{ lat: number; lng: number } | null>(null)
 
   const { isLoaded } = useJsApiLoader({
@@ -479,7 +481,6 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
     if (isLoaded && tradiePos) fetchRoute(tradiePos)
   }, [isLoaded, tradiePos]) // eslint-disable-line
 
-  
   const joinedRef = useRef(false)
   useEffect(() => {
     const socket = connectSocket()
@@ -603,7 +604,7 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
       <div className="flex items-center gap-4 px-4 py-2.5 bg-white border-t border-gray-100 text-xs text-gray-500">
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> Tradie</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" /> Job Location</span>
-        {!tradiePos && <span className="text-amber-500 italic">Waiting for tradie location...</span>}
+        {!tradiePos && !arrived && <span className="text-amber-500 italic">Waiting for tradie location...</span>}
       </div>
     </div>
   )
@@ -827,8 +828,8 @@ export default function JobDetailPage() {
 
   const [tradieLocation, setTradieLocation] = useState<{ lat: number; lng: number } | null>(null)
 
-  const [dispatchCycleAt, setDispatchCycleAt] = useState<string | null>(null)  
-  const [dispatchTotalMs, setDispatchTotalMs] = useState<number>(60_000)       
+  const [dispatchCycleAt, setDispatchCycleAt] = useState<string | null>(null) 
+  const [dispatchTotalMs, setDispatchTotalMs] = useState<number>(60_000)      
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)  
 
   const fetchJob = useCallback(async () => {
@@ -853,10 +854,11 @@ export default function JobDetailPage() {
         .then((res) => {
           if (res.data.location) setTradieLocation(res.data.location)
         })
-        .catch(() => { }) // non-fatal
+        .catch(() => { }) 
     }
   }, [job?.status, jobId]) // eslint-disable-line
 
+  
   useEffect(() => {
     if (job?.status !== 'dispatching') {
       setDispatchElapsedSecs(0)
@@ -920,7 +922,7 @@ export default function JobDetailPage() {
     }, 1000)
 
     return () => clearInterval(id)
-  }, [dispatchCycleAt])  
+  }, [dispatchCycleAt]) 
 
   if (isLoading) {
     return <SkeletonJobDetail />
@@ -941,7 +943,7 @@ export default function JobDetailPage() {
     )
   }
 
- 
+
   const CANCEL_MATRIX: Record<string, { clientLoss: number }> = {
     dispatching: { clientLoss: 0.00 }, 
     accepted:    { clientLoss: 0.03 },
@@ -1195,6 +1197,8 @@ export default function JobDetailPage() {
         <StatusTimeline currentStatus={job.status} />
       </div>
 
+      {job.status === 'in_scope_review' && <ScopeChangeBanner job={job} />}
+
       {job.preferredTime === 'scheduled' && job.scheduledFor && (
         <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
           <Clock className="w-4 h-4 text-blue-500 shrink-0" />
@@ -1216,6 +1220,7 @@ export default function JobDetailPage() {
             jobCode={job.jobCode}
             jobLocation={{ lat: job.location.coordinates.lat, lng: job.location.coordinates.lng }}
             initialTradieLocation={tradieLocation}
+            isAlreadyInProgress={job.status === 'in_progress'}
           />
         )}
 
