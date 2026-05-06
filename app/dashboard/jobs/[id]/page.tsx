@@ -1,5 +1,3 @@
-// app/dashboard/jobs/[id]/page.tsx
-
 'use client'
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
@@ -41,8 +39,10 @@ import type {
   MessageNewPayload,
   JobStatusUpdatePayload,
   TradieLocationUpdatePayload,
+  CancelJobResponse,
 } from '@/lib/types'
 
+// ─── Auto-refresh helper ────────────────────────────────────────────────────────
 
 function AutoRefresh({ onRefresh, intervalMs }: { onRefresh: () => void; intervalMs: number }) {
   useEffect(() => {
@@ -52,6 +52,7 @@ function AutoRefresh({ onRefresh, intervalMs }: { onRefresh: () => void; interva
   return null
 }
 
+// ─── Status Timeline ────────────────────────────────────────────────────────────
 
 const STATUS_STEPS: { status: JobStatus; label: string; icon: React.ElementType }[] = [
   { status: 'quoted', label: 'Quoted', icon: DollarSign },
@@ -115,6 +116,7 @@ function StatusTimeline({ currentStatus }: { currentStatus: JobStatus }) {
   )
 }
 
+// ─── Chat Widget ────────────────────────────────────────────────────────────────
 
 function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: string }) {
   const [messages, setMessages] = useState<Message[]>([])
@@ -123,12 +125,14 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
   const [isLoadingMessages, setIsLoadingMessages] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Load messages
   useEffect(() => {
     async function loadMessages() {
       try {
         const res = await api.getPaginated<Message>(`/api/messages/${jobId}?limit=100`)
         setMessages(res.data)
       } catch {
+        // Silent
       } finally {
         setIsLoadingMessages(false)
       }
@@ -136,12 +140,14 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
     loadMessages()
   }, [jobId])
 
+  // Mark as read
   useEffect(() => {
     if (messages.length > 0) {
       api.patch(`/api/messages/${jobId}/read`).catch(() => { })
     }
   }, [jobId, messages.length])
 
+  // Socket.io listener
   useEffect(() => {
     const socket = connectSocket()
     if (!socket) return
@@ -164,6 +170,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
           updatedAt: payload.createdAt,
         }
         setMessages((prev) => [...prev, incoming])
+        // Mark as read immediately
         api.patch(`/api/messages/${jobId}/read`).catch(() => { })
       }
     }
@@ -176,6 +183,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
     }
   }, [jobId])
 
+  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -187,6 +195,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
       await api.post(`/api/messages/${jobId}`, { content: newMessage.trim() })
       setNewMessage('')
     } catch {
+      // Silent
     } finally {
       setIsSending(false)
     }
@@ -205,6 +214,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
         <h3 className="text-sm font-semibold text-(--upwork-navy)">Chat</h3>
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {isLoadingMessages ? (
           <SkeletonChatMessages />
@@ -254,6 +264,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
         <div ref={bottomRef} />
       </div>
 
+      {/* Input */}
       <div className="px-3 py-2 border-t border-gray-100 flex items-center gap-2">
         <input
           type="text"
@@ -275,6 +286,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
   )
 }
 
+// ─── Review Form ────────────────────────────────────────────────────────────────
 
 function ReviewForm({ jobId, onSubmitted }: { jobId: string; onSubmitted: () => void }) {
   const [rating, setRating] = useState(0)
@@ -361,11 +373,15 @@ function ReviewForm({ jobId, onSubmitted }: { jobId: string; onSubmitted: () => 
   )
 }
 
+// ─── Live Tracking Map (Uber-style) ────────────────────────────────────────────
 
 const GOOGLE_MAPS_LIBRARIES: ('geometry' | 'places')[] = ['geometry']
 const MIN_MOVE_METRES = 30
 
+// ── Custom SVG Markers ──────────────────────────────────────────────────────────
+// Inline SVG data URLs — no CDN, no paid service needed.
 
+// Green teardrop pin with a wrench icon (tradie)
 const TRADIE_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
   <path d="M20 0C8.954 0 0 8.954 0 20c0 11.046 20 32 20 32S40 31.046 40 20C40 8.954 31.046 0 20 0z" fill="#16a34a"/>
   <circle cx="20" cy="20" r="12" fill="rgba(255,255,255,0.18)"/>
@@ -374,6 +390,7 @@ const TRADIE_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="40" he
   </g>
 </svg>`
 
+// Blue teardrop pin with a house icon (job location)
 const JOB_MARKER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
   <path d="M20 0C8.954 0 0 8.954 0 20c0 11.046 20 32 20 32S40 31.046 40 20C40 8.954 31.046 0 20 0z" fill="#3b82f6"/>
   <circle cx="20" cy="20" r="12" fill="rgba(255,255,255,0.18)"/>
@@ -394,7 +411,7 @@ function haversineMetres(a: { lat: number; lng: number }, b: { lat: number; lng:
 }
 
 interface LiveTrackingMapProps {
-  jobId: string          
+  jobId: string          // MongoDB _id — used to join the socket room
   jobCode: string
   jobLocation: { lat: number; lng: number }
   initialTradieLocation: { lat: number; lng: number } | null
@@ -403,7 +420,7 @@ interface LiveTrackingMapProps {
 function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }: LiveTrackingMapProps) {
   const [tradiePos, setTradiePos] = useState<{ lat: number; lng: number } | null>(initialTradieLocation)
   const [routePath, setRoutePath] = useState<{ lat: number; lng: number }[]>([])
-  const [routeKey, setRouteKey] = useState(0)   
+  const [routeKey, setRouteKey] = useState(0)   // bumped on each new route — forces Polyline remount
   const [eta, setEta] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [arrived, setArrived] = useState(false)
@@ -414,6 +431,7 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
     libraries: GOOGLE_MAPS_LIBRARIES,
   })
 
+  // Build Google Maps icon objects after the API is loaded
   const tradieIcon = useMemo(() => {
     if (!isLoaded || typeof window === 'undefined' || !window.google) return undefined
     return {
@@ -432,12 +450,14 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
     }
   }, [isLoaded])
 
+  // Sync when parent fetches the initial location asynchronously
   useEffect(() => {
     if (initialTradieLocation && !tradiePos) {
       setTradiePos(initialTradieLocation)
     }
   }, [initialTradieLocation]) // eslint-disable-line
 
+  // Routes API (replaces deprecated DirectionsService)
   const fetchRoute = useCallback(async (origin: { lat: number; lng: number }) => {
     if (!window.google?.maps?.geometry) return
     try {
@@ -459,10 +479,12 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
       const route = data.routes?.[0]
       if (!route?.polyline?.encodedPolyline) return
 
+      // Decode using the geometry library (already loaded via GOOGLE_MAPS_LIBRARIES)
       const decoded = window.google.maps.geometry.encoding.decodePath(route.polyline.encodedPolyline)
       setRoutePath(decoded.map((p: google.maps.LatLng) => ({ lat: p.lat(), lng: p.lng() })))
-      setRouteKey(k => k + 1)   
+      setRouteKey(k => k + 1)   // force Polyline remount so old route is cleared
 
+      // ETA from duration string e.g. "823s"
       const secs = parseInt((route.duration ?? '0s').replace('s', ''), 10)
       if (secs > 0) {
         const mins = Math.round(secs / 60)
@@ -478,7 +500,8 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
     if (isLoaded && tradiePos) fetchRoute(tradiePos)
   }, [isLoaded, tradiePos]) // eslint-disable-line
 
-
+  // Join job room exactly once — separate from location handler so isLoaded
+  // changes don't cause repeated join/leave cycles
   const joinedRef = useRef(false)
   useEffect(() => {
     const socket = connectSocket()
@@ -608,6 +631,7 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation }:
   )
 }
 
+// ─── Dispute Evidence Section ───────────────────────────────────────────────────
 
 async function signAndUpload(file: File): Promise<{ url: string; publicId: string }> {
   const signRes = await api.post<any>('/api/uploads/sign', { folder: 'dispute_evidence' })
@@ -797,7 +821,9 @@ function DisputeEvidenceSection({ job, user }: { job: Job; user: any }) {
   )
 }
 
-
+// ═════════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═════════════════════════════════════════════════════════════════════════════════
 
 export default function JobDetailPage() {
   const params = useParams()
@@ -812,6 +838,8 @@ export default function JobDetailPage() {
   const [rejectError, setRejectError] = useState('')
   const [isCancelling, setIsCancelling] = useState(false)
   const [cancelError, setCancelError] = useState('')
+  const [cancelResult, setCancelResult] = useState<CancelJobResponse | null>(null)
+  const [cancelModal, setCancelModal] = useState<{ feeAmount: number; refundAmount: number; isFree: boolean; context: string } | null>(null)
   const [dispatchElapsedSecs, setDispatchElapsedSecs] = useState(0)
 
   const [dispute, setDispute] = useState<any | null>(null)
@@ -822,17 +850,21 @@ export default function JobDetailPage() {
   const [evidenceSuccess, setEvidenceSuccess] = useState(false)
   const evidenceInputRef = useRef<HTMLInputElement>(null)
 
+  // Live tracking — tradie location for map
   const [tradieLocation, setTradieLocation] = useState<{ lat: number; lng: number } | null>(null)
 
+  // Dispatch countdown — driven by dispatch:finding_tradie socket event
   const [dispatchCycleAt, setDispatchCycleAt] = useState<string | null>(null)  // expiresAt for current cycle
   const [dispatchTotalMs, setDispatchTotalMs] = useState<number>(60_000)       // timeoutMs from server
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)  // null = not started yet
 
+  // Fetch job detail
   const fetchJob = useCallback(async () => {
     try {
       const res = await api.get<{ job: Job }>(`/api/jobs/${jobId}`)
       setJob(res.data.job)
     } catch {
+      // Silent
     } finally {
       setIsLoading(false)
     }
@@ -842,6 +874,7 @@ export default function JobDetailPage() {
     fetchJob()
   }, [fetchJob])
 
+  // Fetch initial tradie location when job is in a tracking state
   useEffect(() => {
     if (!job) return
     const trackingStatuses = ['on_the_way', 'in_progress']
@@ -850,11 +883,12 @@ export default function JobDetailPage() {
         .then((res) => {
           if (res.data.location) setTradieLocation(res.data.location)
         })
-        .catch(() => { })
+        .catch(() => { }) // non-fatal
     }
   }, [job?.status, jobId]) // eslint-disable-line
 
-  
+  // Start counting elapsed seconds whenever we land on the dispatching screen.
+  // Resets to 0 if status ever changes away from dispatching.
   useEffect(() => {
     if (job?.status !== 'dispatching') {
       setDispatchElapsedSecs(0)
@@ -865,6 +899,7 @@ export default function JobDetailPage() {
     return () => clearInterval(id)
   }, [job?.status])
 
+  // Socket.io — live status updates + dispatch countdown
   useEffect(() => {
     const socket = connectSocket()
     if (!socket || !job) return
@@ -878,12 +913,13 @@ export default function JobDetailPage() {
       }
     }
 
+    // Fires each time a new tradie is being tried — resets the countdown
     const handleFindingTradie = (payload: {
       expiresAt: string
       timeoutMs: number
       message: string
     }) => {
-      setDispatchCycleAt(payload.expiresAt)  
+      setDispatchCycleAt(payload.expiresAt)  // changing this key restarts the countdown effect
       setDispatchTotalMs(payload.timeoutMs)
       const secs = Math.ceil(
         (new Date(payload.expiresAt).getTime() - Date.now()) / 1000
@@ -893,6 +929,7 @@ export default function JobDetailPage() {
 
     socket.on('job:status_update', handleStatusUpdate)
     socket.on('dispatch:finding_tradie', handleFindingTradie)
+    // Tradie submitted completion photos → re-fetch so photos appear live
     const handleOtpSent = () => fetchJob()
     socket.on('job:otp_sent', handleOtpSent)
 
@@ -904,6 +941,7 @@ export default function JobDetailPage() {
     }
   }, [job?._id])
 
+  // Countdown tick — resets whenever a new dispatch cycle starts (dispatchCycleAt changes)
   useEffect(() => {
     if (!dispatchCycleAt) return
 
@@ -911,14 +949,14 @@ export default function JobDetailPage() {
       setSecondsLeft((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(id)
-          return 0  
+          return 0  // hits 0 → searching for next tradie
         }
         return prev - 1
       })
     }, 1000)
 
     return () => clearInterval(id)
-  }, [dispatchCycleAt])  
+  }, [dispatchCycleAt])  // ← new cycle = new interval = no reset-to-0 glitch
 
   if (isLoading) {
     return <SkeletonJobDetail />
@@ -939,22 +977,89 @@ export default function JobDetailPage() {
     )
   }
 
+  // ── Intermediate status screens — auto-poll every 5s ──────────────────────
 
+  // Must be declared before the early-return block below that references it
+  // ── Status-based cancellation fee matrix (mirrors backend CANCEL_MATRIX)
+  const CANCEL_MATRIX: Record<string, { clientLoss: number }> = {
+    dispatching: { clientLoss: 0.00 }, // Free — full refund
+    accepted:    { clientLoss: 0.03 },
+    on_the_way:  { clientLoss: 0.08 },
+    in_progress: { clientLoss: 0.10 },
+  }
+
+  // Dispatching = always free cancel → skip modal, go straight to API
+  // Accepted / on_the_way / in_progress = show fee modal first
   const handleCancelJob = async () => {
-    if (!window.confirm(
-      'Are you sure you want to cancel this job?\n\nYour payment will be fully refunded — no charges apply.'
-    )) return
+    if (!job) return
+    setCancelError('')
+
+    // ── Fast path: dispatching is always free — no dialog, cancel immediately ──
+    if (job.status === 'dispatching' || job.status === 'payment_pending') {
+      setIsCancelling(true)
+      try {
+        await api.patch(`/api/jobs/${job._id}/cancel`)
+        router.push('/dashboard/jobs')
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setCancelError(err.message)
+        } else {
+          setCancelError('Failed to cancel job. Please try again.')
+        }
+        setIsCancelling(false)
+      }
+      return
+    }
+
+    // ── Fee path: fetch preview then show modal ──
+    setIsCancelling(true)
+    let feeAmount = 0
+    let refundAmount = 0
+    try {
+      const preview = await api.get<{ feeAmount: number; refundAmount: number; isFree: boolean }>(
+        `/api/jobs/${job._id}/cancel-preview`
+      )
+      feeAmount    = preview.data?.feeAmount    ?? 0
+      refundAmount = preview.data?.refundAmount ?? 0
+    } catch {
+      const matrix = CANCEL_MATRIX[job.status]
+      const price  = selectedQuoteOption?.suggestedFixedPrice ?? 0
+      feeAmount    = Math.round(price * (matrix?.clientLoss ?? 0) * 100) / 100
+      refundAmount = Math.round((price - feeAmount) * 100) / 100
+    }
+
+    const context = job.status === 'accepted'
+      ? 'a tradie has accepted your job'
+      : job.status === 'on_the_way'
+      ? 'the tradie is on the way to your location'
+      : 'work is already in progress'
+
+    setCancelModal({ feeAmount, refundAmount, isFree: feeAmount === 0, context })
+    setIsCancelling(false)
+  }
+
+  // Step 2: User confirmed in modal — execute the actual cancellation
+  const confirmCancelJob = async () => {
+    if (!job) return
     setIsCancelling(true)
     setCancelError('')
     try {
-      await api.patch(`/api/jobs/${job!._id}/cancel`)
-      router.push('/dashboard/jobs')
+      const res = await api.patch<{ data: CancelJobResponse }>(`/api/jobs/${job._id}/cancel`)
+      const result = res.data.data ?? res.data as unknown as CancelJobResponse
+      setCancelModal(null)
+      if ((result?.cancellationFeeAmount ?? 0) > 0) {
+        setCancelResult(result)
+      } else {
+        router.push('/dashboard/jobs')
+      }
     } catch (err) {
+      setCancelModal(null)
       if (err instanceof ApiError) {
         setCancelError(err.message)
       } else {
         setCancelError('Failed to cancel job. Please try again or contact support.')
       }
+    } finally {
       setIsCancelling(false)
     }
   }
@@ -962,6 +1067,7 @@ export default function JobDetailPage() {
   if (job.status === 'payment_pending' || job.status === 'dispatching') {
     const isSearching = job.status === 'dispatching'
     const totalSecs = Math.round(dispatchTotalMs / 1000)
+    // Progress 0→1 representing how much of the window is left
     const progressRatio = secondsLeft !== null ? secondsLeft / totalSecs : 0
     const urgent = secondsLeft !== null && secondsLeft <= 10
     const mm = secondsLeft !== null ? String(Math.floor(secondsLeft / 60)).padStart(1, '0') : '0'
@@ -970,6 +1076,7 @@ export default function JobDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
         <div className="relative mb-8">
+          {/* Animated rings */}
           <div className="absolute inset-0 rounded-full border-4 border-green-200 animate-ping opacity-40" />
           <div className="absolute inset-0 rounded-full border-4 border-green-300 animate-ping opacity-20" style={{ animationDelay: '0.5s' }} />
           <div className="w-24 h-24 rounded-full bg-linear-to-br from-green-50 to-emerald-100 flex items-center justify-center relative">
@@ -990,6 +1097,7 @@ export default function JobDetailPage() {
           }
         </p>
 
+        {/* Countdown — only shown once a tradie is being asked (dispatch:finding_tradie received) */}
         {isSearching && secondsLeft !== null && (
           <div className="mt-8 w-full max-w-xs">
             <div className="flex items-center justify-between mb-2">
@@ -1003,6 +1111,7 @@ export default function JobDetailPage() {
                 </span>
               )}
             </div>
+            {/* Progress bar */}
             <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${urgent ? 'bg-red-400' : 'bg-(--upwork-green)'
@@ -1025,8 +1134,9 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        {isSearching && dispatchElapsedSecs >= 120 && (
-          <div className="mt-6 flex flex-col items-center gap-2">
+        {/* Cancel button — always visible while dispatching */}
+        {isSearching && !cancelResult && (
+          <div className="mt-8 flex flex-col items-center gap-2">
             {cancelError && (
               <p className="text-xs text-red-500 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
@@ -1036,15 +1146,34 @@ export default function JobDetailPage() {
             <button
               onClick={handleCancelJob}
               disabled={isCancelling}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-all disabled:opacity-50 animate-in fade-in duration-500"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-red-300 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-semibold transition-all disabled:opacity-50"
             >
               {isCancelling ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Cancelling...</>
+                <><Loader2 className="w-4 h-4 animate-spin" />Loading...</>
               ) : (
-                <><XCircle className="w-4 h-4" />Cancel Job &amp; Get Refund</>
+                <><XCircle className="w-4 h-4" />Cancel Job</>
               )}
             </button>
-            <p className="text-[11px] text-gray-400">You will receive a full refund immediately.</p>
+            <p className="text-[11px] text-gray-400">At this stage, cancellation is free — full refund applies.</p>
+          </div>
+        )}
+
+        {/* Cancellation result — fee charged summary */}
+        {cancelResult && (
+          <div className="mt-6 flex flex-col items-center gap-3 animate-in fade-in duration-500">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-center max-w-sm">
+              <p className="text-sm font-semibold text-amber-800 mb-1">Job Cancelled</p>
+              <p className="text-xs text-amber-700">
+                You lost <strong>${(cancelResult.cancellationFeeAmount ?? 0).toFixed(2)} AUD</strong>.<br />
+                A refund of <strong>${cancelResult.refundAmount.toFixed(2)} AUD</strong> will appear on your card within 2–3 business days.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/jobs')}
+              className="text-sm text-(--upwork-green) hover:underline"
+            >
+              Back to my jobs
+            </button>
           </div>
         )}
 
@@ -1055,6 +1184,7 @@ export default function JobDetailPage() {
           View all my jobs
         </button>
 
+        {/* Auto-refresh — polls every 5s until status changes */}
         <AutoRefresh onRefresh={fetchJob} intervalMs={5000} />
       </div>
     )
@@ -1089,6 +1219,7 @@ export default function JobDetailPage() {
 
   return (
     <div>
+      {/* Back + Title */}
       <div className="mb-6">
         <button
           onClick={() => router.push('/dashboard/jobs')}
@@ -1111,10 +1242,12 @@ export default function JobDetailPage() {
         </p>
       </div>
 
+      {/* Status Timeline */}
       <div className="mb-6">
         <StatusTimeline currentStatus={job.status} />
       </div>
 
+      {/* Scheduling badge — shown when job was scheduled for a specific time */}
       {job.preferredTime === 'scheduled' && job.scheduledFor && (
         <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-700">
           <Clock className="w-4 h-4 text-blue-500 shrink-0" />
@@ -1129,6 +1262,7 @@ export default function JobDetailPage() {
         </div>
       )}
 
+      {/* Live Tracking Map — shown when tradie is on_the_way or in_progress */}
       {(job.status === 'on_the_way' || job.status === 'in_progress') &&
         job.location?.coordinates?.lat && (
           <LiveTrackingMap
@@ -1139,6 +1273,7 @@ export default function JobDetailPage() {
           />
         )}
 
+      {/* Dispute Options (Before payment release) */}
       {job.status === 'completed' && !(job as any).disputeId && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1164,6 +1299,7 @@ export default function JobDetailPage() {
 
       {job.status === 'disputed' && <DisputeEvidenceSection job={job} user={user} />}
 
+      {/* Quote Action Banner — shown when job is awaiting client decision */}
       {job.status === 'quoted' && quote && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1204,7 +1340,9 @@ export default function JobDetailPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Left Column */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Description */}
           <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5">
             <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3">Description</h3>
             <p className="text-xs sm:text-sm text-(--upwork-gray) leading-relaxed whitespace-pre-wrap">
@@ -1212,6 +1350,7 @@ export default function JobDetailPage() {
             </p>
           </div>
 
+          {/* Images */}
           {job.images.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3">Photos</h3>
@@ -1230,6 +1369,7 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
+          {/* Proof of Work Photos — shown when tradie submitted completion photos */}
           {(job.completionPhotos?.length > 0 || job.status === 'completed') && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
@@ -1295,18 +1435,21 @@ export default function JobDetailPage() {
             <ChatWidget jobId={job._id} currentUserId={user._id} />
           )}
 
+          {/* Review */}
           {canReview && (
             <ReviewForm
               jobId={job._id}
               onSubmitted={() => {
                 setReviewSubmitted(true)
-                fetchJob() 
+                fetchJob() // Refresh job data
               }}
             />
           )}
         </div>
 
+        {/* Right Column */}
         <div className="space-y-6">
+          {/* Location */}
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3 flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-gray-400" />
@@ -1318,6 +1461,7 @@ export default function JobDetailPage() {
             </p>
           </div>
 
+          {/* Quote Details */}
           {quote && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3 flex items-center gap-1.5">
@@ -1358,6 +1502,7 @@ export default function JobDetailPage() {
             </div>
           )}
 
+          {/* Assigned Tradie */}
           {assignedTradie && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3">
@@ -1392,6 +1537,7 @@ export default function JobDetailPage() {
             </div>
           )}
 
+          {/* Preferred Time */}
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-(--upwork-navy) mb-2 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-gray-400" />
@@ -1401,8 +1547,131 @@ export default function JobDetailPage() {
               {job.preferredTime === '1-2weeks' ? 'In 1–2 Weeks' : job.preferredTime === 'no-rush' ? 'No Rush' : 'Now'}
             </p>
           </div>
+
+          {/* Cancel Job — available at accepted / on_the_way / in_progress */}
+          {['accepted', 'on_the_way', 'in_progress'].includes(job.status) && !cancelResult && (
+            <div className="bg-white border border-red-100 rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-red-700 mb-1 flex items-center gap-1.5">
+                <XCircle className="w-4 h-4" />
+                Cancel Job
+              </h3>
+              <p className="text-xs text-gray-400 mb-3">
+                A cancellation fee applies as a tradie has already been matched.
+              </p>
+              {cancelError && (
+                <p className="text-xs text-red-500 flex items-center gap-1 mb-2">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {cancelError}
+                </p>
+              )}
+              <button
+                onClick={handleCancelJob}
+                disabled={isCancelling}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-all disabled:opacity-50"
+              >
+                {isCancelling ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />Cancelling...</>
+                ) : (
+                  <><XCircle className="w-4 h-4" />Cancel This Job</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Cancellation fee result summary */}
+          {cancelResult && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+              <p className="text-sm font-semibold text-amber-800 mb-1">Job Cancelled</p>
+              <p className="text-xs text-amber-700 mb-3">
+                You lost <strong>${(cancelResult.cancellationFeeAmount ?? 0).toFixed(2)} AUD</strong>.<br />
+                A refund of <strong>${cancelResult.refundAmount.toFixed(2)} AUD</strong> will appear on your card within 2–3 business days.
+              </p>
+              <button
+                onClick={() => router.push('/dashboard/jobs')}
+                className="text-sm text-(--upwork-green) hover:underline font-medium"
+              >
+                Back to my jobs →
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ── Cancellation Confirmation Modal ─────────────────────────────── */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
+            {/* Header */}
+            <div className={`px-6 py-4 flex items-center gap-3 ${cancelModal.isFree ? 'bg-blue-50 border-b border-blue-100' : 'bg-red-50 border-b border-red-100'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${cancelModal.isFree ? 'bg-blue-100 text-blue-600' : 'bg-red-100 text-red-600'}`}>
+                {cancelModal.isFree ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-(--upwork-navy)">Cancel Job</h3>
+                <p className="text-xs text-gray-500">{cancelModal.isFree ? 'No cancellation fee' : 'Cancellation fee applies'}</p>
+              </div>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
+              {cancelModal.isFree ? (
+                <p className="text-sm text-(--upwork-gray)">
+                  {['accepted', 'on_the_way', 'in_progress'].includes(job?.status ?? '') ? (
+                    <>
+                      Are you sure you want to cancel this job? Because <span className="font-medium text-(--upwork-navy)">{cancelModal.context}</span>, we are waiving the cancellation fee — you will receive a <strong>full refund</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Are you sure you want to cancel this job? Since no tradie has been matched yet, you will receive a <strong>full refund</strong> — no charges apply.
+                    </>
+                  )}
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-(--upwork-gray)">
+                    A cancellation fee applies because <span className="font-medium text-(--upwork-navy)">{cancelModal.context}</span>.
+                  </p>
+                  <div className="rounded-xl border border-gray-100 overflow-hidden">
+                    <div className="flex justify-between items-center px-4 py-3 bg-red-50">
+                      <span className="text-sm text-red-700">You will lose</span>
+                      <span className="text-sm font-bold text-red-700">${cancelModal.feeAmount.toFixed(2)} AUD</span>
+                    </div>
+                    <div className="flex justify-between items-center px-4 py-3 bg-green-50 border-t border-gray-100">
+                      <span className="text-sm text-green-700">You will receive back</span>
+                      <span className="text-sm font-bold text-green-700">${cancelModal.refundAmount.toFixed(2)} AUD</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400">Refunds typically appear on your card within 2–3 business days.</p>
+                </>
+              )}
+              {cancelError && (
+                <p className="text-xs text-red-500 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />{cancelError}
+                </p>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => setCancelModal(null)}
+                disabled={isCancelling}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Keep Job
+              </button>
+              <button
+                onClick={confirmCancelJob}
+                disabled={isCancelling}
+                className={`px-5 py-2 text-sm font-semibold text-white rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50 ${cancelModal.isFree ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'}`}
+              >
+                {isCancelling
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Cancelling...</>
+                  : 'Yes, Cancel Job'
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
