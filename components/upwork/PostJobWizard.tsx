@@ -28,6 +28,7 @@ import {
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
+import AddressAutocomplete from '@/components/upwork/AddressAutocomplete'
 
 import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES } from '@/lib/constants'
 import type {
@@ -181,7 +182,7 @@ function StepDiagnosticQuestions({
 }) {
   const answeredCount = Object.keys(answers).length
   const totalQuestions = questions.length
-  const canProceed = !isLoading 
+  const canProceed = !isLoading
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -245,11 +246,10 @@ function StepDiagnosticQuestions({
                       <button
                         key={opt}
                         onClick={() => onAnswerChange(q.id, selected ? '' : opt)}
-                        className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all text-left ${
-                          selected
-                            ? 'bg-[var(--upwork-green)] border-[var(--upwork-green)] text-white shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-[var(--upwork-navy)] hover:border-[var(--upwork-green)] hover:bg-green-50'
-                        }`}
+                        className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all text-left ${selected
+                          ? 'bg-[var(--upwork-green)] border-[var(--upwork-green)] text-white shadow-sm'
+                          : 'bg-gray-50 border-gray-200 text-[var(--upwork-navy)] hover:border-[var(--upwork-green)] hover:bg-green-50'
+                          }`}
                       >
                         {selected && <Check className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />}
                         {opt}
@@ -379,6 +379,7 @@ function StepLocation({
   postcode,
   state,
   onFieldChange,
+  onAutocompleteFill,
   onNext,
   isGeocoding = false,
   geocodeError = '',
@@ -388,10 +389,13 @@ function StepLocation({
   postcode: string
   state: string
   onFieldChange: (field: string, value: string) => void
+  onAutocompleteFill: (fields: { address: string; suburb: string; postcode: string; state: string; lat: number; lng: number }) => void
   onNext: () => void
   isGeocoding?: boolean
   geocodeError?: string
 }) {
+  const [isManualMode, setIsManualMode] = useState(false)
+  const [autoFilled, setAutoFilled] = useState(false)
   const isValid = address && suburb && postcode && state
 
   return (
@@ -404,66 +408,92 @@ function StepLocation({
       </p>
 
       <div className="space-y-4">
-        <div>
-          <label htmlFor="loc-address" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
-            Street Address
-          </label>
-          <input
-            id="loc-address"
-            type="text"
-            value={address}
-            onChange={(e) => onFieldChange('address', e.target.value)}
-            placeholder="123 Example Street"
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+        {!isManualMode && (
+          <AddressAutocomplete
+            defaultValue={address}
+            onSelect={(components) => {
+              onAutocompleteFill(components)
+              setAutoFilled(true)
+            }}
+            onManualMode={() => setIsManualMode(true)}
           />
-        </div>
+        )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="loc-suburb" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
-              Suburb
-            </label>
-            <input
-              id="loc-suburb"
-              type="text"
-              value={suburb}
-              onChange={(e) => onFieldChange('suburb', e.target.value)}
-              placeholder="Richmond"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
-            />
-          </div>
-          <div>
-            <label htmlFor="loc-postcode" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
-              Postcode
-            </label>
-            <input
-              id="loc-postcode"
-              type="text"
-              value={postcode}
-              onChange={(e) => onFieldChange('postcode', e.target.value)}
-              placeholder="3121"
-              maxLength={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="loc-state" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
-            State
-          </label>
-          <select
-            id="loc-state"
-            value={state}
-            onChange={(e) => onFieldChange('state', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+        {isManualMode && (
+          <button
+            type="button"
+            onClick={() => setIsManualMode(false)}
+            className="flex items-center gap-1.5 text-xs text-[var(--upwork-gray)] hover:text-[var(--upwork-green)] transition-colors mb-2"
           >
-            <option value="" disabled>Select state...</option>
-            {AUSTRALIAN_STATES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-        </div>
+            <MapPin className="w-3.5 h-3.5" />
+            Search address instead
+          </button>
+        )}
+
+        {(isManualMode || autoFilled) && (
+          <>
+            <div>
+              <label htmlFor="loc-address" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
+                Street Address
+              </label>
+              <input
+                id="loc-address"
+                type="text"
+                value={address}
+                onChange={(e) => onFieldChange('address', e.target.value)}
+                placeholder="123 Example Street"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="loc-suburb" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
+                  Suburb
+                </label>
+                <input
+                  id="loc-suburb"
+                  type="text"
+                  value={suburb}
+                  onChange={(e) => onFieldChange('suburb', e.target.value)}
+                  placeholder="Richmond"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label htmlFor="loc-postcode" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
+                  Postcode
+                </label>
+                <input
+                  id="loc-postcode"
+                  type="text"
+                  value={postcode}
+                  onChange={(e) => onFieldChange('postcode', e.target.value)}
+                  placeholder="3121"
+                  maxLength={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="loc-state" className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
+                State
+              </label>
+              <select
+                id="loc-state"
+                value={state}
+                onChange={(e) => onFieldChange('state', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+              >
+                <option value="" disabled>Select state...</option>
+                {AUSTRALIAN_STATES.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
       </div>
 
       {geocodeError && (
@@ -539,8 +569,8 @@ function StepTime({
             key={opt.value}
             onClick={() => onSelect(opt.value)}
             className={`px-5 py-4 rounded-xl border text-left transition-all ${selected === opt.value
-                ? 'bg-[var(--upwork-navy)] text-white border-[var(--upwork-navy)]'
-                : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-navy)]'
+              ? 'bg-[var(--upwork-navy)] text-white border-[var(--upwork-navy)]'
+              : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-navy)]'
               }`}
           >
             <div className="text-xl mb-1">{opt.icon}</div>
@@ -631,8 +661,8 @@ function TierCard({
     <button
       onClick={onSelect}
       className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${isSelected
-          ? 'border-[var(--upwork-green)] bg-green-50 shadow-md'
-          : `${cfg.borderClass} bg-white hover:border-[var(--upwork-green)] hover:shadow-sm`
+        ? 'border-[var(--upwork-green)] bg-green-50 shadow-md'
+        : `${cfg.borderClass} bg-white hover:border-[var(--upwork-green)] hover:shadow-sm`
         }`}
     >
       <div className="flex items-center justify-between mb-3">
@@ -686,7 +716,6 @@ const STATE_TZ: Record<string, string> = {
   WA: 'Australia/Perth', NT: 'Australia/Darwin',
 }
 
-
 function datetimeLocalToAuISO(localStr: string, tz: string): string {
   const provisional = new Date(localStr + 'Z')
 
@@ -699,7 +728,7 @@ function datetimeLocalToAuISO(localStr: string, tz: string): string {
   const [wantH, wantM] = timePart.split(':').map(Number)
   let diffMinutes = (wantH * 60 + wantM) - (auH * 60 + auM)
 
-  if (diffMinutes > 12 * 60)  diffMinutes -= 24 * 60
+  if (diffMinutes > 12 * 60) diffMinutes -= 24 * 60
   if (diffMinutes < -12 * 60) diffMinutes += 24 * 60
 
   return new Date(provisional.getTime() + diffMinutes * 60_000).toISOString()
@@ -731,7 +760,6 @@ function StepQuote({
   const [showSchedulePicker, setShowSchedulePicker] = useState(false)
   const [selectedMorningTier, setSelectedMorningTier] = useState<SkillLevel | null>(null)
 
-  // Selecting a main tier clears the morning tile, and vice versa — only one group active at a time
   const handleSelectMainTier = (tier: SkillLevel) => {
     setSelectedMorningTier(null)
     onSelectTier(tier)
@@ -873,11 +901,10 @@ function StepQuote({
                       setSelectedMorningTier(next)
                       if (next) onSelectTier(null)
                     }}
-                    className={`w-full text-left flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all ${
-                      isChosen
-                        ? 'border-blue-500 bg-blue-50 shadow-sm'
-                        : 'border-blue-100 bg-blue-50/30 hover:border-blue-300 hover:bg-blue-50'
-                    }`}
+                    className={`w-full text-left flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all ${isChosen
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-blue-100 bg-blue-50/30 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
                   >
                     <div>
                       <span className="text-xs text-blue-600 font-semibold uppercase tracking-wide">
@@ -1078,7 +1105,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [geocodeError, setGeocodeError] = useState('')
   const [preferredTime, setPreferredTime] = useState<PreferredTime | ''>('')
-  const [scheduledFor, setScheduledFor] = useState('')  
+  const [scheduledFor, setScheduledFor] = useState('')  // ISO datetime string for 'scheduled' jobs
 
   const [diagnosticQuestions, setDiagnosticQuestions] = useState<DiagnosticQuestion[]>([])
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<string, string>>({})
@@ -1218,12 +1245,13 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
     setIsSubmitting(true)
     setSubmitError('')
-    setCurrentStep(6)
+    setCurrentStep(6) 
 
     try {
       const lat = coords?.lat ?? -37.8136
       const lng = coords?.lng ?? 144.9631
 
+      
       const resolvedScheduledFor = scheduledForOverride ?? scheduledFor
 
       const res = await api.post<{ job: Job; quote: Quote }>('/api/jobs', {
@@ -1269,7 +1297,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     try {
       const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier: selectedTier }   
+        { tier: selectedTier }  
       )
       const secret = res.data.clientSecret
       if (!secret) throw new Error('No client secret returned from server')
@@ -1318,6 +1346,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         STATE_TZ[(createdJob.location as any)?.state?.toUpperCase?.()] ?? 'Australia/Sydney'
       )
 
+      
       const acceptRes = await api.post<{ clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
         { tier, scheduledFor: auISO, priceOverride: price }
@@ -1326,7 +1355,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       if (!secret) throw new Error('No client secret returned.')
 
       setSelectedTier(tier)
-      setAcceptedPrice(price) 
+      setAcceptedPrice(price)
       setClientSecret(secret)
       setCurrentStep(8) 
 
@@ -1372,8 +1401,22 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     setGeocodeError('')
   }
 
+  const handleAutocompleteFill = (fields: { address: string; suburb: string; postcode: string; state: string; lat: number; lng: number }) => {
+    setAddress(fields.address)
+    setSuburb(fields.suburb)
+    setPostcode(fields.postcode)
+    setLocationState(fields.state)
+    setCoords({ lat: fields.lat, lng: fields.lng })
+    setGeocodeError('')
+  }
+
 
   const handleLocationNext = async () => {
+    if (coords) {
+      setCurrentStep(5)
+      return
+    }
+
     setIsGeocoding(true)
     setGeocodeError('')
     try {
@@ -1655,6 +1698,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             postcode={postcode}
             state={locationState}
             onFieldChange={handleLocationFieldChange}
+            onAutocompleteFill={handleAutocompleteFill}
             onNext={handleLocationNext}
             isGeocoding={isGeocoding}
             geocodeError={geocodeError}
@@ -1674,3 +1718,4 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     </div>
   )
 }
+
