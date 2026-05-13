@@ -604,7 +604,6 @@ function StepTime({
               Please choose a time at least 5 minutes from now and within 24 hours.
             </p>
           )}
-          {/* Confirm button */}
           <button
             onClick={onScheduledSubmit}
             disabled={!scheduledFor || !scheduledValid}
@@ -705,6 +704,30 @@ function TierCard({
         </div>
         <span className="text-[10px] text-gray-400">{Math.round(option.confidence * 100)}% confidence</span>
       </div>
+
+      {(() => {
+        const pct = Math.round(option.confidence * 100)
+        if (pct >= 85) return (
+          <p className="text-[10px] text-green-600 mt-1.5 flex items-center gap-1">
+            <span>✅</span> High confidence — clear job details allow an accurate quote.
+          </p>
+        )
+        if (pct >= 70) return (
+          <p className="text-[10px] text-blue-500 mt-1.5 flex items-center gap-1">
+            <span>ℹ️</span> Good estimate — final price may vary slightly after inspection.
+          </p>
+        )
+        if (pct >= 50) return (
+          <p className="text-[10px] text-amber-500 mt-1.5 flex items-center gap-1">
+            <span>⚠️</span> Estimate only — price may change after your tradie visits.
+          </p>
+        )
+        return (
+          <p className="text-[10px] text-orange-500 mt-1.5 flex items-center gap-1">
+            <span>🔶</span> Rough estimate — we recommend an on-site inspection first.
+          </p>
+        )
+      })()}
     </button>
   )
 }
@@ -715,6 +738,7 @@ const STATE_TZ: Record<string, string> = {
   QLD: 'Australia/Brisbane', SA: 'Australia/Adelaide',
   WA: 'Australia/Perth', NT: 'Australia/Darwin',
 }
+
 
 function datetimeLocalToAuISO(localStr: string, tz: string): string {
   const provisional = new Date(localStr + 'Z')
@@ -1021,7 +1045,7 @@ function PaymentForm({
       confirmParams: {
         return_url: `${window.location.origin}/dashboard`,
       },
-      redirect: 'if_required',
+      redirect: 'if_required', 
     })
 
     if (error) {
@@ -1078,6 +1102,7 @@ function PaymentForm({
     </div>
   )
 }
+
 
 
 export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId }: PostJobWizardProps) {
@@ -1168,7 +1193,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
   const handleDescriptionNext = async () => {
-    setCurrentStep(25)   
+    setCurrentStep(25)  
     setIsDiagnosticLoading(true)
     try {
       const res = await api.post<{ questions: DiagnosticQuestion[] }>('/api/jobs/preflight-questions', {
@@ -1297,7 +1322,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     try {
       const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier: selectedTier }  
+        { tier: selectedTier }   
       )
       const secret = res.data.clientSecret
       if (!secret) throw new Error('No client secret returned from server')
@@ -1329,7 +1354,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     router.back()
   }, [createdJob, router])
 
- 
+  
 
   const handleRescheduleToScheduled = useCallback(async (isoTime: string, tier: SkillLevel | null, price: number) => {
     console.log('[Reschedule] Calling handleRescheduleToScheduled:', { isoTime, tier, price })
@@ -1355,7 +1380,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       if (!secret) throw new Error('No client secret returned.')
 
       setSelectedTier(tier)
-      setAcceptedPrice(price)
+      setAcceptedPrice(price) 
       setClientSecret(secret)
       setCurrentStep(8) 
 
