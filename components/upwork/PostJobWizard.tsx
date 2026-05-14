@@ -208,7 +208,7 @@ function StepDiagnosticQuestions({
       {isLoading ? (
         <div className="flex flex-col items-center gap-4 py-16">
           <Loader2 className="w-8 h-8 text-[var(--upwork-green)] animate-spin" />
-          <p className="text-sm text-[var(--upwork-gray)]">Preparing your questions…</p>
+          <p className="text-sm text-[var(--upwork-gray)]">Analysing your photos and preparing questions…</p>
         </div>
       ) : questions.length === 0 ? (
         <div className="text-center py-12">
@@ -267,7 +267,7 @@ function StepDiagnosticQuestions({
               disabled={!canProceed}
               className="w-full max-w-sm bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              Continue to Photos
+              Continue to Location
               <ChevronRight className="w-4 h-4" />
             </button>
             <button
@@ -797,7 +797,7 @@ function StepQuote({
   }
   const [pickedTime, setPickedTime] = useState(getTomorrowNineAM)
 
- 
+  
   const isPickedTimeAfterHours = (isoTime: string): boolean => {
     try {
       const hour = parseInt(isoTime.split('T')[1]?.split(':')[0] ?? '12', 10)
@@ -1106,7 +1106,7 @@ function PaymentForm({
       confirmParams: {
         return_url: `${window.location.origin}/dashboard`,
       },
-      redirect: 'if_required',
+      redirect: 'if_required', 
     })
 
     if (error) {
@@ -1191,7 +1191,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [geocodeError, setGeocodeError] = useState('')
   const [preferredTime, setPreferredTime] = useState<PreferredTime | ''>('')
-  const [scheduledFor, setScheduledFor] = useState('')  // ISO datetime string for 'scheduled' jobs
+  const [scheduledFor, setScheduledFor] = useState('')  
 
   const [diagnosticQuestions, setDiagnosticQuestions] = useState<DiagnosticQuestion[]>([])
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<string, string>>({})
@@ -1253,14 +1253,21 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }
 
 
-  const handleDescriptionNext = async () => {
+  const handleDescriptionNext = () => {
+    setCurrentStep(3)  
+  }
+
+
+  const handlePhotosNext = async () => {
     setCurrentStep(25)   
     setIsDiagnosticLoading(true)
+    setDiagnosticAnswers({})  
     try {
       const res = await api.post<{ questions: DiagnosticQuestion[] }>('/api/jobs/preflight-questions', {
         title,
         description,
         category: category || 'other',
+        imageUrls: images.map(img => img.url), 
       })
       setDiagnosticQuestions(res.data.questions || [])
     } catch {
@@ -1337,7 +1344,18 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       const lat = coords?.lat ?? -37.8136
       const lng = coords?.lng ?? 144.9631
 
+     
       const resolvedScheduledFor = scheduledForOverride ?? scheduledFor
+
+      
+      const readableDiagnosticAnswers = Object.entries(diagnosticAnswers).reduce<Record<string, string>>(
+        (acc, [qId, answer]) => {
+          const question = diagnosticQuestions.find(q => q.id === qId)
+          acc[question ? question.text : qId] = answer
+          return acc
+        },
+        {}
+      )
 
       const res = await api.post<{ job: Job; quote: Quote }>('/api/jobs', {
         title,
@@ -1352,7 +1370,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           coordinates: { lat, lng },
         },
         preferredTime: timeValue,
-        diagnosticAnswers,  
+        diagnosticAnswers: readableDiagnosticAnswers,   
         ...(timeValue === 'scheduled' && resolvedScheduledFor
           ? { scheduledFor: new Date(resolvedScheduledFor).toISOString() }
           : {}),
@@ -1382,7 +1400,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     try {
       const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier: selectedTier }  
+        { tier: selectedTier }   
       )
       const secret = res.data.clientSecret
       if (!secret) throw new Error('No client secret returned from server')
@@ -1391,7 +1409,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       setAcceptedPrice(selectedOption?.suggestedFixedPrice ?? 0)
 
       setClientSecret(secret)
-      setCurrentStep(8) 
+      setCurrentStep(8)
     } catch (err) {
       if (err instanceof ApiError) {
         setAcceptError(err.message)
@@ -1414,7 +1432,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     router.back()
   }, [createdJob, router])
 
- 
+  
 
   const handleRescheduleToScheduled = useCallback(async (isoTime: string, tier: SkillLevel | null, price: number) => {
     console.log('[Reschedule] Calling handleRescheduleToScheduled:', { isoTime, tier, price })
@@ -1431,7 +1449,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         STATE_TZ[(createdJob.location as any)?.state?.toUpperCase?.()] ?? 'Australia/Sydney'
       )
 
-     
+      
       const acceptRes = await api.post<{ clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
         { tier, scheduledFor: auISO, priceOverride: price }
@@ -1454,7 +1472,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
   const handleBack = () => {
     if (currentStep === 25) {
-      setCurrentStep(2)  
+      setCurrentStep(3) 
+    } else if (currentStep === 4) {
+      setCurrentStep(25)  
     } else if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
@@ -1505,7 +1525,6 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     setIsGeocoding(true)
     setGeocodeError('')
     try {
-      
       const streetForGeocode = address
         .replace(/^(unit|apt|apartment|suite|lot|flat|shop|level)\s*\d+[a-z]?\s*[,/\\-]?\s*/i, '')
         .replace(/^\d+\s*[/\\-]\s*/, '') 
@@ -1717,7 +1736,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             Back
           </button>
           <span className="text-sm text-[var(--upwork-gray)]">
-            Step {currentStep === 25 ? '2.5' : currentStep} of {totalSteps}
+            Step {currentStep === 25 ? '3.5' : currentStep} of {totalSteps}
           </span>
         </div>
         <div className="h-1 bg-gray-200">
@@ -1756,24 +1775,24 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           />
         )}
 
+        {currentStep === 3 && (
+          <StepPhotos
+            images={images}
+            onImagesChange={setImages}
+            onNext={handlePhotosNext}
+            isUploading={isUploading}
+            onUploadFiles={handleUploadFiles}
+          />
+        )}
+
         {currentStep === 25 && (
           <StepDiagnosticQuestions
             questions={diagnosticQuestions}
             answers={diagnosticAnswers}
             onAnswerChange={(qId, ans) => setDiagnosticAnswers(prev => ({ ...prev, [qId]: ans }))}
-            onNext={() => setCurrentStep(3)}
+            onNext={() => setCurrentStep(4)}
             isLoading={isDiagnosticLoading}
             categoryLabel={category ? CATEGORY_LABELS[category] : ''}
-          />
-        )}
-
-        {currentStep === 3 && (
-          <StepPhotos
-            images={images}
-            onImagesChange={setImages}
-            onNext={() => setCurrentStep(4)}
-            isUploading={isUploading}
-            onUploadFiles={handleUploadFiles}
           />
         )}
 
