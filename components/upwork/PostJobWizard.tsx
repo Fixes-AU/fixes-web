@@ -797,7 +797,7 @@ function StepQuote({
   }
   const [pickedTime, setPickedTime] = useState(getTomorrowNineAM)
 
-  
+ 
   const isPickedTimeAfterHours = (isoTime: string): boolean => {
     try {
       const hour = parseInt(isoTime.split('T')[1]?.split(':')[0] ?? '12', 10)
@@ -834,6 +834,15 @@ function StepQuote({
           <Moon className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-700">
             After-hours pricing applied — tradies working after 6pm receive a surcharge for evening availability.
+          </p>
+        </div>
+      )}
+
+      {job.isWeekend && !job.isAfterHours && (
+        <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 mb-5">
+          <Calendar className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-purple-700">
+            Weekend pricing applied — tradies working on weekends receive a surcharge for weekend availability.
           </p>
         </div>
       )}
@@ -1015,9 +1024,61 @@ function StepQuote({
           )}
         </div>
       )}
+
+      {job.isWeekend && !job.isAfterHours && (quote.weekdayOptions?.length ?? 0) > 0 && (() => {
+        const weekdayOpts = quote.weekdayOptions || []
+        const maxWeekdaySavingsPct = weekdayOpts.length > 0
+          ? Math.max(...weekdayOpts.map((wo, i) => {
+            const ev = quote.options[i]?.suggestedFixedPrice
+            if (!ev) return 0
+            return Math.round(((ev - wo.suggestedFixedPrice) / ev) * 100)
+          }))
+          : 0
+        return (
+          <div className="border-t border-gray-100 pt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar className="w-4 h-4 text-purple-500" />
+              <span className="text-sm font-semibold text-purple-700">
+                Book on a Weekday &amp; Save up to {maxWeekdaySavingsPct}%
+              </span>
+            </div>
+            <div className="space-y-2 mb-4">
+              <p className="text-xs text-gray-500 mb-1">Standard weekday rates for the same job:</p>
+              {weekdayOpts.map((wo, i) => {
+                const weekendPrice = quote.options[i]?.suggestedFixedPrice ?? wo.suggestedFixedPrice
+                const savings = Math.round(((weekendPrice - wo.suggestedFixedPrice) / weekendPrice) * 100)
+                return (
+                  <div
+                    key={wo.tier}
+                    className="w-full text-left flex items-center justify-between rounded-xl border-2 border-purple-100 bg-purple-50/30 px-4 py-3"
+                  >
+                    <div>
+                      <span className="text-xs text-purple-600 font-semibold uppercase tracking-wide">
+                        {TIER_CONFIG[wo.tier as SkillLevel]?.label ?? wo.tier} Option
+                      </span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xl font-bold text-purple-900">${wo.suggestedFixedPrice}</span>
+                        <span className="text-sm text-gray-400 line-through">${weekendPrice}</span>
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                          Save {savings}%
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-purple-400 font-medium">Weekday rate</span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-xs text-center text-gray-400">
+              Standard weekday rates apply Mon–Fri · No weekend surcharge
+            </p>
+          </div>
+        )
+      })()}
     </div>
   )
 }
+
 
 
 
@@ -1045,7 +1106,7 @@ function PaymentForm({
       confirmParams: {
         return_url: `${window.location.origin}/dashboard`,
       },
-      redirect: 'if_required', 
+      redirect: 'if_required',
     })
 
     if (error) {
@@ -1193,7 +1254,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
   const handleDescriptionNext = async () => {
-    setCurrentStep(25)  
+    setCurrentStep(25)   
     setIsDiagnosticLoading(true)
     try {
       const res = await api.post<{ questions: DiagnosticQuestion[] }>('/api/jobs/preflight-questions', {
@@ -1276,7 +1337,6 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       const lat = coords?.lat ?? -37.8136
       const lng = coords?.lng ?? 144.9631
 
-      
       const resolvedScheduledFor = scheduledForOverride ?? scheduledFor
 
       const res = await api.post<{ job: Job; quote: Quote }>('/api/jobs', {
@@ -1292,7 +1352,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           coordinates: { lat, lng },
         },
         preferredTime: timeValue,
-        diagnosticAnswers,   
+        diagnosticAnswers,  
         ...(timeValue === 'scheduled' && resolvedScheduledFor
           ? { scheduledFor: new Date(resolvedScheduledFor).toISOString() }
           : {}),
@@ -1322,7 +1382,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     try {
       const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier: selectedTier }   
+        { tier: selectedTier }  
       )
       const secret = res.data.clientSecret
       if (!secret) throw new Error('No client secret returned from server')
@@ -1354,7 +1414,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     router.back()
   }, [createdJob, router])
 
-  
+ 
 
   const handleRescheduleToScheduled = useCallback(async (isoTime: string, tier: SkillLevel | null, price: number) => {
     console.log('[Reschedule] Calling handleRescheduleToScheduled:', { isoTime, tier, price })
@@ -1371,7 +1431,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         STATE_TZ[(createdJob.location as any)?.state?.toUpperCase?.()] ?? 'Australia/Sydney'
       )
 
-      
+     
       const acceptRes = await api.post<{ clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
         { tier, scheduledFor: auISO, priceOverride: price }
@@ -1445,6 +1505,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     setIsGeocoding(true)
     setGeocodeError('')
     try {
+      
       const streetForGeocode = address
         .replace(/^(unit|apt|apartment|suite|lot|flat|shop|level)\s*\d+[a-z]?\s*[,/\\-]?\s*/i, '')
         .replace(/^\d+\s*[/\\-]\s*/, '') 

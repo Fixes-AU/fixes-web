@@ -159,7 +159,8 @@ export interface Job {
   scheduledFor: string | null
   status: JobStatus
   selectedTier: SkillLevel | null  
-  isAfterHours: boolean            
+  isAfterHours: boolean    
+  isWeekend: boolean        
   quote: string | Quote | null
   assignedTradieId: string | User | null
   payment: string | null
@@ -229,7 +230,8 @@ export interface Quote {
   jobId: string
   detectedCategory: string
   options: QuoteOption[]          
-  morningOptions: QuoteOption[]   
+  morningOptions: QuoteOption[]  
+  weekdayOptions: QuoteOption[] 
   selectedTier: SkillLevel | null 
   engine: QuoteEngine
   isLargeProject: boolean        
