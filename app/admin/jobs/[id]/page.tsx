@@ -1,7 +1,7 @@
 // fixes-web/app/admin/jobs/[id]/page.tsx
 
-'use client'
 
+'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -291,7 +291,7 @@ export default function AdminJobDetailPage() {
                       alt={`Completion photo ${i + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
-                    <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/50 to-transparent px-2 py-1.5">
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5">
                       <p className="text-[10px] text-white/80">Photo {i + 1}</p>
                     </div>
                   </a>
@@ -313,6 +313,39 @@ export default function AdminJobDetailPage() {
               <p className="text-xs text-gray-300 mt-0.5">Photos will appear once the tradie submits them via the mobile app.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {job.images && job.images.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Camera className="w-3.5 h-3.5" />
+              Client Photos
+            </h2>
+            <span className="text-xs text-gray-400">{job.images.length} photo{job.images.length !== 1 ? 's' : ''} uploaded</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {job.images.map((img: { url: string; publicId: string }, i: number) => (
+              <a
+                key={img.publicId}
+                href={img.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square rounded-xl overflow-hidden border border-gray-100 hover:border-blue-300 transition-colors"
+              >
+                <img
+                  src={img.url}
+                  alt={`Job photo ${i + 1}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5">
+                  <p className="text-[10px] text-white/80">Photo {i + 1}</p>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       )}
 
