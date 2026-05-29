@@ -16,12 +16,14 @@ import {
   X,
   Loader2,
   Camera,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { api } from '@/lib/api'
 
 export default function DashboardProfilePage() {
-  const { user, profile, refreshUser } = useAuth()
+  const { user, profile, refreshUser, logout } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [isEditing, setIsEditing] = useState(false)
@@ -29,6 +31,10 @@ export default function DashboardProfilePage() {
   const [isSendingVerification, setIsSendingVerification] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deleteReason, setDeleteReason] = useState('')
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   const [name, setName] = useState(user?.name || '')
   const [phone, setPhone] = useState(user?.phone || '')
@@ -76,6 +82,22 @@ export default function DashboardProfilePage() {
       showToast('Failed to send email. Please try again.', 'error')
     } finally {
       setIsSendingVerification(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true)
+    try {
+      await api.post('/api/auth/delete-request', { reason: deleteReason.trim() || 'User requested deletion from web dashboard' })
+      showToast('Account deletion request submitted.', 'success')
+      setIsDeleteModalOpen(false)
+      setTimeout(() => {
+        logout()
+      }, 2000)
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Failed to submit request', 'error')
+    } finally {
+      setIsDeletingAccount(false)
     }
   }
 
@@ -347,8 +369,84 @@ export default function DashboardProfilePage() {
               </div>
             </div>
           )}
+
+          <div className="bg-red-50 border border-red-200 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
+              <Trash2 className="w-4 h-4" />
+              Danger Zone
+            </h3>
+            <p className="text-xs text-red-600/80 mb-4">
+              Permanently delete your account and all associated data. This action cannot be undone.
+            </p>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors focus:ring-2 focus:ring-red-600 focus:ring-offset-1"
+            >
+              Delete My Account
+            </button>
+          </div>
+
         </div>
       </div>
+
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="flex flex-col items-center text-center mb-6 mt-2">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Account</h2>
+              <p className="text-sm text-gray-500 px-4">
+                This action is irreversible. All your jobs, messages, and personal data will be permanently removed.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">
+                Reason for leaving (optional)
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="Tell us why you're leaving..."
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none h-24"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Account'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
