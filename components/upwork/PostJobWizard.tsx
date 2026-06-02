@@ -672,42 +672,24 @@ function StepAnalyzing() {
 }
 
 
-const TIER_CONFIG: Record<SkillLevel, { label: string; icon: React.ElementType; colorClass: string; bgClass: string; borderClass: string }> = {
+const TIER_CONFIG: Record<string, { label: string; icon: React.ElementType; colorClass: string; bgClass: string; borderClass: string }> = {
   junior: { label: 'Standard', icon: Zap, colorClass: 'text-blue-600', bgClass: 'bg-blue-50', borderClass: 'border-blue-200' },
   senior: { label: 'Premium', icon: Star, colorClass: 'text-amber-600', bgClass: 'bg-amber-50', borderClass: 'border-amber-200' },
   specialist: { label: 'Expert', icon: Award, colorClass: 'text-purple-600', bgClass: 'bg-purple-50', borderClass: 'border-purple-200' },
+  premium: { label: 'Premium Service', icon: Star, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-50', borderClass: 'border-emerald-200' },
 }
 
-function TierCard({
-  option,
-  isSelected,
-  onSelect,
-}: {
-  option: QuoteOption
-  isSelected: boolean
-  onSelect: () => void
-}) {
-  const cfg = TIER_CONFIG[option.tier]
-  const Icon = cfg.icon
-
+function PremiumQuoteCard({ option }: { option: QuoteOption }) {
   return (
-    <button
-      onClick={onSelect}
-      className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${isSelected
-        ? 'border-[var(--upwork-green)] bg-green-50 shadow-md'
-        : `${cfg.borderClass} bg-white hover:border-[var(--upwork-green)] hover:shadow-sm`
-        }`}
-    >
+    <div className="w-full text-left rounded-2xl border-2 border-[var(--upwork-green)] bg-green-50 shadow-md p-5">
       <div className="flex items-center justify-between mb-3">
-        <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${cfg.bgClass}`}>
-          <Icon className={`w-4 h-4 ${cfg.colorClass}`} />
-          <span className={`text-sm font-semibold ${cfg.colorClass}`}>{cfg.label} Option</span>
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100">
+          <Star className="w-4 h-4 text-emerald-600" />
+          <span className="text-sm font-semibold text-emerald-600">Premium Service</span>
         </div>
-        {isSelected && (
-          <div className="w-6 h-6 rounded-full bg-[var(--upwork-green)] flex items-center justify-center">
-            <Check className="w-3.5 h-3.5 text-white" />
-          </div>
-        )}
+        <div className="w-6 h-6 rounded-full bg-[var(--upwork-green)] flex items-center justify-center">
+          <Check className="w-3.5 h-3.5 text-white" />
+        </div>
       </div>
 
       <div className="mb-3">
@@ -762,7 +744,7 @@ function TierCard({
           </p>
         )
       })()}
-    </button>
+    </div>
   )
 }
 
@@ -817,6 +799,7 @@ function StepQuote({
 }) {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false)
   const [selectedMorningTier, setSelectedMorningTier] = useState<SkillLevel | null>(null)
+  const [selectedWeekdayTier, setSelectedWeekdayTier] = useState<SkillLevel | null>(null)
 
   const handleSelectMainTier = (tier: SkillLevel) => {
     setSelectedMorningTier(null)
@@ -893,215 +876,394 @@ function StepQuote({
         </div>
       )}
 
-      <div className="space-y-3 mb-5">
-        {quote.options.map((opt) => (
-          <TierCard
-            key={opt.tier}
-            option={opt}
-            isSelected={selectedTier === opt.tier}
-            onSelect={() => handleSelectMainTier(opt.tier)}
-          />
-        ))}
-      </div>
-
-      <div className="flex justify-center mb-5">
-        <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-500 font-medium">
-          {quote.engine === 'gemini' ? 'AI-Powered Estimate' : 'Market Rate Estimate'}
-        </span>
-      </div>
-
-      {acceptError && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
-          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-700">{acceptError}</p>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <button
-          onClick={onAccept}
-          disabled={isAccepting || !selectedTier}
-          className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
-        >
-          {isAccepting ? (
+      {showRescheduleSection && morningOptions[0] ? (
+        (() => {
+          const mo = morningOptions[0]
+          const eveningPrice = quote.options[0]?.suggestedFixedPrice ?? 0
+          const savings = Math.round(((eveningPrice - mo.suggestedFixedPrice) / eveningPrice) * 100)
+          return (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Accepting...
-            </>
-          ) : (
-            <>
-              {selectedTier ? `Accept ${TIER_CONFIG[selectedTier].label} Quote` : 'Select a tier first'}
-              {selectedTier && <ChevronRight className="w-4 h-4" />}
-            </>
-          )}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={isAccepting}
-          className="flex-1 border border-gray-300 text-[var(--upwork-navy)] font-medium py-3 px-6 rounded-xl hover:border-gray-400 transition-colors"
-        >
-          Cancel Job
-        </button>
-      </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <button
+                  onClick={() => { onSelectTier('premium'); setSelectedMorningTier(null) }}
+                  className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${
+                    selectedTier === 'premium' && !selectedMorningTier
+                      ? 'border-[var(--upwork-green)] bg-green-50 shadow-md'
+                      : 'border-amber-200 bg-white hover:border-[var(--upwork-green)] hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100">
+                      <Moon className="w-3.5 h-3.5 text-amber-600" />
+                      <span className="text-xs font-semibold text-amber-600">Tonight</span>
+                    </div>
+                    {selectedTier === 'premium' && !selectedMorningTier && (
+                      <div className="w-6 h-6 rounded-full bg-[var(--upwork-green)] flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-2">
+                    <div className="text-2xl font-bold text-[var(--upwork-navy)]">
+                      ${quote.options[0]?.suggestedFixedPrice}
+                      <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Range: ${quote.options[0]?.price.min} – ${quote.options[0]?.price.max}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
+                    <Moon className="w-3 h-3" />
+                    <span>After-hours rate · Available now</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--upwork-gray)]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{quote.options[0]?.estimatedHours.min}–{quote.options[0]?.estimatedHours.max} hours</span>
+                  </div>
+                  {quote.options[0]?.reasoning && (
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mt-2">{quote.options[0].reasoning}</p>
+                  )}
+                </button>
 
-      {showRescheduleSection && (
-        <div className="border-t border-gray-100 pt-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sunrise className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-semibold text-blue-700">
-              Schedule for a different time &amp; save up to {maxSavingsPct}%
+                <button
+                  onClick={() => { setSelectedMorningTier(mo.tier as SkillLevel); onSelectTier(null) }}
+                  className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${
+                    selectedMorningTier
+                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      : 'border-blue-200 bg-white hover:border-blue-500 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100">
+                      <Sunrise className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-xs font-semibold text-blue-600">Next Morning</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                        Save {savings}%
+                      </span>
+                      {selectedMorningTier && (
+                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-blue-900">
+                        ${mo.suggestedFixedPrice}
+                        <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
+                      </span>
+                      <span className="text-sm text-gray-400 line-through">${eveningPrice}</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Range: ${mo.price.min} – ${mo.price.max}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
+                    <Sunrise className="w-3 h-3" />
+                    <span>Standard rate · No surcharge</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--upwork-gray)]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{mo.estimatedHours.min}–{mo.estimatedHours.max} hours</span>
+                  </div>
+                  {mo.reasoning && (
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mt-2">{mo.reasoning}</p>
+                  )}
+                </button>
+              </div>
+
+              <div className="flex justify-center mb-5">
+                <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-500 font-medium">
+                  {quote.engine === 'gemini' ? 'AI-Powered Estimate' : 'Market Rate Estimate'}
+                </span>
+              </div>
+
+              {acceptError && (
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+                  <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-700">{acceptError}</p>
+                </div>
+              )}
+
+              {selectedMorningTier ? (
+                <div className="space-y-3 mb-6">
+                  <label className="block text-sm font-medium text-gray-700">
+                    📅 Select your preferred morning time:
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={pickedTime}
+                    min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                    onChange={(e) => setPickedTime(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  {pickedIsAfterHours && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <Moon className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-700">
+                        <strong>After-hours rates still apply</strong> for this time slot.
+                        Choose a daytime slot (before 6 PM) to unlock savings.
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => {
+                        onReschedule(pickedTime, mo.tier as SkillLevel ?? 'premium', mo.suggestedFixedPrice)
+                      }}
+                      disabled={isRescheduling || !pickedTime}
+                      className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white"
+                      style={{ backgroundColor: pickedIsAfterHours ? '#f59e0b' : '#3b82f6' }}
+                    >
+                      {isRescheduling ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Rescheduling...</>
+                      ) : pickedIsAfterHours ? (
+                        <><Moon className="w-4 h-4" /> Book at After-Hours Rate</>
+                      ) : (
+                        <><Sunrise className="w-4 h-4" /> Book Morning at ${mo.suggestedFixedPrice}</>
+                      )}
+                    </button>
+                    <button
+                      onClick={onCancel}
+                      disabled={isAccepting}
+                      className="flex-1 border border-gray-300 text-[var(--upwork-navy)] font-medium py-3 px-6 rounded-xl hover:border-gray-400 transition-colors"
+                    >
+                      Cancel Job
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                  <button
+                    onClick={onAccept}
+                    disabled={isAccepting}
+                    className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isAccepting ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
+                    ) : (
+                      <>Accept Tonight at ${eveningPrice} <ChevronRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                  <button
+                    onClick={onCancel}
+                    disabled={isAccepting}
+                    className="flex-1 border border-gray-300 text-[var(--upwork-navy)] font-medium py-3 px-6 rounded-xl hover:border-gray-400 transition-colors"
+                  >
+                    Cancel Job
+                  </button>
+                </div>
+              )}
+            </>
+          )
+        })()
+      ) : job.isWeekend && !job.isAfterHours && (quote.weekdayOptions?.length ?? 0) > 0 ? (
+        null
+      ) : (
+        <>
+          <div className="space-y-3 mb-5">
+            {quote.options[0] && (
+              <PremiumQuoteCard option={quote.options[0]} />
+            )}
+          </div>
+
+          <div className="flex justify-center mb-5">
+            <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-500 font-medium">
+              {quote.engine === 'gemini' ? 'AI-Powered Estimate' : 'Market Rate Estimate'}
             </span>
           </div>
 
-          {showSchedulePicker && !pickedIsAfterHours && (
-            <div className="space-y-2 mb-4">
-              <p className="text-xs text-gray-500 mb-1">Select a tier to book at standard rates:</p>
-              {morningOptions.map((mo, i) => {
-                const eveningPrice = quote.options[i]?.suggestedFixedPrice ?? mo.suggestedFixedPrice
-                const savings = Math.round(((eveningPrice - mo.suggestedFixedPrice) / eveningPrice) * 100)
-                const isChosen = selectedMorningTier === mo.tier
-                return (
-                  <button
-                    key={mo.tier}
-                    onClick={() => {
-                      const next = selectedMorningTier === mo.tier ? null : mo.tier as SkillLevel
-                      setSelectedMorningTier(next)
-                      if (next) onSelectTier(null)
-                    }}
-                    className={`w-full text-left flex items-center justify-between rounded-xl border-2 px-4 py-3 transition-all ${isChosen
-                      ? 'border-blue-500 bg-blue-50 shadow-sm'
-                      : 'border-blue-100 bg-blue-50/30 hover:border-blue-300 hover:bg-blue-50'
-                      }`}
-                  >
-                    <div>
-                      <span className="text-xs text-blue-600 font-semibold uppercase tracking-wide">
-                        {TIER_CONFIG[mo.tier as SkillLevel]?.label ?? mo.tier} Option
-                      </span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xl font-bold text-blue-900">${mo.suggestedFixedPrice}</span>
-                        <span className="text-sm text-gray-400 line-through">${eveningPrice}</span>
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-                          Save {savings}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-xs text-blue-400 font-medium">Standard rate</span>
-                      {isChosen && (
-                        <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-white" />
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                )
-              })}
+          {acceptError && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-700">{acceptError}</p>
             </div>
           )}
 
-          {showSchedulePicker && pickedIsAfterHours && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
-              <Moon className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700">
-                <strong>After-hours rates still apply</strong> for this time slot — prices will be the same as tonight.
-                Choose a daytime slot (before 6 PM) to unlock standard rates.
-              </p>
-            </div>
-          )}
-
-          {!showSchedulePicker ? (
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <button
-              onClick={() => setShowSchedulePicker(true)}
-              className="w-full border-2 border-blue-300 text-blue-700 font-semibold py-3 px-6 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+              onClick={onAccept}
+              disabled={isAccepting}
+              className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
-              <Calendar className="w-4 h-4" />
-              Choose a Different Time &amp; Save
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                📅 Select your preferred date &amp; time:
-              </label>
-              <input
-                type="datetime-local"
-                value={pickedTime}
-                min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                onChange={(e) => setPickedTime(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-              <button
-                onClick={() => {
-                  const mo = morningOptions.find(m => m.tier === selectedMorningTier)
-                  onReschedule(pickedTime, selectedMorningTier, mo?.suggestedFixedPrice ?? 0)
-                }}
-                disabled={isRescheduling || !pickedTime || (!pickedIsAfterHours && !selectedMorningTier)}
-                className="w-full font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{
-                  backgroundColor: pickedIsAfterHours ? '#f59e0b' : '#3b82f6',
-                  color: 'white',
-                }}
-              >
-                {isRescheduling ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Rescheduling...</>
-                ) : pickedIsAfterHours ? (
-                  <><Moon className="w-4 h-4" /> Book at After-Hours Rate</>
-                ) : (
-                  <><Sunrise className="w-4 h-4" /> Confirm &amp; Book at Standard Rates</>
-                )}
-              </button>
-              {!pickedIsAfterHours && (
-                <p className="text-xs text-center text-gray-400">
-                  Standard rates apply · No after-hours surcharge · Dispatched at your selected time
-                </p>
+              {isAccepting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Accepting...
+                </>
+              ) : (
+                <>
+                  Accept Premium Quote
+                  <ChevronRight className="w-4 h-4" />
+                </>
               )}
-            </div>
-          )}
-        </div>
+            </button>
+            <button
+              onClick={onCancel}
+              disabled={isAccepting}
+              className="flex-1 border border-gray-300 text-[var(--upwork-navy)] font-medium py-3 px-6 rounded-xl hover:border-gray-400 transition-colors"
+            >
+              Cancel Job
+            </button>
+          </div>
+        </>
       )}
 
       {job.isWeekend && !job.isAfterHours && (quote.weekdayOptions?.length ?? 0) > 0 && (() => {
         const weekdayOpts = quote.weekdayOptions || []
-        const maxWeekdaySavingsPct = weekdayOpts.length > 0
-          ? Math.max(...weekdayOpts.map((wo, i) => {
-            const ev = quote.options[i]?.suggestedFixedPrice
-            if (!ev) return 0
-            return Math.round(((ev - wo.suggestedFixedPrice) / ev) * 100)
-          }))
-          : 0
+        const wo = weekdayOpts[0]
+        if (!wo) return null
+        const weekendPrice = quote.options[0]?.suggestedFixedPrice ?? wo.suggestedFixedPrice
+        const savings = Math.round(((weekendPrice - wo.suggestedFixedPrice) / weekendPrice) * 100)
+        const isWeekdaySelected = !!selectedWeekdayTier
         return (
-          <div className="border-t border-gray-100 pt-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-semibold text-purple-700">
-                Book on a Weekday &amp; Save up to {maxWeekdaySavingsPct}%
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+              <button
+                onClick={() => { onSelectTier('premium'); setSelectedWeekdayTier(null) }}
+                className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${
+                  selectedTier === 'premium' && !isWeekdaySelected
+                    ? 'border-[var(--upwork-green)] bg-green-50 shadow-md'
+                    : 'border-purple-200 bg-white hover:border-[var(--upwork-green)] hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100">
+                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-xs font-semibold text-purple-600">This Weekend</span>
+                  </div>
+                  {selectedTier === 'premium' && !isWeekdaySelected && (
+                    <div className="w-6 h-6 rounded-full bg-[var(--upwork-green)] flex items-center justify-center">
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  )}
+                </div>
+                <div className="mb-2">
+                  <div className="text-2xl font-bold text-[var(--upwork-navy)]">
+                    ${weekendPrice}
+                    <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
+                  <Calendar className="w-3 h-3" />
+                  <span>Weekend rate · Available now</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm text-[var(--upwork-gray)]">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{quote.options[0]?.estimatedHours.min}–{quote.options[0]?.estimatedHours.max} hours</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => { setSelectedWeekdayTier(wo.tier as SkillLevel); onSelectTier(null) }}
+                className={`w-full text-left rounded-2xl border-2 p-5 transition-all ${
+                  isWeekdaySelected
+                    ? 'border-purple-500 bg-purple-50 shadow-md'
+                    : 'border-purple-200 bg-white hover:border-purple-500 hover:shadow-sm'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100">
+                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-xs font-semibold text-purple-600">Weekday</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                      Save {savings}%
+                    </span>
+                    {isWeekdaySelected && (
+                      <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-purple-900">
+                      ${wo.suggestedFixedPrice}
+                      <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
+                    </span>
+                    <span className="text-sm text-gray-400 line-through">${weekendPrice}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
+                  <Calendar className="w-3 h-3" />
+                  <span>Standard rate · No surcharge</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm text-[var(--upwork-gray)]">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{wo.estimatedHours.min}–{wo.estimatedHours.max} hours</span>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex justify-center mb-5">
+              <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-500 font-medium">
+                {quote.engine === 'gemini' ? 'AI-Powered Estimate' : 'Market Rate Estimate'}
               </span>
             </div>
-            <div className="space-y-2 mb-4">
-              <p className="text-xs text-gray-500 mb-1">Standard weekday rates for the same job:</p>
-              {weekdayOpts.map((wo, i) => {
-                const weekendPrice = quote.options[i]?.suggestedFixedPrice ?? wo.suggestedFixedPrice
-                const savings = Math.round(((weekendPrice - wo.suggestedFixedPrice) / weekendPrice) * 100)
-                return (
-                  <div
-                    key={wo.tier}
-                    className="w-full text-left flex items-center justify-between rounded-xl border-2 border-purple-100 bg-purple-50/30 px-4 py-3"
-                  >
-                    <div>
-                      <span className="text-xs text-purple-600 font-semibold uppercase tracking-wide">
-                        {TIER_CONFIG[wo.tier as SkillLevel]?.label ?? wo.tier} Option
-                      </span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xl font-bold text-purple-900">${wo.suggestedFixedPrice}</span>
-                        <span className="text-sm text-gray-400 line-through">${weekendPrice}</span>
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
-                          Save {savings}%
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-purple-400 font-medium">Weekday rate</span>
-                  </div>
-                )
-              })}
+
+            {acceptError && (
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-5">
+                <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-700">{acceptError}</p>
+              </div>
+            )}
+
+            {isWeekdaySelected && (
+              <div className="space-y-3 mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  📅 Select your preferred weekday:
+                </label>
+                <input
+                  type="datetime-local"
+                  value={pickedTime}
+                  min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                  onChange={(e) => setPickedTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              {isWeekdaySelected ? (
+                <button
+                  onClick={() => {
+                    onReschedule(pickedTime, wo.tier as SkillLevel ?? 'premium', wo.suggestedFixedPrice)
+                  }}
+                  disabled={isRescheduling || !pickedTime}
+                  className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white bg-purple-600 hover:bg-purple-700"
+                >
+                  {isRescheduling ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Rescheduling...</>
+                  ) : (
+                    <><Calendar className="w-4 h-4" /> Book Weekday at ${wo.suggestedFixedPrice}</>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={onAccept}
+                  disabled={isAccepting}
+                  className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isAccepting ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
+                  ) : (
+                    <>Accept Weekend at ${weekendPrice} <ChevronRight className="w-4 h-4" /></>
+                  )}
+                </button>
+              )}
+              <button
+                onClick={onCancel}
+                disabled={isAccepting}
+                className="flex-1 border border-gray-300 text-[var(--upwork-navy)] font-medium py-3 px-6 rounded-xl hover:border-gray-400 transition-colors"
+              >
+                Cancel Job
+              </button>
             </div>
             <p className="text-xs text-center text-gray-400">
               Standard weekday rates apply Mon–Fri · No weekend surcharge
@@ -1267,7 +1429,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     return () => clearTimeout(timer)
   }, [title, description, currentStep]) // eslint-disable-line
 
-  const [selectedTier, setSelectedTier] = useState<SkillLevel | null>(null)
+  const [selectedTier, setSelectedTier] = useState<SkillLevel | null>('premium')
 
   const [isAccepting, setIsAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState('')

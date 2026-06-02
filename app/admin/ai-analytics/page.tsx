@@ -79,6 +79,7 @@ const SKILL_COLORS: Record<string, string> = {
   junior:     '#10B981',
   senior:     '#3B82F6',
   specialist: '#8B5CF6',
+  premium:    '#059669',
 }
 
 

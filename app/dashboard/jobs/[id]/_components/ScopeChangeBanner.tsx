@@ -88,7 +88,7 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
   const [scopeChange, setScopeChange] = useState<ScopeChange | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedTier, setSelectedTier] = useState<'junior' | 'senior' | 'specialist' | null>(null)
+  const [selectedTier, setSelectedTier] = useState<'junior' | 'senior' | 'specialist' | 'premium' | null>('premium')
   const [processing, setProcessing] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [balanceToPay, setBalanceToPay] = useState(0)
@@ -110,7 +110,7 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
       setLoading(true)
       const res = await api.get<any>(`/api/jobs/${job._id}/scope-change/${job.activeScopeChangeId}`)
       setScopeChange(res.data.scopeChange)
-      if (res.data.scopeChange?.newQuoteOptions?.length === 1) {
+      if (res.data.scopeChange?.newQuoteOptions?.length >= 1) {
         setSelectedTier(res.data.scopeChange.newQuoteOptions[0].tier)
       }
     } catch (err) {
@@ -238,7 +238,7 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
 
         <hr className="border-gray-100 my-6" />
 
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">Updated Quote Options</h3>
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Updated Premium Quote</h3>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
@@ -246,31 +246,19 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
           </div>
         )}
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {scopeChange.newQuoteOptions.map((opt: QuoteOption) => {
-            const isSelected = selectedTier === opt.tier
+        <div className="mb-6">
+          {scopeChange.newQuoteOptions[0] && (() => {
+            const opt = scopeChange.newQuoteOptions[0]
             const priceDiff = opt.suggestedFixedPrice - scopeChange.originalPrice
             return (
-              <div
-                key={opt.tier}
-                onClick={() => setSelectedTier(opt.tier)}
-                className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 flex flex-col ${isSelected
-                    ? 'border-(--upwork-green) bg-green-50/50 shadow-md transform scale-[1.02]'
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  }`}
-              >
-                {isSelected && (
-                  <div className="absolute -top-3 -right-3 bg-(--upwork-green) text-white rounded-full p-1 shadow-sm">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                )}
+              <div className="relative border-2 rounded-xl p-4 border-emerald-500 bg-green-50/50 shadow-md">
+                <div className="absolute -top-3 -right-3 bg-emerald-500 text-white rounded-full p-1 shadow-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
 
                 <div className="flex justify-between items-start mb-2">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${opt.tier === 'junior' ? 'bg-blue-100 text-blue-700' :
-                      opt.tier === 'senior' ? 'bg-purple-100 text-purple-700' :
-                        'bg-amber-100 text-amber-700'
-                    }`}>
-                    {opt.tier} Option
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                    Premium Service
                   </span>
                 </div>
 
@@ -286,7 +274,7 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
                   <p className="text-xs font-medium text-gray-500 mb-3">No price change</p>
                 )}
 
-                <div className="text-xs text-gray-600 flex-1 space-y-2">
+                <div className="text-xs text-gray-600 space-y-2">
                   <div className="flex items-center gap-1.5 font-medium text-gray-700">
                     <Clock className="w-3.5 h-3.5" />
                     Est. {opt.estimatedHours.min}-{opt.estimatedHours.max} hrs
@@ -295,7 +283,7 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
                 </div>
               </div>
             )
-          })}
+          })()}
         </div>
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100">

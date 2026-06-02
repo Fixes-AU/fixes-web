@@ -207,7 +207,7 @@ export interface ScopeChange {
 
 
 
-export type SkillLevel = 'junior' | 'senior' | 'specialist'
+export type SkillLevel = 'junior' | 'senior' | 'specialist' | 'premium'
 export type QuoteEngine = 'gemini' | 'gemini-custom-ml' | 'rule_based' | 'placeholder'
 
 export interface QuoteOption {

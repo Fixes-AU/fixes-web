@@ -75,6 +75,7 @@ export const TIER_LABELS: Record<string, string> = {
   junior: 'Standard',
   senior: 'Premium',
   specialist: 'Expert',
+  premium: 'Premium Service',
 }
 
 

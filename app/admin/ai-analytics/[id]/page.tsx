@@ -67,6 +67,7 @@ function SkillBadge({ level }: { level: string | null }) {
   if (!level) return <span className="text-gray-400">—</span>
   const color = level === 'junior' ? 'bg-emerald-100 text-emerald-700'
     : level === 'senior' ? 'bg-blue-100 text-blue-700'
+    : level === 'premium' ? 'bg-teal-100 text-teal-700'
     : 'bg-purple-100 text-purple-700'
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium capitalize ${color}`}>{level}</span>
 }
