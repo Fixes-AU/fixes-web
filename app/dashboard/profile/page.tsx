@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import {
   User as UserIcon,
@@ -18,7 +18,11 @@ import {
   Camera,
   Trash2,
   AlertTriangle,
+  CreditCard,
+  Plus,
 } from 'lucide-react'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '@/contexts/auth-context'
 import { api } from '@/lib/api'
 
@@ -38,6 +42,63 @@ export default function DashboardProfilePage() {
 
   const [name, setName] = useState(user?.name || '')
   const [phone, setPhone] = useState(user?.phone || '')
+
+  // ── Saved Cards State ──
+  type SavedCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number }
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([])
+  const [isLoadingCards, setIsLoadingCards] = useState(false)
+  const [isAddingCard, setIsAddingCard] = useState(false)
+  const [addCardSecret, setAddCardSecret] = useState<string | null>(null)
+  const [removingCardId, setRemovingCardId] = useState<string | null>(null)
+  const [cardError, setCardError] = useState('')
+
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
+
+  const fetchSavedCards = useCallback(async () => {
+    if (user?.role !== 'client') return
+    setIsLoadingCards(true)
+    try {
+      const res = await api.get<{ cards: SavedCard[] }>('/api/payments/saved-cards')
+      setSavedCards(res.data.cards)
+    } catch { } finally {
+      setIsLoadingCards(false)
+    }
+  }, [user?.role])
+
+  useEffect(() => {
+    fetchSavedCards()
+  }, [fetchSavedCards])
+
+  const handleAddCard = async () => {
+    setCardError('')
+    try {
+      const res = await api.post<{ clientSecret: string }>('/api/payments/setup-intent', {})
+      setAddCardSecret(res.data.clientSecret)
+      setIsAddingCard(true)
+    } catch {
+      showToast('Failed to start card setup', 'error')
+    }
+  }
+
+  const handleRemoveCard = async (pmId: string) => {
+    setRemovingCardId(pmId)
+    try {
+      await api.delete(`/api/payments/cards/${pmId}`)
+      setSavedCards(prev => prev.filter(c => c.id !== pmId))
+      showToast('Card removed', 'success')
+    } catch {
+      showToast('Failed to remove card', 'error')
+    } finally {
+      setRemovingCardId(null)
+    }
+  }
+
+  const handleAddCardSuccess = () => {
+    setIsAddingCard(false)
+    setAddCardSecret(null)
+    fetchSavedCards()
+    showToast('Card saved successfully!', 'success')
+  }
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type })
@@ -183,7 +244,7 @@ export default function DashboardProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 sm:p-6">
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 sm:p-6 self-start">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
 
@@ -370,6 +431,61 @@ export default function DashboardProfilePage() {
             </div>
           )}
 
+          {user.role === 'client' && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-(--upwork-green)" />
+                Payment Methods
+              </h3>
+
+              {isLoadingCards ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-5 h-5 text-(--upwork-green) animate-spin" />
+                </div>
+              ) : savedCards.length === 0 ? (
+                <p className="text-xs text-gray-400 mb-3">No saved cards yet. Cards are automatically saved when you make your first payment.</p>
+              ) : (
+                <div className="space-y-2 mb-3">
+                  {savedCards.map(card => (
+                    <div
+                      key={card.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <CreditCard className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs font-medium text-(--upwork-navy) capitalize">
+                          {card.brand} •••• {card.last4}
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {String(card.expMonth).padStart(2, '0')}/{String(card.expYear).slice(-2)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveCard(card.id)}
+                        disabled={removingCardId === card.id}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1 disabled:opacity-50"
+                        title="Remove card"
+                      >
+                        {removingCardId === card.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Trash2 className="w-3.5 h-3.5" />
+                        }
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={handleAddCard}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors w-full justify-center"
+              >
+                <Plus className="w-3 h-3" />
+                Add New Card
+              </button>
+            </div>
+          )}
+
           <div className="bg-red-50 border border-red-200 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-red-700 mb-2 flex items-center gap-2">
               <Trash2 className="w-4 h-4" />
@@ -447,6 +563,96 @@ export default function DashboardProfilePage() {
         </div>
       )}
 
+      {isAddingCard && addCardSecret && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 shadow-xl relative animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => { setIsAddingCard(false); setAddCardSecret(null) }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-(--upwork-navy) mb-1">Add Payment Method</h2>
+            <p className="text-sm text-gray-400 mb-6">Your card details are securely handled by Stripe.</p>
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret: addCardSecret,
+                appearance: {
+                  theme: 'stripe',
+                  variables: {
+                    colorPrimary: '#14a800',
+                    colorBackground: '#ffffff',
+                    borderRadius: '12px',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                  },
+                },
+              }}
+            >
+              <SetupForm
+                onSuccess={handleAddCardSuccess}
+                onCancel={() => { setIsAddingCard(false); setAddCardSecret(null) }}
+              />
+            </Elements>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+
+function SetupForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async () => {
+    if (!stripe || !elements) return
+    setIsConfirming(true)
+    setError('')
+
+    const { error: err } = await stripe.confirmSetup({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/dashboard/profile`,
+      },
+      redirect: 'if_required',
+    })
+
+    if (err) {
+      setError(err.message || 'Failed to save card')
+      setIsConfirming(false)
+    } else {
+      onSuccess()
+    }
+  }
+
+  return (
+    <div>
+      <PaymentElement options={{ layout: 'tabs' }} />
+      {error && (
+        <div className="flex items-start gap-2 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={onCancel}
+          className="flex-1 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={!stripe || !elements || isConfirming}
+          className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-(--upwork-green) rounded-xl hover:bg-(--upwork-green-dark) transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isConfirming ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : 'Save Card'}
+        </button>
+      </div>
     </div>
   )
 }

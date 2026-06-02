@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { AlertCircle, CheckCircle2, Clock, XCircle, FileImage, ShieldAlert } from 'lucide-react' // using normal lucide-react if web? Wait, dashboard is web, it uses lucide-react. Let me check what it imports. I will use lucide-react.
+import { AlertCircle, CheckCircle2, Clock, XCircle, FileImage, ShieldAlert, CreditCard, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -93,6 +93,12 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [balanceToPay, setBalanceToPay] = useState(0)
 
+  type SavedCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number }
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([])
+  const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null)
+  const [useNewCard, setUseNewCard] = useState(false)
+  const [isPayingWithSaved, setIsPayingWithSaved] = useState(false)
+
   useEffect(() => {
     if (job.activeScopeChangeId) {
       fetchScopeChange()
@@ -125,6 +131,11 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
         setClientSecret(res.data.clientSecret)
         setBalanceToPay(res.data.priceDifference)
         setProcessing(false)
+        try {
+          const cardsRes = await api.get<{ cards: SavedCard[] }>('/api/payments/saved-cards')
+          setSavedCards(cardsRes.data.cards)
+          if (cardsRes.data.cards.length === 0) setUseNewCard(true)
+        } catch { setUseNewCard(true) }
       } else {
         window.location.reload()
       }
@@ -305,13 +316,91 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
         </div>
 
         {clientSecret && (
-          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-            <PaymentForm 
-              amount={balanceToPay} 
-              onSuccess={handlePaymentSuccess} 
-              onCancel={() => setClientSecret(null)} 
-            />
-          </Elements>
+          <div className="mt-6">
+            {savedCards.length > 0 && !useNewCard && (
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-(--upwork-green)" />
+                  Pay with Saved Card
+                </h3>
+                <div className="space-y-2">
+                  {savedCards.map(card => (
+                    <button
+                      key={card.id}
+                      onClick={() => setSelectedSavedCard(card.id)}
+                      className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left ${
+                        selectedSavedCard === card.id
+                          ? 'border-(--upwork-green) bg-green-50 ring-1 ring-(--upwork-green)'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        selectedSavedCard === card.id ? 'border-(--upwork-green)' : 'border-gray-300'
+                      }`}>
+                        {selectedSavedCard === card.id && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-(--upwork-green)" />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 capitalize">
+                        {card.brand} •••• {card.last4}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {String(card.expMonth).padStart(2, '0')}/{String(card.expYear).slice(-2)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                  <button
+                    onClick={async () => {
+                      if (!selectedSavedCard || !scopeChange) return
+                      setIsPayingWithSaved(true)
+                      setError('')
+                      try {
+                        await handlePaymentSuccess()
+                      } catch (err: any) {
+                        setError(err.message || 'Payment failed')
+                        setIsPayingWithSaved(false)
+                      }
+                    }}
+                    disabled={!selectedSavedCard || isPayingWithSaved}
+                    className="flex-1 bg-(--upwork-green) hover:bg-green-700 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isPayingWithSaved
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                      : `Pay $${balanceToPay} AUD & Confirm`
+                    }
+                  </button>
+                  <button
+                    onClick={() => { setUseNewCard(true); setSelectedSavedCard(null) }}
+                    className="flex-1 border border-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl hover:border-gray-300 transition-colors text-sm"
+                  >
+                    Use a new card
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(useNewCard || savedCards.length === 0) && (
+              <>
+                {savedCards.length > 0 && (
+                  <button
+                    onClick={() => { setUseNewCard(false); setSelectedSavedCard(null) }}
+                    className="flex items-center gap-1.5 text-sm text-(--upwork-green) font-medium mb-3 hover:opacity-80 transition-opacity"
+                  >
+                    ← Back to saved cards
+                  </button>
+                )}
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+                  <PaymentForm
+                    amount={balanceToPay}
+                    onSuccess={handlePaymentSuccess}
+                    onCancel={() => setClientSecret(null)}
+                  />
+                </Elements>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

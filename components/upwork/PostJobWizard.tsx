@@ -24,6 +24,7 @@ import {
   Sunrise,
   Calendar,
   HelpCircle,
+  CreditCard,
 } from 'lucide-react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/contexts/auth-context'
@@ -1274,6 +1275,12 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [acceptedPrice, setAcceptedPrice] = useState<number>(0)
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [stripeInstance, setStripeInstance] = useState<any>(null)
+
+  const [savedCards, setSavedCards] = useState<{ id: string; brand: string; last4: string; expMonth: number; expYear: number }[]>([])
+  const [selectedSavedCard, setSelectedSavedCard] = useState<string | null>(null)
+  const [useNewCard, setUseNewCard] = useState(false)
+  const [isPayingWithSaved, setIsPayingWithSaved] = useState(false)
+
   useEffect(() => {
     import('@stripe/stripe-js').then(({ loadStripe }) => {
       setStripeInstance(
@@ -1281,6 +1288,17 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       )
     })
   }, [])
+
+  useEffect(() => {
+    if (currentStep === 8) {
+      api.get<{ cards: typeof savedCards }>('/api/payments/saved-cards')
+        .then(res => {
+          setSavedCards(res.data.cards)
+          if (res.data.cards.length === 0) setUseNewCard(true)
+        })
+        .catch(() => setUseNewCard(true))
+    }
+  }, [currentStep])
 
   useEffect(() => {
     if (existingJobId) {
@@ -1454,34 +1472,43 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [isAuthenticated, router, title, description, category, images, address, suburb, postcode, locationState, coords, scheduledFor, diagnosticAnswers])
 
 
-  const handleAcceptQuote = useCallback(async () => {
+  const handleAcceptQuote = useCallback(async (paymentMethodId?: string) => {
     if (!createdJob || !selectedTier) return
     setIsAccepting(true)
     setAcceptError('')
 
     try {
+      const body: Record<string, unknown> = { tier: selectedTier }
+      if (paymentMethodId) body.paymentMethodId = paymentMethodId
+
       const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier: selectedTier }   
+        body
       )
-      const secret = res.data.clientSecret
-      if (!secret) throw new Error('No client secret returned from server')
 
       const selectedOption = createdQuote?.options.find(o => o.tier === selectedTier)
       setAcceptedPrice(selectedOption?.suggestedFixedPrice ?? 0)
 
+      if (paymentMethodId) {
+        router.push('/dashboard')
+        return
+      }
+
+      const secret = res.data.clientSecret
+      if (!secret) throw new Error('No client secret returned from server')
+
       setClientSecret(secret)
       setCurrentStep(8)
-    } catch (err) {
+    } catch (err: any) {
       if (err instanceof ApiError) {
         setAcceptError(err.message)
       } else {
-        setAcceptError('Failed to accept quote. Please try again.')
+        setAcceptError(err?.response?.data?.message || err?.message || 'Failed to accept quote. Please try again.')
       }
     } finally {
       setIsAccepting(false)
     }
-  }, [createdJob, selectedTier])
+  }, [createdJob, selectedTier, router])
 
 
 
@@ -1717,7 +1744,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             job={createdJob}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
-            onAccept={handleAcceptQuote}
+            onAccept={() => handleAcceptQuote()}
             onCancel={handleCancelJob}
             onReschedule={handleRescheduleToScheduled}
             isAccepting={isAccepting}
@@ -1731,6 +1758,39 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
   if (currentStep === 8 && clientSecret && createdQuote) {
+    const brandIcon = (brand: string) => {
+      const b = brand.toLowerCase()
+      if (b === 'visa') return '💳 Visa'
+      if (b === 'mastercard') return '💳 Mastercard'
+      if (b === 'amex') return '💳 Amex'
+      return `💳 ${brand.charAt(0).toUpperCase() + brand.slice(1)}`
+    }
+
+    const handlePayWithSaved = async () => {
+      if (!selectedSavedCard || !clientSecret) return
+      setIsPayingWithSaved(true)
+      setAcceptError('')
+      try {
+        const { loadStripe } = await import('@stripe/stripe-js')
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
+        if (!stripe) throw new Error('Stripe failed to load')
+
+        const { error } = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: selectedSavedCard,
+        })
+
+        if (error) {
+          setAcceptError(error.message || 'Payment failed. Please try again.')
+          setIsPayingWithSaved(false)
+        } else {
+          router.push('/dashboard')
+        }
+      } catch (err) {
+        setAcceptError(err instanceof ApiError ? err.message : 'Payment failed. Please try again.')
+        setIsPayingWithSaved(false)
+      }
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-[#f2f7f2] to-white">
         <header className="border-b border-gray-200 bg-white">
@@ -1753,29 +1813,113 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
               </span>{' '}
               is held in escrow until your job is completed.
             </p>
-
           </div>
-          <Elements
-            stripe={stripeInstance}
-            options={{
-              clientSecret,
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorPrimary: '#14a800',
-                  colorBackground: '#ffffff',
-                  borderRadius: '12px',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                },
-              },
-            }}
-          >
-            <PaymentForm
-              amount={acceptedPrice}
-              onSuccess={() => router.push('/dashboard')}
-              onCancel={handleCancelJob}
-            />
-          </Elements>
+
+          {savedCards.length > 0 && !useNewCard && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
+              <h3 className="text-sm font-semibold text-[var(--upwork-navy)] mb-4 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-[var(--upwork-green)]" />
+                Saved Payment Methods
+              </h3>
+              <div className="space-y-2">
+                {savedCards.map(card => (
+                  <button
+                    key={card.id}
+                    onClick={() => setSelectedSavedCard(card.id)}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border transition-all text-left ${
+                      selectedSavedCard === card.id
+                        ? 'border-[var(--upwork-green)] bg-green-50 ring-1 ring-[var(--upwork-green)]'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      selectedSavedCard === card.id ? 'border-[var(--upwork-green)]' : 'border-gray-300'
+                    }`}>
+                      {selectedSavedCard === card.id && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-[var(--upwork-green)]" />
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-[var(--upwork-navy)]">
+                      {brandIcon(card.brand)} •••• {card.last4}
+                    </span>
+                    <span className="text-xs text-gray-400 ml-auto">
+                      {String(card.expMonth).padStart(2, '0')}/{String(card.expYear).slice(-2)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {acceptError && (
+                <div className="flex items-start gap-2 mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">{acceptError}</p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 mt-5">
+                <button
+                  onClick={handlePayWithSaved}
+                  disabled={!selectedSavedCard || isPayingWithSaved}
+                  className="w-full bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isPayingWithSaved ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Confirming…</>
+                  ) : (
+                    <><ShieldCheck className="w-4 h-4" /> Pay ${acceptedPrice} AUD</>
+                  )}
+                </button>
+                <button
+                  onClick={() => { setUseNewCard(true); setSelectedSavedCard(null) }}
+                  className="w-full border border-gray-200 text-[var(--upwork-gray)] font-medium py-3 px-6 rounded-xl hover:border-gray-300 transition-colors text-sm"
+                >
+                  Use a new card
+                </button>
+                <button
+                  onClick={handleCancelJob}
+                  disabled={isPayingWithSaved}
+                  className="w-full text-gray-400 font-medium py-2 px-6 rounded-xl hover:text-gray-500 transition-colors text-sm"
+                >
+                  Cancel Job
+                </button>
+              </div>
+            </div>
+          )}
+
+          {(useNewCard || savedCards.length === 0) && (
+            <>
+              {savedCards.length > 0 && (
+                <button
+                  onClick={() => { setUseNewCard(false); setSelectedSavedCard(null) }}
+                  className="flex items-center gap-1.5 text-sm text-[var(--upwork-green)] font-medium mb-4 hover:opacity-80 transition-opacity"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to saved cards
+                </button>
+              )}
+              <Elements
+                stripe={stripeInstance}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                    variables: {
+                      colorPrimary: '#14a800',
+                      colorBackground: '#ffffff',
+                      borderRadius: '12px',
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                    },
+                  },
+                }}
+              >
+                <PaymentForm
+                  amount={acceptedPrice}
+                  onSuccess={() => router.push('/dashboard')}
+                  onCancel={handleCancelJob}
+                />
+              </Elements>
+            </>
+          )}
+
           <p className="text-center text-xs text-gray-400 mt-6 flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5" />
             Payments secured by Stripe — your card details are never stored on our servers
