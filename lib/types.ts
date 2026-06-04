@@ -31,6 +31,8 @@ export interface User {
   avatarPublicId: string | null
   isEmailVerified: boolean
   isActive: boolean
+  isCleaningAdmin?: boolean
+  isFullAdmin?: boolean
   stripeCustomerId: string | null
   fixId: string
   createdAt: string
@@ -48,6 +50,8 @@ export type TradieCategory =
   | 'carpentry'
   | 'emergency_make_safe'
   | 'general_labourer'
+  | 'cleaning'
+  | 'waste_removal'
 
 export type DocumentType =
   | 'abn'
@@ -62,6 +66,7 @@ export type DocumentType =
   | 'arctick_license'
   | 'carpentry_certificate'
   | 'builders_license_cbu'
+  | 'police_check'
 
 export interface TradieDocument {
   type: DocumentType
@@ -179,6 +184,26 @@ export interface Job {
   rescheduleDeclinedAt: string | null
   diagnosticAnswers: Record<string, string>
   completionFeedback?: { submittedAt: string | null } | null
+  isAgencyManaged?: boolean
+  cleaningType?: CleaningType | null
+  cleaningTasks?: {
+    title: string
+    description?: string
+    status: 'pending' | 'in_progress' | 'completed'
+    photos?: { url: string; publicId: string; uploadedAt: string }[]
+    completedAt?: string | null
+    order: number
+    subtasks?: { title: string; status?: string }[]
+  }[]
+  cleaningPricing?: {
+    ratePerHour: number | null
+    estimatedHours: number | null
+    totalEstimate: number | null
+    actualHours: number | null
+    finalAmount: number | null
+  }
+  recurringSchedule?: string | null
+  recurringInstanceIndex?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -474,5 +499,72 @@ export interface TradieLocationUpdatePayload {
   lat: number
   lng: number
   updatedAt: number
+}
+
+
+export type CleaningType =
+  | 'standard_clean'
+  | 'deep_clean'
+  | 'end_of_lease'
+  | 'move_in_clean'
+  | 'commercial_clean'
+  | 'carpet_clean'
+  | 'window_clean'
+  | 'spring_clean'
+  | 'post_renovation'
+  | 'general_waste'
+  | 'green_waste'
+
+export interface CleaningSubtask {
+  title: string
+  description?: string
+  isDefault: boolean
+}
+
+export interface CleaningTask {
+  title: string
+  description?: string
+  estimatedMinutes: number
+  isDefault: boolean
+  order: number
+  subtasks: CleaningSubtask[]
+}
+
+export interface CleaningTaskTemplate {
+  _id: string
+  cleaningType: CleaningType
+  label: string
+  category: 'cleaning' | 'waste_removal'
+  tasks: CleaningTask[]
+}
+
+export interface SelectedCleaningTask {
+  title: string
+  subtasks: string[]
+  estimatedMinutes: number
+}
+
+export interface CleaningQuote {
+  ratePerHour: number
+  estimatedHours: number
+  totalEstimate: number
+  cleaningType: string
+}
+
+export interface CleaningSummary {
+  summary: string
+  taskCount: number
+  estimatedHours: number
+}
+
+export type RecurringFrequency = 'weekly' | 'fortnightly'
+
+export interface RecurringScheduleInput {
+  cleaningType: CleaningType
+  frequency: RecurringFrequency
+  dayOfWeek: number
+  preferredTime: string
+  totalInstances: number
+  assignPreference: 'same_cleaner' | 'any_cleaner'
 }
 

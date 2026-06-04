@@ -22,6 +22,7 @@ interface AuthContextValue {
   isClient: boolean
   isTradie: boolean
   isAdmin: boolean
+  isCleaningAdmin: boolean
   login: (email: string, password: string) => Promise<User>
   registerClient: (data: RegisterClientData) => Promise<User>
   logout: () => Promise<void>
@@ -125,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isClient: user?.role === 'client',
     isTradie: user?.role === 'tradie',
     isAdmin: user?.role === 'admin',
+    isCleaningAdmin: !!(user?.role === 'admin' && user?.isCleaningAdmin),
     login,
     registerClient,
     logout,

@@ -127,6 +127,14 @@ export default function MyJobsPage() {
                           <span className="text-(--upwork-navy)">{assignedTradie.name}</span>
                         </>
                       )}
+                      {job.isAgencyManaged && job.cleaningTasks && job.cleaningTasks.length > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="text-(--upwork-green) font-medium">
+                            {job.cleaningTasks.filter((t: any) => t.status === 'completed').length}/{job.cleaningTasks.length} tasks
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 whitespace-nowrap">

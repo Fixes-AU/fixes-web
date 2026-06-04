@@ -25,13 +25,17 @@ import {
   Calendar,
   HelpCircle,
   CreditCard,
+  CheckSquare,
+  Repeat,
+  ListChecks,
+  ClipboardList,
 } from 'lucide-react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
 import AddressAutocomplete from '@/components/upwork/AddressAutocomplete'
 
-import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES } from '@/lib/constants'
+import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES, AGENCY_CATEGORIES, CLEANING_TYPE_LABELS } from '@/lib/constants'
 import type {
   Job,
   Quote,
@@ -43,6 +47,13 @@ import type {
   JobImage,
   DiagnosticQuestion,
   PreflightQuestionsResponse,
+  CleaningType,
+  CleaningTaskTemplate,
+  SelectedCleaningTask,
+  CleaningQuote,
+  CleaningSummary,
+  RecurringFrequency,
+  RecurringScheduleInput,
 } from '@/lib/types'
 
 interface PostJobWizardProps {
@@ -647,6 +658,479 @@ function StepTime({
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+
+function StepCleaningType({
+  category,
+  selectedType,
+  onSelectType,
+}: {
+  category: TradieCategory
+  selectedType: CleaningType | ''
+  onSelectType: (t: CleaningType) => void
+}) {
+  const types: { value: CleaningType; icon: string }[] = category === 'waste_removal'
+    ? [
+        { value: 'general_waste', icon: '🗑️' },
+        { value: 'green_waste', icon: '🌿' },
+      ]
+    : [
+        { value: 'standard_clean', icon: '🧹' },
+        { value: 'deep_clean', icon: '✨' },
+        { value: 'end_of_lease', icon: '🏠' },
+        { value: 'move_in_clean', icon: '📦' },
+        { value: 'commercial_clean', icon: '🏢' },
+        { value: 'carpet_clean', icon: '🧶' },
+        { value: 'window_clean', icon: '🪟' },
+        { value: 'spring_clean', icon: '🌸' },
+        { value: 'post_renovation', icon: '🔨' },
+      ]
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-8">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-[var(--upwork-green)] text-sm font-medium rounded-full mb-3">
+          <Check className="w-3.5 h-3.5" />
+          {CATEGORY_LABELS[category]}
+        </span>
+        <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">
+          What type of {category === 'waste_removal' ? 'waste removal' : 'cleaning'}?
+        </h1>
+        <p className="text-[var(--upwork-gray)]">Select the service that best matches your needs.</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {types.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => onSelectType(t.value)}
+            className={`px-4 py-4 rounded-xl border text-left transition-all ${
+              selectedType === t.value
+                ? 'bg-[var(--upwork-navy)] text-white border-[var(--upwork-navy)]'
+                : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-navy)]'
+            }`}
+          >
+            <div className="text-2xl mb-2">{t.icon}</div>
+            <div className="text-sm font-medium">{CLEANING_TYPE_LABELS[t.value]}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
+function StepCleaningTasks({
+  template,
+  selectedTasks,
+  onToggleTask,
+  onToggleSubtask,
+  onNext,
+  isLoading,
+  cleaningType,
+}: {
+  template: CleaningTaskTemplate | null
+  selectedTasks: Record<number, { selected: boolean; subtasks: Set<string> }>
+  onToggleTask: (idx: number) => void
+  onToggleSubtask: (taskIdx: number, subtaskTitle: string) => void
+  onNext: () => void
+  isLoading: boolean
+  cleaningType: string
+}) {
+  const anySelected = Object.values(selectedTasks).some((t) => t.selected)
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto flex flex-col items-center gap-4 py-16">
+        <Loader2 className="w-8 h-8 text-[var(--upwork-green)] animate-spin" />
+        <p className="text-sm text-[var(--upwork-gray)]">Loading task templates...</p>
+      </div>
+    )
+  }
+
+  if (!template) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <p className="text-[var(--upwork-gray)] mb-4">No task templates available for this type.</p>
+        <button
+          onClick={onNext}
+          className="bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] text-white font-medium py-3 px-8 rounded-xl transition-colors"
+        >
+          Continue
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <ListChecks className="w-7 h-7 text-[var(--upwork-green)]" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">
+          Select tasks
+        </h1>
+        <p className="text-[var(--upwork-gray)] text-sm">
+          Choose which tasks you need for your <strong>{CLEANING_TYPE_LABELS[cleaningType] || cleaningType}</strong>.
+          Default tasks are pre-selected.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {template.tasks.map((task, idx) => {
+          const taskState = selectedTasks[idx] || { selected: false, subtasks: new Set() }
+          return (
+            <div key={idx} className={`border rounded-2xl transition-all ${taskState.selected ? 'border-[var(--upwork-green)] bg-green-50/30' : 'border-gray-200 bg-white'}`}>
+              <button
+                onClick={() => onToggleTask(idx)}
+                className="w-full flex items-center gap-3 p-4 text-left"
+              >
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                  taskState.selected ? 'bg-[var(--upwork-green)] border-[var(--upwork-green)]' : 'border-gray-300'
+                }`}>
+                  {taskState.selected && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--upwork-navy)]">{task.title}</p>
+                  {task.description && (
+                    <p className="text-xs text-[var(--upwork-gray)] mt-0.5">{task.description}</p>
+                  )}
+                </div>
+                <span className="text-xs text-[var(--upwork-gray)] shrink-0">~{task.estimatedMinutes}min</span>
+              </button>
+
+              {taskState.selected && task.subtasks.length > 0 && (
+                <div className="px-4 pb-4 pl-12 space-y-2">
+                  {task.subtasks.map((sub) => {
+                    const subSelected = taskState.subtasks.has(sub.title)
+                    return (
+                      <button
+                        key={sub.title}
+                        onClick={() => onToggleSubtask(idx, sub.title)}
+                        className="flex items-center gap-2 w-full text-left"
+                      >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          subSelected ? 'bg-[var(--upwork-green)] border-[var(--upwork-green)]' : 'border-gray-300'
+                        }`}>
+                          {subSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        <span className="text-xs text-[var(--upwork-navy)]">{sub.title}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!anySelected}
+        className="w-full max-w-sm mx-auto block mt-8 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors"
+      >
+        Continue
+      </button>
+    </div>
+  )
+}
+
+
+function StepCleaningSchedule({
+  enableRecurring,
+  onToggleRecurring,
+  frequency,
+  onFrequencyChange,
+  dayOfWeek,
+  onDayChange,
+  preferredTime,
+  onTimeChange,
+  totalInstances,
+  onInstancesChange,
+  assignPreference,
+  onAssignPrefChange,
+  scheduledFor,
+  onScheduledForChange,
+  onNext,
+}: {
+  enableRecurring: boolean
+  onToggleRecurring: (v: boolean) => void
+  frequency: RecurringFrequency
+  onFrequencyChange: (v: RecurringFrequency) => void
+  dayOfWeek: number
+  onDayChange: (v: number) => void
+  preferredTime: string
+  onTimeChange: (v: string) => void
+  totalInstances: number
+  onInstancesChange: (v: number) => void
+  assignPreference: 'same_cleaner' | 'any_cleaner'
+  onAssignPrefChange: (v: 'same_cleaner' | 'any_cleaner') => void
+  scheduledFor: string
+  onScheduledForChange: (v: string) => void
+  onNext: () => void
+}) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const now = new Date()
+  const maxDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const toDatetimeLocal = (d: Date) =>
+    new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+
+  const canProceed = scheduledFor.length > 0
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Calendar className="w-7 h-7 text-[var(--upwork-green)]" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">
+          Schedule your clean
+        </h1>
+        <p className="text-[var(--upwork-gray)] text-sm">
+          Book up to one month in advance with optional recurring schedules.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-[var(--upwork-navy)] mb-1.5">
+            When do you need the first clean?
+          </label>
+          <input
+            type="datetime-local"
+            value={scheduledFor}
+            min={toDatetimeLocal(new Date(now.getTime() + 60 * 60 * 1000))}
+            max={toDatetimeLocal(maxDate)}
+            onChange={(e) => onScheduledForChange(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
+          />
+          <p className="text-xs text-[var(--upwork-gray)] mt-1">You can schedule up to 30 days ahead.</p>
+        </div>
+
+        <div className="border border-gray-200 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Repeat className="w-4 h-4 text-[var(--upwork-green)]" />
+              <span className="text-sm font-semibold text-[var(--upwork-navy)]">Recurring Schedule</span>
+            </div>
+            <button
+              onClick={() => onToggleRecurring(!enableRecurring)}
+              className={`w-10 h-6 rounded-full transition-colors ${enableRecurring ? 'bg-[var(--upwork-green)]' : 'bg-gray-300'}`}
+            >
+              <div className={`w-4 h-4 bg-white rounded-full transition-transform mx-1 ${enableRecurring ? 'translate-x-4' : ''}`} />
+            </button>
+          </div>
+
+          {enableRecurring && (
+            <div className="space-y-4 pt-2 border-t border-gray-100">
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                {(['weekly', 'fortnightly'] as RecurringFrequency[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => onFrequencyChange(f)}
+                    className={`py-2.5 px-4 rounded-xl border text-sm font-medium transition-all ${
+                      frequency === f
+                        ? 'bg-[var(--upwork-navy)] text-white border-[var(--upwork-navy)]'
+                        : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-navy)]'
+                    }`}
+                  >
+                    {f === 'weekly' ? 'Weekly' : 'Fortnightly'}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--upwork-navy)] mb-1.5">Day of week</label>
+                <select
+                  value={dayOfWeek}
+                  onChange={(e) => onDayChange(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-[var(--upwork-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)]"
+                >
+                  {days.map((d, i) => (
+                    <option key={i} value={i}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--upwork-navy)] mb-1.5">Preferred time</label>
+                <input
+                  type="time"
+                  value={preferredTime}
+                  onChange={(e) => onTimeChange(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-[var(--upwork-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--upwork-navy)] mb-1.5">
+                  Number of sessions ({frequency === 'weekly' ? `${totalInstances} weeks` : `${totalInstances * 2} weeks`})
+                </label>
+                <input
+                  type="range"
+                  min={2}
+                  max={frequency === 'weekly' ? 4 : 2}
+                  value={totalInstances}
+                  onChange={(e) => onInstancesChange(Number(e.target.value))}
+                  className="w-full accent-[var(--upwork-green)]"
+                />
+                <div className="flex justify-between text-xs text-[var(--upwork-gray)]">
+                  <span>2 sessions</span>
+                  <span>{frequency === 'weekly' ? '4 sessions' : '2 sessions'}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--upwork-navy)] mb-1.5">Cleaner preference</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { value: 'same_cleaner' as const, label: 'Same cleaner each time' },
+                    { value: 'any_cleaner' as const, label: 'Any available cleaner' },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onAssignPrefChange(opt.value)}
+                      className={`py-2 px-3 rounded-xl border text-xs font-medium transition-all ${
+                        assignPreference === opt.value
+                          ? 'bg-[var(--upwork-green)] text-white border-[var(--upwork-green)]'
+                          : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-green)]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!canProceed}
+        className="w-full max-w-sm mx-auto block mt-8 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors"
+      >
+        Continue
+      </button>
+    </div>
+  )
+}
+
+
+function StepCleaningQuote({
+  quote,
+  summary,
+  isLoading,
+  onAccept,
+  onBack,
+  isAccepting,
+  error,
+  cleaningType,
+}: {
+  quote: CleaningQuote | null
+  summary: CleaningSummary | null
+  isLoading: boolean
+  onAccept: () => void
+  onBack: () => void
+  isAccepting: boolean
+  error: string
+  cleaningType: CleaningType | null | ''
+}) {
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto flex flex-col items-center gap-4 py-16">
+        <Loader2 className="w-8 h-8 text-[var(--upwork-green)] animate-spin" />
+        <p className="text-sm text-[var(--upwork-gray)]">Generating your quote...</p>
+      </div>
+    )
+  }
+
+  if (!quote) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12">
+        <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+        <p className="text-[var(--upwork-navy)] font-semibold mb-2">Could not generate quote</p>
+        <p className="text-sm text-[var(--upwork-gray)] mb-6">{error || 'Please try again.'}</p>
+        <button onClick={onBack} className="text-[var(--upwork-green)] text-sm underline hover:opacity-80">Go back</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <DollarSign className="w-7 h-7 text-[var(--upwork-green)]" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">
+          Your Quote
+        </h1>
+        <p className="text-[var(--upwork-gray)] text-sm">
+          Hourly rate for {CLEANING_TYPE_LABELS[cleaningType || ''] || cleaningType || 'cleaning'}
+        </p>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-[var(--upwork-gray)]">Rate per hour</span>
+          <span className="text-lg font-bold text-[var(--upwork-navy)]">${quote.ratePerHour.toFixed(2)}/hr</span>
+        </div>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium text-[var(--upwork-gray)]">Estimated hours</span>
+          <span className="text-lg font-bold text-[var(--upwork-navy)]">{quote.estimatedHours}h</span>
+        </div>
+        <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
+          <span className="text-sm font-semibold text-[var(--upwork-navy)]">Estimated Total (inc. GST)</span>
+          <span className="text-2xl font-bold text-[var(--upwork-green)]">${quote.totalEstimate.toFixed(2)}</span>
+        </div>
+        <p className="text-xs text-[var(--upwork-gray)] mt-2">
+          Final amount is based on actual hours worked.
+        </p>
+      </div>
+
+      {summary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6">
+          <div className="flex items-start gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+            <span className="text-sm font-semibold text-blue-800">AI Summary</span>
+          </div>
+          <p className="text-sm text-blue-700 leading-relaxed">{typeof summary === 'string' ? summary : summary.summary}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-4">
+          <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={onAccept}
+          disabled={isAccepting}
+          className="w-full bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+        >
+          {isAccepting ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+          ) : (
+            <><ShieldCheck className="w-4 h-4" /> Accept & Pay ${quote.totalEstimate.toFixed(2)}</>
+          )}
+        </button>
+        <button
+          onClick={onBack}
+          disabled={isAccepting}
+          className="w-full text-[var(--upwork-gray)] font-medium py-2 px-6 rounded-xl hover:text-[var(--upwork-navy)] transition-colors text-sm"
+        >
+          Go back
+        </button>
+      </div>
     </div>
   )
 }
@@ -1370,7 +1854,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [resumeError, setResumeError] = useState('')
 
   const hasPreselectedCategory = VALID_CATEGORIES.includes(preselectedCategory as TradieCategory)
-  const [currentStep, setCurrentStep] = useState(existingJobId ? 7 : (hasPreselectedCategory ? 2 : 1))
+  const isPreselectedAgency = hasPreselectedCategory && AGENCY_CATEGORIES.includes(preselectedCategory as TradieCategory)
+  const [currentStep, setCurrentStep] = useState(
+    existingJobId ? 7 : (isPreselectedAgency ? 10 : (hasPreselectedCategory ? 2 : 1))
+  )
   const totalSteps = 5
 
   const [category, setCategory] = useState<TradieCategory | ''>(
@@ -1392,6 +1879,23 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [diagnosticQuestions, setDiagnosticQuestions] = useState<DiagnosticQuestion[]>([])
   const [diagnosticAnswers, setDiagnosticAnswers] = useState<Record<string, string>>({})
   const [isDiagnosticLoading, setIsDiagnosticLoading] = useState(false)
+
+  const isAgencyCategory = AGENCY_CATEGORIES.includes(category as TradieCategory)
+  const [cleaningType, setCleaningType] = useState<CleaningType | ''>('')
+  const [cleaningTemplate, setCleaningTemplate] = useState<CleaningTaskTemplate | null>(null)
+  const [isTemplateLoading, setIsTemplateLoading] = useState(false)
+  const [selectedCleaningTasks, setSelectedCleaningTasks] = useState<Record<number, { selected: boolean; subtasks: Set<string> }>>({})
+  const [cleaningQuote, setCleaningQuote] = useState<CleaningQuote | null>(null)
+  const [cleaningSummary, setCleaningSummary] = useState<CleaningSummary | null>(null)
+  const [isCleaningQuoteLoading, setIsCleaningQuoteLoading] = useState(false)
+  const [cleaningQuoteError, setCleaningQuoteError] = useState('')
+  const [enableRecurring, setEnableRecurring] = useState(false)
+  const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>('weekly')
+  const [recurringDay, setRecurringDay] = useState(1)
+  const [recurringTime, setRecurringTime] = useState('09:00')
+  const [recurringInstances, setRecurringInstances] = useState(4)
+  const [assignPreference, setAssignPreference] = useState<'same_cleaner' | 'any_cleaner'>('any_cleaner')
+  const [cleaningScheduledFor, setCleaningScheduledFor] = useState('')
 
   const [classifySuggestion, setClassifySuggestion] = useState<{
     suggestedCategory: TradieCategory
@@ -1486,12 +1990,19 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [existingJobId])
 
 
-  const progress = Math.min((currentStep / totalSteps) * 100, 100)
+  const cleaningStepMap: Record<number, number> = { 10: 2, 11: 3, 4: 4, 12: 5, 13: 6 }
+  const effectiveStep = isAgencyCategory ? (cleaningStepMap[currentStep] ?? currentStep) : currentStep
+  const effectiveTotalSteps = isAgencyCategory ? 6 : totalSteps
+  const progress = Math.min((effectiveStep / effectiveTotalSteps) * 100, 100)
 
 
   const handleCategorySelect = (cat: TradieCategory) => {
     setCategory(cat)
-    setCurrentStep(2)
+    if (AGENCY_CATEGORIES.includes(cat)) {
+      setCurrentStep(10)
+    } else {
+      setCurrentStep(2)
+    }
   }
 
 
@@ -1721,11 +2232,219 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [createdJob])
 
 
+  const handleCleaningTypeSelect = async (type: CleaningType) => {
+    setCleaningType(type)
+    setCurrentStep(11)
+    setIsTemplateLoading(true)
+    try {
+      const res = await api.get<CleaningTaskTemplate>(`/api/cleaning/templates/${type}`)
+      const tmpl = res.data
+      setCleaningTemplate(tmpl)
+      if (tmpl) {
+        const defaults: Record<number, { selected: boolean; subtasks: Set<string> }> = {}
+        tmpl.tasks.forEach((task, idx) => {
+          if (task.isDefault) {
+            const subs = new Set(task.subtasks.filter((s) => s.isDefault).map((s) => s.title))
+            defaults[idx] = { selected: true, subtasks: subs }
+          }
+        })
+        setSelectedCleaningTasks(defaults)
+      }
+    } catch {
+      setCleaningTemplate(null)
+    } finally {
+      setIsTemplateLoading(false)
+    }
+  }
+
+  const handleToggleCleaningTask = (idx: number) => {
+    setSelectedCleaningTasks((prev) => {
+      const current = prev[idx]
+      if (current?.selected) {
+        const next = { ...prev }
+        delete next[idx]
+        return next
+      }
+      const task = cleaningTemplate?.tasks[idx]
+      const defaultSubs = new Set(task?.subtasks.filter((s) => s.isDefault).map((s) => s.title) || [])
+      return { ...prev, [idx]: { selected: true, subtasks: defaultSubs } }
+    })
+  }
+
+  const handleToggleCleaningSubtask = (taskIdx: number, subtaskTitle: string) => {
+    setSelectedCleaningTasks((prev) => {
+      const task = prev[taskIdx]
+      if (!task) return prev
+      const subs = new Set(task.subtasks)
+      if (subs.has(subtaskTitle)) subs.delete(subtaskTitle)
+      else subs.add(subtaskTitle)
+      return { ...prev, [taskIdx]: { ...task, subtasks: subs } }
+    })
+  }
+
+  const handleCleaningTasksNext = () => {
+    setCurrentStep(4)
+  }
+
+  const handleCleaningLocationNext = async () => {
+    if (!coords) {
+      await handleLocationNext()
+      return
+    }
+    setCurrentStep(12)
+  }
+
+  const handleCleaningScheduleNext = async () => {
+    setCurrentStep(13)
+    setIsCleaningQuoteLoading(true)
+    setCleaningQuoteError('')
+    try {
+      const tasks = Object.entries(selectedCleaningTasks)
+        .filter(([, v]) => v.selected)
+        .map(([idx, v]) => {
+          const task = cleaningTemplate!.tasks[Number(idx)]
+          return {
+            title: task.title,
+            subtasks: Array.from(v.subtasks),
+            estimatedMinutes: task.estimatedMinutes,
+          }
+        })
+
+      const [quoteRes, summaryRes] = await Promise.all([
+        api.post<CleaningQuote>('/api/cleaning/quote', {
+          cleaningType,
+          selectedTasks: tasks,
+          category: category || 'cleaning',
+        }),
+        api.post<{ summary: CleaningSummary }>('/api/cleaning/summary', {
+          cleaningType,
+          selectedTasks: tasks,
+          location: { suburb, state: locationState },
+        }),
+      ])
+
+      setCleaningQuote(quoteRes.data)
+      setCleaningSummary(summaryRes.data.summary)
+    } catch (err) {
+      setCleaningQuoteError(err instanceof ApiError ? err.message : 'Failed to generate quote')
+    } finally {
+      setIsCleaningQuoteLoading(false)
+    }
+  }
+
+  const handleCleaningAccept = useCallback(async () => {
+    if (!cleaningQuote || !isAuthenticated) {
+      if (!isAuthenticated) router.push('/login')
+      return
+    }
+
+    setIsSubmitting(true)
+    setCleaningQuoteError('')
+
+    try {
+      const lat = coords?.lat ?? -37.8136
+      const lng = coords?.lng ?? 144.9631
+
+      const tasks = Object.entries(selectedCleaningTasks)
+        .filter(([, v]) => v.selected)
+        .map(([idx, v]) => {
+          const task = cleaningTemplate!.tasks[Number(idx)]
+          return {
+            title: task.title,
+            subtasks: Array.from(v.subtasks).map((s) => ({ title: s })),
+            estimatedMinutes: task.estimatedMinutes,
+            order: task.order,
+          }
+        })
+
+      const jobPayload: Record<string, unknown> = {
+        title: `${CLEANING_TYPE_LABELS[cleaningType] || cleaningType} — ${suburb || 'Cleaning Job'}`,
+        description: cleaningSummary?.summary || `${CLEANING_TYPE_LABELS[cleaningType] || cleaningType} service`,
+        category: category || 'cleaning',
+        cleaningType,
+        cleaningTasks: tasks,
+        cleaningPricing: {
+          ratePerHour: cleaningQuote.ratePerHour,
+          estimatedHours: cleaningQuote.estimatedHours,
+          totalEstimate: cleaningQuote.totalEstimate,
+        },
+        images,
+        location: {
+          address,
+          suburb,
+          postcode,
+          state: locationState,
+          coordinates: { lat, lng },
+        },
+        preferredTime: 'scheduled',
+        scheduledFor: new Date(cleaningScheduledFor).toISOString(),
+        isAgencyManaged: true,
+      }
+
+      const res = await api.post<{ job: Job; quote: Quote; clientSecret: string; payment?: unknown }>(
+        '/api/jobs',
+        jobPayload
+      )
+
+      setCreatedJob(res.data.job)
+
+      if (enableRecurring) {
+        try {
+          await api.post('/api/cleaning/recurring', {
+            jobId: res.data.job._id,
+            cleaningType,
+            frequency: recurringFrequency,
+            dayOfWeek: recurringDay,
+            preferredTime: recurringTime,
+            totalInstances: recurringInstances,
+            assignPreference,
+            location: { address, suburb, postcode, state: locationState, coordinates: { lat, lng } },
+            tasks,
+            ratePerHour: cleaningQuote.ratePerHour,
+            estimatedHours: cleaningQuote.estimatedHours,
+          })
+        } catch {
+          // recurring schedule creation is non-blocking
+        }
+      }
+
+      // Always set createdQuote from response — step 8 (payment) needs it
+      if (res.data.quote) {
+        setCreatedQuote(res.data.quote)
+      }
+
+      if (res.data.clientSecret) {
+        setClientSecret(res.data.clientSecret)
+        setAcceptedPrice(cleaningQuote.totalEstimate)
+        setCurrentStep(8)
+      } else {
+        router.push('/dashboard')
+      }
+    } catch (err) {
+      setCleaningQuoteError(err instanceof ApiError ? err.message : 'Failed to create job. Please try again.')
+      setCurrentStep(13)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [cleaningQuote, cleaningType, category, selectedCleaningTasks, cleaningTemplate, cleaningSummary, images, address, suburb, postcode, locationState, coords, cleaningScheduledFor, enableRecurring, recurringFrequency, recurringDay, recurringTime, recurringInstances, assignPreference, isAuthenticated, router])
+
   const handleBack = () => {
     if (currentStep === 25) {
       setCurrentStep(3)  
     } else if (currentStep === 4) {
-      setCurrentStep(25) 
+      if (isAgencyCategory) {
+        setCurrentStep(11)
+      } else {
+        setCurrentStep(25)
+      }
+    } else if (currentStep === 10) {
+      setCurrentStep(1)
+    } else if (currentStep === 11) {
+      setCurrentStep(10)
+    } else if (currentStep === 12) {
+      setCurrentStep(4)
+    } else if (currentStep === 13) {
+      setCurrentStep(12)
     } else if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     } else {
@@ -1769,7 +2488,11 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
   const handleLocationNext = async () => {
     if (coords) {
-      setCurrentStep(5)
+      if (isAgencyCategory) {
+        setCurrentStep(12)
+      } else {
+        setCurrentStep(5)
+      }
       return
     }
 
@@ -1820,7 +2543,11 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } finally {
       setIsGeocoding(false)
     }
-    setCurrentStep(5)
+    if (isAgencyCategory) {
+      setCurrentStep(12)
+    } else {
+      setCurrentStep(5)
+    }
   }
 
 
@@ -2104,7 +2831,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             Back
           </button>
           <span className="text-sm text-[var(--upwork-gray)]">
-            Step {currentStep === 25 ? '3.5' : currentStep} of {totalSteps}
+            Step {currentStep === 25 ? '3.5' : effectiveStep} of {effectiveTotalSteps}
           </span>
         </div>
         <div className="h-1 bg-gray-200">
@@ -2192,6 +2919,59 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             scheduledFor={scheduledFor}
             onScheduledForChange={setScheduledFor}
             onScheduledSubmit={handleScheduledSubmit}
+          />
+        )}
+
+        {currentStep === 10 && (
+          <StepCleaningType
+            category={category as TradieCategory}
+            selectedType={cleaningType}
+            onSelectType={handleCleaningTypeSelect}
+          />
+        )}
+
+        {currentStep === 11 && (
+          <StepCleaningTasks
+            template={cleaningTemplate}
+            selectedTasks={selectedCleaningTasks}
+            onToggleTask={handleToggleCleaningTask}
+            onToggleSubtask={handleToggleCleaningSubtask}
+            onNext={handleCleaningTasksNext}
+            isLoading={isTemplateLoading}
+            cleaningType={cleaningType}
+          />
+        )}
+
+        {currentStep === 12 && (
+          <StepCleaningSchedule
+            enableRecurring={enableRecurring}
+            onToggleRecurring={setEnableRecurring}
+            frequency={recurringFrequency}
+            onFrequencyChange={setRecurringFrequency}
+            dayOfWeek={recurringDay}
+            onDayChange={setRecurringDay}
+            preferredTime={recurringTime}
+            onTimeChange={setRecurringTime}
+            totalInstances={recurringInstances}
+            onInstancesChange={setRecurringInstances}
+            assignPreference={assignPreference}
+            onAssignPrefChange={setAssignPreference}
+            scheduledFor={cleaningScheduledFor}
+            onScheduledForChange={setCleaningScheduledFor}
+            onNext={handleCleaningScheduleNext}
+          />
+        )}
+
+        {currentStep === 13 && (
+          <StepCleaningQuote
+            quote={cleaningQuote}
+            summary={cleaningSummary}
+            isLoading={isCleaningQuoteLoading}
+            onAccept={handleCleaningAccept}
+            onBack={() => setCurrentStep(12)}
+            isAccepting={isSubmitting}
+            error={cleaningQuoteError}
+            cleaningType={cleaningType}
           />
         )}
       </main>

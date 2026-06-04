@@ -35,7 +35,16 @@ export default function LoginPage() {
       const user = await login(email, password)
 
       if (user.role === 'admin') {
-        router.push('/admin')
+        const hasBoth = user.isCleaningAdmin && user.isFullAdmin !== false
+        const cleaningOnly = user.isCleaningAdmin && user.isFullAdmin === false
+
+        if (hasBoth) {
+          router.push('/admin-select')
+        } else if (cleaningOnly) {
+          router.push('/cleaning-admin')
+        } else {
+          router.push('/admin')
+        }
       } else {
         router.push('/dashboard')
       }

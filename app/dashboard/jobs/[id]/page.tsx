@@ -28,8 +28,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
-import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS } from '@/lib/constants'
+import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS, AGENCY_CATEGORIES } from '@/lib/constants'
 import { SkeletonJobDetail, SkeletonChatMessages } from '../../_components/skeletons'
+import CleaningTaskList from '../../_components/CleaningTaskList'
+import CleaningQuoteCard from '../../_components/CleaningQuoteCard'
+import RecurringScheduleCard from '../../_components/RecurringScheduleCard'
 import ScopeChangeBanner from './_components/ScopeChangeBanner'
 import { connectSocket, joinJobRoom, leaveJobRoom } from '@/lib/socket'
 import { GoogleMap, useJsApiLoader, Polyline, Marker } from '@react-google-maps/api'
@@ -907,6 +910,8 @@ export default function JobDetailPage() {
   const [isRespondingReschedule, setIsRespondingReschedule] = useState(false)
   const [rescheduleError, setRescheduleError] = useState('')
 
+  const [recurringSchedule, setRecurringSchedule] = useState<any | null>(null)
+
   const fetchJob = useCallback(async () => {
     try {
       const res = await api.get<{ job: Job }>(`/api/jobs/${jobId}`)
@@ -920,6 +925,13 @@ export default function JobDetailPage() {
   useEffect(() => {
     fetchJob()
   }, [fetchJob])
+
+  useEffect(() => {
+    if (!job?.recurringSchedule) return
+    api.get<{ schedule: any }>(`/api/cleaning/recurring/${job.recurringSchedule}`)
+      .then((res) => setRecurringSchedule(res.data.schedule))
+      .catch(() => {})
+  }, [job?.recurringSchedule])
 
   useEffect(() => {
     if (!job) return
@@ -974,10 +986,20 @@ export default function JobDetailPage() {
     const handleOtpSent = () => fetchJob()
     socket.on('job:otp_sent', handleOtpSent)
 
+    const handleCleaningTaskUpdate = () => fetchJob()
+    socket.on('cleaning:task_started', handleCleaningTaskUpdate)
+    socket.on('cleaning:task_completed', handleCleaningTaskUpdate)
+    socket.on('cleaning:accepted', handleCleaningTaskUpdate)
+    socket.on('cleaning:scope_change', handleCleaningTaskUpdate)
+
     return () => {
       socket.off('job:status_update', handleStatusUpdate)
       socket.off('dispatch:finding_tradie', handleFindingTradie)
       socket.off('job:otp_sent', handleOtpSent)
+      socket.off('cleaning:task_started', handleCleaningTaskUpdate)
+      socket.off('cleaning:task_completed', handleCleaningTaskUpdate)
+      socket.off('cleaning:accepted', handleCleaningTaskUpdate)
+      socket.off('cleaning:scope_change', handleCleaningTaskUpdate)
       leaveJobRoom(mongoId)
     }
   }, [job?._id])
@@ -1398,7 +1420,9 @@ export default function JobDetailPage() {
                 <AlertCircle className="w-4 h-4" /> Notice an issue?
               </p>
               <p className="text-xs text-amber-700 max-w-lg">
-                Your payment is held in escrow for 48 hours. If the tradie did not complete the job properly or damaged something, you can raise a dispute to freeze the funds while our team investigates.
+                {job.isAgencyManaged
+                  ? 'If the cleaner did not complete the job properly or damaged something, you can open a dispute and our team will investigate.'
+                  : 'Your payment is held in escrow for 48 hours. If the tradie did not complete the job properly or damaged something, you can raise a dispute to freeze the funds while our team investigates.'}
               </p>
             </div>
             <div className="shrink-0 flex items-center">
@@ -1406,7 +1430,7 @@ export default function JobDetailPage() {
                 onClick={() => router.push(`/dashboard/jobs/${job._id}/dispute`)}
                 className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors whitespace-nowrap"
               >
-                Raise Dispute
+                {job.isAgencyManaged ? 'Open Dispute' : 'Raise Dispute'}
               </button>
             </div>
           </div>
@@ -1462,6 +1486,10 @@ export default function JobDetailPage() {
               {job.description}
             </p>
           </div>
+
+          {job.isAgencyManaged && job.cleaningTasks && job.cleaningTasks.length > 0 && (
+            <CleaningTaskList tasks={job.cleaningTasks} jobStatus={job.status} />
+          )}
 
           {job.images.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
@@ -1569,7 +1597,13 @@ export default function JobDetailPage() {
             </p>
           </div>
 
-          {quote && (
+          {job.isAgencyManaged && job.cleaningPricing && job.cleaningType ? (
+            <CleaningQuoteCard
+              cleaningType={job.cleaningType}
+              pricing={job.cleaningPricing}
+              jobStatus={job.status}
+            />
+          ) : quote && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3 flex items-center gap-1.5">
                 <DollarSign className="w-4 h-4 text-gray-400" />
@@ -1612,7 +1646,7 @@ export default function JobDetailPage() {
           {assignedTradie && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3">
-                Assigned Tradie
+                {job.isAgencyManaged ? 'Assigned Cleaner' : 'Assigned Tradie'}
               </h3>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-(--upwork-green) flex items-center justify-center text-white overflow-hidden shrink-0">
@@ -1643,6 +1677,10 @@ export default function JobDetailPage() {
             </div>
           )}
 
+          {recurringSchedule && (
+            <RecurringScheduleCard schedule={recurringSchedule} onUpdate={fetchJob} />
+          )}
+
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-(--upwork-navy) mb-2 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-gray-400" />
@@ -1653,7 +1691,7 @@ export default function JobDetailPage() {
             </p>
           </div>
 
-          {['accepted', 'on_the_way', 'in_progress'].includes(job.status) && !cancelResult && (
+          {['accepted', 'on_the_way', 'in_progress'].includes(job.status) && !cancelResult && !job.isAgencyManaged && (
             <div className="bg-white border border-red-100 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-red-700 mb-1 flex items-center gap-1.5">
                 <XCircle className="w-4 h-4" />

@@ -23,7 +23,7 @@ import {
   MessageSquareWarning,
     Trash2,
   ClipboardList,
-
+  Percent,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
@@ -41,6 +41,7 @@ const sidebarLinks = [
     { href: '/admin/delete-requests',label: 'Delete Requests',icon: Trash2 },
 
   { href: '/admin/disputes',   label: 'Dispute Center',   icon: MessageSquareWarning },
+  { href: '/admin/commission',     label: 'Commission',     icon: Percent },
   { href: '/admin/profile',        label: 'My Profile',     icon: User },
 ]
 
@@ -116,13 +117,19 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'admin')) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
+  const isFullAdmin = user?.role === 'admin' && user?.isFullAdmin !== false
 
-  if (isLoading || !user || user.role !== 'admin') {
+  useEffect(() => {
+    if (!isLoading && !isFullAdmin) {
+      if (user?.role === 'admin' && user?.isCleaningAdmin) {
+        router.replace('/cleaning-admin')
+      } else {
+        router.replace('/login')
+      }
+    }
+  }, [isFullAdmin, isLoading, router, user])
+
+  if (isLoading || !isFullAdmin) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="w-6 h-6 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
@@ -158,6 +165,15 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            {user.isCleaningAdmin && (
+              <Link
+                href="/admin-select"
+                className="hidden sm:flex items-center gap-1 text-xs text-teal-500 hover:text-teal-600 transition-colors"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                Switch Panel
+              </Link>
+            )}
             <Link
               href="/"
               className="hidden sm:flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"

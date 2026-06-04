@@ -16,7 +16,11 @@ export const VALID_CATEGORIES: TradieCategory[] = [
   'carpentry',
   'emergency_make_safe',
   'general_labourer',
+  'cleaning',
+  'waste_removal',
 ]
+
+export const AGENCY_CATEGORIES: TradieCategory[] = ['cleaning', 'waste_removal']
 
 export const CATEGORY_LABELS: Record<JobCategory, string> = {
   electrical: 'Electrician',
@@ -28,6 +32,8 @@ export const CATEGORY_LABELS: Record<JobCategory, string> = {
   carpentry: 'Carpenter',
   emergency_make_safe: 'Emergency Make Safe',
   general_labourer: 'General Labourer',
+  cleaning: 'Cleaning',
+  waste_removal: 'Waste Removal',
   other: 'Other',
 }
 
@@ -92,6 +98,21 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   arctick_license: 'ARCtick License',
   carpentry_certificate: 'Carpentry Certificate',
   builders_license_cbu: 'Builders License (CBU)',
+  police_check: 'Police Check',
+}
+
+export const CLEANING_TYPE_LABELS: Record<string, string> = {
+  standard_clean: 'Standard Clean',
+  deep_clean: 'Deep Clean',
+  end_of_lease: 'End of Lease Clean',
+  move_in_clean: 'Move-in Clean',
+  commercial_clean: 'Commercial Clean',
+  carpet_clean: 'Carpet Clean',
+  window_clean: 'Window Clean',
+  spring_clean: 'Spring Clean',
+  post_renovation: 'Post-Renovation Clean',
+  general_waste: 'General Waste Removal',
+  green_waste: 'Green Waste Removal',
 }
 
 
