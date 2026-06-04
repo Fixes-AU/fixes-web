@@ -36,6 +36,14 @@ import { api, ApiError } from '@/lib/api'
 import AddressAutocomplete from '@/components/upwork/AddressAutocomplete'
 
 import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES, AGENCY_CATEGORIES, CLEANING_TYPE_LABELS } from '@/lib/constants'
+import {
+  applyStateScheduleChange,
+  datetimeLocalInStateToISO,
+  getMaxScheduledDatetimeLocal,
+  getMinScheduledDatetimeLocal,
+  getStateTimeLabel,
+  snapTodayToStateNow,
+} from '@/lib/australianTime'
 import type {
   Job,
   Quote,
@@ -857,6 +865,8 @@ function StepCleaningSchedule({
   scheduledFor,
   onScheduledForChange,
   onNext,
+  locationState,
+  jobCategory,
 }: {
   enableRecurring: boolean
   onToggleRecurring: (v: boolean) => void
@@ -873,12 +883,21 @@ function StepCleaningSchedule({
   scheduledFor: string
   onScheduledForChange: (v: string) => void
   onNext: () => void
+  locationState: string
+  jobCategory: TradieCategory | ''
 }) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  const now = new Date()
-  const maxDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-  const toDatetimeLocal = (d: Date) =>
-    new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+  const minDt = getMinScheduledDatetimeLocal(locationState, 60)
+  const maxDt = getMaxScheduledDatetimeLocal(locationState, 30)
+  const stateTimeLabel = getStateTimeLabel(locationState)
+
+  const handleScheduleChange = (value: string) => {
+    onScheduledForChange(applyStateScheduleChange(value, locationState, 60))
+  }
+
+  const handleUseNowInState = () => {
+    onScheduledForChange(snapTodayToStateNow('', locationState, 60))
+  }
 
   const canProceed = scheduledFor.length > 0
 
@@ -889,10 +908,10 @@ function StepCleaningSchedule({
           <Calendar className="w-7 h-7 text-[var(--upwork-green)]" />
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">
-          Schedule your clean
+          {jobCategory === 'waste_removal' ? 'Schedule your pickup' : 'Schedule your clean'}
         </h1>
         <p className="text-[var(--upwork-gray)] text-sm">
-          Book up to one month in advance with optional recurring schedules.
+          Book up to one month in advance. Times use {stateTimeLabel}.
         </p>
       </div>
 
@@ -904,12 +923,23 @@ function StepCleaningSchedule({
           <input
             type="datetime-local"
             value={scheduledFor}
-            min={toDatetimeLocal(new Date(now.getTime() + 60 * 60 * 1000))}
-            max={toDatetimeLocal(maxDate)}
-            onChange={(e) => onScheduledForChange(e.target.value)}
+            min={minDt}
+            max={maxDt}
+            onChange={(e) => handleScheduleChange(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl text-[var(--upwork-navy)] focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
           />
-          <p className="text-xs text-[var(--upwork-gray)] mt-1">You can schedule up to 30 days ahead.</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+            <p className="text-xs text-[var(--upwork-gray)]">
+              Enter date and time in {stateTimeLabel}. Today uses the current local time there.
+            </p>
+            <button
+              type="button"
+              onClick={handleUseNowInState}
+              className="text-xs font-medium text-[var(--upwork-green)] hover:underline whitespace-nowrap"
+            >
+              Use current {locationState || 'state'} time
+            </button>
+          </div>
         </div>
 
         <div className="border border-gray-200 rounded-2xl p-5">
@@ -1230,32 +1260,6 @@ function PremiumQuoteCard({ option }: { option: QuoteOption }) {
       })()}
     </div>
   )
-}
-
-const STATE_TZ: Record<string, string> = {
-  NSW: 'Australia/Sydney', ACT: 'Australia/Sydney',
-  VIC: 'Australia/Melbourne', TAS: 'Australia/Hobart',
-  QLD: 'Australia/Brisbane', SA: 'Australia/Adelaide',
-  WA: 'Australia/Perth', NT: 'Australia/Darwin',
-}
-
-
-function datetimeLocalToAuISO(localStr: string, tz: string): string {
-  const provisional = new Date(localStr + 'Z')
-
-  const dtf = new Intl.DateTimeFormat('en-AU', {
-    timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
-  })
-  const [auH, auM] = dtf.format(provisional).split(':').map(Number)
-
-  const [, timePart] = localStr.split('T')
-  const [wantH, wantM] = timePart.split(':').map(Number)
-  let diffMinutes = (wantH * 60 + wantM) - (auH * 60 + auM)
-
-  if (diffMinutes > 12 * 60) diffMinutes -= 24 * 60
-  if (diffMinutes < -12 * 60) diffMinutes += 24 * 60
-
-  return new Date(provisional.getTime() + diffMinutes * 60_000).toISOString()
 }
 
 function StepQuote({
@@ -2206,9 +2210,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     setAcceptError('')
 
     try {
-      const auISO = datetimeLocalToAuISO(
+      const auISO = datetimeLocalInStateToISO(
         isoTime,
-        STATE_TZ[(createdJob.location as any)?.state?.toUpperCase?.()] ?? 'Australia/Sydney'
+        (createdJob.location as { state?: string })?.state
       )
 
       
@@ -2377,7 +2381,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           coordinates: { lat, lng },
         },
         preferredTime: 'scheduled',
-        scheduledFor: new Date(cleaningScheduledFor).toISOString(),
+        scheduledFor: datetimeLocalInStateToISO(cleaningScheduledFor, locationState),
         isAgencyManaged: true,
       }
 
@@ -2959,6 +2963,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             scheduledFor={cleaningScheduledFor}
             onScheduledForChange={setCleaningScheduledFor}
             onNext={handleCleaningScheduleNext}
+            locationState={locationState}
+            jobCategory={category}
           />
         )}
 

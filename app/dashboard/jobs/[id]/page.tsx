@@ -1523,7 +1523,9 @@ export default function JobDetailPage() {
               </div>
             </div>
           )}
-          {(job.completionPhotos?.length > 0 || job.status === 'completed') && (
+          {!job.isAgencyManaged &&
+            !(AGENCY_CATEGORIES as readonly string[]).includes(job.category) &&
+            (job.completionPhotos?.length > 0 || job.status === 'completed') && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-(--upwork-navy) flex items-center gap-1.5">
