@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { BarChart3, Loader2, Download, DollarSign, TrendingUp } from 'lucide-react'
-import { api } from '@/lib/api'
+import Link from 'next/link'
+import { api, getAccessToken } from '@/lib/api'
+import { API_BASE_URL } from '@/lib/constants'
 
 interface RevenueData {
   period: string
@@ -11,6 +13,23 @@ interface RevenueData {
   totalPaidOut: number
   platformCommission: number
   breakdown: { date: string; revenue: number; jobs: number }[]
+  transactions: {
+    id: string
+    jobId: string
+    jobCode: string
+    stripePi: string
+    date: string
+    revenue: number
+    cleanerPayout: number
+    platformFee: number
+    status: string
+  }[]
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
 
 interface ApiRevenueReport {
@@ -21,7 +40,19 @@ interface ApiRevenueReport {
     totalCleanerPayouts: number
     totalPlatformFees: number
   }
-  payments: { amount: number; date: string }[]
+  breakdown: { date: string; revenue: number; jobs: number }[]
+  pagination: { total: number; page: number; limit: number; totalPages: number }
+  payments: {
+    _id: string
+    jobId: string
+    jobCode: string
+    stripePaymentIntentId: string
+    amount: number
+    platformFee: number
+    tradieEarnings: number
+    status: string
+    date: string
+  }[]
 }
 
 function getDateRange(period: 'week' | 'month' | 'quarter') {
@@ -38,15 +69,17 @@ function getDateRange(period: 'week' | 'month' | 'quarter') {
 }
 
 function mapReportToRevenue(period: 'week' | 'month' | 'quarter', data: ApiRevenueReport): RevenueData {
-  const breakdownMap = new Map<string, { revenue: number; jobs: number }>()
-  for (const p of data.payments ?? []) {
-    const date = new Date(p.date).toISOString().split('T')[0]
-    const existing = breakdownMap.get(date) ?? { revenue: 0, jobs: 0 }
-    breakdownMap.set(date, { revenue: existing.revenue + p.amount, jobs: existing.jobs + 1 })
-  }
-  const breakdown = Array.from(breakdownMap.entries())
-    .map(([date, v]) => ({ date, revenue: v.revenue, jobs: v.jobs }))
-    .sort((a, b) => a.date.localeCompare(b.date))
+  const transactions = (data.payments ?? []).map(p => ({
+    id: p._id,
+    jobId: p.jobId,
+    jobCode: p.jobCode,
+    stripePi: p.stripePaymentIntentId,
+    date: p.date,
+    revenue: p.amount,
+    cleanerPayout: p.tradieEarnings,
+    platformFee: p.platformFee,
+    status: p.status
+  }))
 
   const s = data.summary
   return {
@@ -55,7 +88,9 @@ function mapReportToRevenue(period: 'week' | 'month' | 'quarter', data: ApiReven
     totalJobs: s.totalPayments ?? 0,
     totalPaidOut: s.totalCleanerPayouts ?? 0,
     platformCommission: s.totalPlatformFees ?? 0,
-    breakdown,
+    breakdown: data.breakdown ?? [],
+    transactions,
+    pagination: data.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 1 },
   }
 }
 
@@ -63,36 +98,49 @@ export default function RevenuePage() {
   const [revenue, setRevenue] = useState<RevenueData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     setIsLoading(true)
     const { start, end } = getDateRange(period)
-    const qs = `?startDate=${start.toISOString()}&endDate=${end.toISOString()}`
+    const qs = `?startDate=${start.toISOString()}&endDate=${end.toISOString()}&page=${currentPage}&limit=20`
     api.get<ApiRevenueReport>(`/api/cleaning-admin/revenue${qs}`)
       .then((res) => setRevenue(mapReportToRevenue(period, res.data)))
       .catch(() => setRevenue(null))
       .finally(() => setIsLoading(false))
-  }, [period])
+  }, [period, currentPage])
 
-  const handleExportCSV = () => {
+  const handlePeriodChange = (p: 'week' | 'month' | 'quarter') => {
+    setPeriod(p)
+    setCurrentPage(1)
+  }
+
+  const handleExportCSV = async () => {
     if (!revenue) return
-    const rows = [['Date', 'Revenue ($)', 'Jobs']]
-    revenue.breakdown.forEach((d) => {
-      rows.push([d.date, d.revenue.toFixed(2), String(d.jobs)])
-    })
-    rows.push([])
-    rows.push(['Total Revenue', revenue.totalRevenue.toFixed(2), String(revenue.totalJobs)])
-    rows.push(['Total Paid Out', revenue.totalPaidOut.toFixed(2), ''])
-    rows.push(['Platform Commission', revenue.platformCommission.toFixed(2), ''])
-
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `cleaning-revenue-${period}-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    const { start, end } = getDateRange(period)
+    const url = `/api/cleaning-admin/revenue/csv?startDate=${start.toISOString()}&endDate=${end.toISOString()}`
+    
+    try {
+      const token = getAccessToken()
+      const res = await fetch(`${API_BASE_URL}${url}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (!res.ok) throw new Error('Export failed')
+      
+      const blob = await res.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = `cleaning-revenue-${period}-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(downloadUrl)
+    } catch (err) {
+      console.error('Failed to export CSV', err)
+    }
   }
 
   return (
@@ -104,10 +152,9 @@ export default function RevenuePage() {
             {(['week', 'month', 'quarter'] as const).map((p) => (
               <button
                 key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
-                  period === p ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
+                onClick={() => handlePeriodChange(p)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${period === p ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
               >
                 {p}
               </button>
@@ -195,6 +242,93 @@ export default function RevenuePage() {
                   </tr>
                 </tfoot>
               </table>
+            )}
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mt-6">
+            <div className="px-5 py-3 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-800">Detailed Transaction History</h2>
+            </div>
+            {revenue.transactions.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-12">No transactions in this period</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Date & Time</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Job Code</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Stripe PI</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Client Paid</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Cleaner Payout</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Platform Fee</th>
+                      <th className="text-center px-4 py-3 text-xs font-semibold text-gray-600 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {revenue.transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {new Date(tx.date).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <Link href={`/cleaning-admin/jobs/${tx.jobId}`} className="text-teal-600 hover:underline font-medium">
+                            {tx.jobCode}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500 font-mono">
+                          {tx.stripePi || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-800 text-right font-medium">${tx.revenue.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-amber-600 text-right">${tx.cleanerPayout.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-green-600 text-right">${tx.platformFee.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-xs text-center">
+                          <span className={`px-2 py-1 rounded-full ${tx.status === 'released' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {tx.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {revenue.pagination && revenue.pagination.totalPages > 1 && (
+              <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                <div className="text-sm text-gray-500">
+                  Showing {((revenue.pagination.page - 1) * revenue.pagination.limit) + 1} to {Math.min(revenue.pagination.page * revenue.pagination.limit, revenue.pagination.total)} of {revenue.pagination.total} entries
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={revenue.pagination.page === 1}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-gray-600">Page</span>
+                    <select
+                      value={revenue.pagination.page}
+                      onChange={(e) => setCurrentPage(Number(e.target.value))}
+                      className="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                    >
+                      {Array.from({ length: revenue.pagination.totalPages }, (_, i) => i + 1).map(page => (
+                        <option key={page} value={page}>{page}</option>
+                      ))}
+                    </select>
+                    <span className="text-sm text-gray-600">of {revenue.pagination.totalPages}</span>
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(revenue.pagination.totalPages, p + 1))}
+                    disabled={revenue.pagination.page === revenue.pagination.totalPages}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </>
