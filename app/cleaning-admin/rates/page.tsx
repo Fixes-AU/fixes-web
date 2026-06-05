@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DollarSign, Loader2, Save, AlertCircle } from 'lucide-react'
+import { DollarSign, Loader2, Save, AlertCircle, Info } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { CLEANING_TYPE_LABELS } from '@/lib/constants'
 
@@ -47,6 +47,16 @@ export default function RatesPage() {
       })
       .finally(() => setIsLoading(false))
   }, [])
+
+  const calculateClientRate = (cleanerRate: number, minHours: number) => {
+    if (!cleanerRate) return 0;
+    const platformCommission = 0.20;
+    const stripePercent = 0.017;
+    const stripeFlatFee = 0.30;
+    const hours = minHours || 2;
+    const spread = stripeFlatFee / hours;
+    return Math.round(((cleanerRate + spread) / (1 - platformCommission - stripePercent)) * 100) / 100;
+  };
 
   const updateRate = (idx: number, field: 'ratePerHour' | 'minimumHours', value: string) => {
     setRates((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: Number(value) || 0 } : r))
@@ -106,7 +116,19 @@ export default function RatesPage() {
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Cleaning Type</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-36">Rate/hr ($)</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-56">
+                <div className="flex items-center gap-1">
+                  Cleaner Base Rate/hr ($)
+                  <div className="relative group flex items-center">
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:block w-64 bg-gray-800 text-white text-xs rounded-lg p-2.5 shadow-lg z-50 normal-case tracking-normal font-normal pointer-events-none">
+                      This is the amount the cleaner earns. The system automatically adds ~28% on top of this to cover Platform Commission (20%) and Stripe Fees (1.7% + 30c) when quoting the client.
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                    </div>
+                  </div>
+                </div>
+              </th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-40">Est. Client Pays/hr</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider w-36">Min. Hours</th>
             </tr>
           </thead>
@@ -126,6 +148,11 @@ export default function RatesPage() {
                     className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="0"
                   />
+                </td>
+                <td className="px-4 py-3">
+                  <div className="text-sm font-medium text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-transparent">
+                    ${calculateClientRate(rate.ratePerHour, rate.minimumHours).toFixed(2)}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <input
