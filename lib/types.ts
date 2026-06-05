@@ -518,6 +518,7 @@ export type CleaningType =
 export interface CleaningSubtask {
   title: string
   description?: string
+  estimatedMinutes?: number
   isDefault: boolean
 }
 
@@ -546,9 +547,17 @@ export interface SelectedCleaningTask {
 
 export interface CleaningQuote {
   ratePerHour: number
+  baseRate?: number
   estimatedHours: number
   totalEstimate: number
-  cleaningType: string
+  cleaningType?: string
+  minHours?: number
+  taskMinutes?: number
+  adjustedMinutes?: number
+  belowMinimum?: boolean
+  propertyMultiplier?: number
+  confidence?: number
+  reasoning?: string
 }
 
 export interface CleaningSummary {
@@ -568,3 +577,32 @@ export interface RecurringScheduleInput {
   assignPreference: 'same_cleaner' | 'any_cleaner'
 }
 
+export type PropertyType =
+  | 'studio' | '1bed_apartment' | '2bed_apartment'
+  | 'single_storey' | 'townhouse' | 'double_storey' | 'commercial'
+
+export interface PropertyDetails {
+  propertyType: PropertyType
+  bedrooms: number
+  bathrooms: number
+}
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  studio: 'Studio Apartment',
+  '1bed_apartment': '1-Bed Apartment',
+  '2bed_apartment': '2-Bed Apartment',
+  single_storey: 'Single-Storey House',
+  townhouse: 'Townhouse',
+  double_storey: 'Double-Storey House',
+  commercial: 'Commercial / Office',
+}
+
+export const PROPERTY_TYPE_MULTIPLIERS: Record<PropertyType, number> = {
+  studio: 0.50,
+  '1bed_apartment': 0.65,
+  '2bed_apartment': 0.80,
+  single_storey: 1.00,
+  townhouse: 1.15,
+  double_storey: 1.25,
+  commercial: 1.10,
+}

@@ -62,7 +62,9 @@ import type {
   CleaningSummary,
   RecurringFrequency,
   RecurringScheduleInput,
+  PropertyType,
 } from '@/lib/types'
+import { PROPERTY_TYPE_LABELS, PROPERTY_TYPE_MULTIPLIERS } from '@/lib/types'
 
 interface PostJobWizardProps {
   searchQuery: string
@@ -739,6 +741,7 @@ function StepCleaningTasks({
   onNext,
   isLoading,
   cleaningType,
+  propertyType,
 }: {
   template: CleaningTaskTemplate | null
   selectedTasks: Record<number, { selected: boolean; subtasks: Set<string> }>
@@ -747,8 +750,31 @@ function StepCleaningTasks({
   onNext: () => void
   isLoading: boolean
   cleaningType: string
+  propertyType: PropertyType | null
 }) {
   const anySelected = Object.values(selectedTasks).some((t) => t.selected)
+
+  let liveMinutes = 0
+  if (template) {
+    Object.entries(selectedTasks).forEach(([idxStr, state]) => {
+      if (!state.selected) return
+      const idx = Number(idxStr)
+      const task = template.tasks[idx]
+      if (!task) return
+      if (state.subtasks.size > 0 && task.subtasks.length > 0) {
+        task.subtasks.forEach((sub) => {
+          if (state.subtasks.has(sub.title)) {
+            liveMinutes += sub.estimatedMinutes || 15
+          }
+        })
+      } else {
+        liveMinutes += task.estimatedMinutes || 30
+      }
+    })
+  }
+  const multiplier = propertyType ? PROPERTY_TYPE_MULTIPLIERS[propertyType] || 1.0 : 1.0
+  const adjustedMinutes = Math.round(liveMinutes * multiplier)
+  const liveHours = Math.ceil((adjustedMinutes / 60) * 2) / 2
 
   if (isLoading) {
     return (
@@ -826,7 +852,10 @@ function StepCleaningTasks({
                         }`}>
                           {subSelected && <Check className="w-2.5 h-2.5 text-white" />}
                         </div>
-                        <span className="text-xs text-[var(--upwork-navy)]">{sub.title}</span>
+                        <span className="text-xs text-[var(--upwork-navy)] flex-1">{sub.title}</span>
+                        {sub.estimatedMinutes ? (
+                          <span className="text-[10px] text-[var(--upwork-gray)] shrink-0">{sub.estimatedMinutes}min</span>
+                        ) : null}
                       </button>
                     )
                   })}
@@ -836,6 +865,22 @@ function StepCleaningTasks({
           )
         })}
       </div>
+
+      {anySelected && (
+        <div className="mt-6 bg-white border border-[var(--upwork-green)] rounded-xl p-4 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 text-[var(--upwork-green)]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[var(--upwork-navy)]">~{liveHours}h estimated</p>
+              <p className="text-xs text-[var(--upwork-gray)]">
+                {adjustedMinutes}min • {propertyType ? PROPERTY_TYPE_LABELS[propertyType] : 'Default'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onNext}
@@ -1115,6 +1160,36 @@ function StepCleaningQuote({
           <span className="text-sm font-medium text-[var(--upwork-gray)]">Estimated hours</span>
           <span className="text-lg font-bold text-[var(--upwork-navy)]">{quote.estimatedHours}h</span>
         </div>
+        
+        {quote.taskMinutes && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+            <h4 className="text-xs font-semibold text-[var(--upwork-navy)] mb-2 uppercase tracking-wide">Time Estimate Breakdown</h4>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs text-[var(--upwork-gray)]">Task base time</span>
+              <span className="text-xs font-medium text-[var(--upwork-navy)]">{quote.taskMinutes} min</span>
+            </div>
+            {quote.propertyMultiplier && quote.propertyMultiplier !== 1 && (
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-[var(--upwork-gray)]">Property multiplier</span>
+                <span className="text-xs font-medium text-[var(--upwork-navy)]">x{quote.propertyMultiplier}</span>
+              </div>
+            )}
+            {quote.adjustedMinutes && quote.adjustedMinutes !== quote.taskMinutes && (
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-[var(--upwork-gray)]">Adjusted time</span>
+                <span className="text-xs font-medium text-[var(--upwork-navy)]">{quote.adjustedMinutes} min ({(quote.adjustedMinutes / 60).toFixed(1)}h)</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-200">
+              <span className="text-xs font-semibold text-[var(--upwork-gray)]">Final Billable Hours</span>
+              <span className="text-xs font-bold text-[var(--upwork-navy)]">
+                {quote.estimatedHours}h
+                {quote.belowMinimum ? ` (Minimum)` : ''}
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
           <span className="text-sm font-semibold text-[var(--upwork-navy)]">Estimated Total (inc. GST)</span>
           <span className="text-2xl font-bold text-[var(--upwork-green)]">${quote.totalEstimate.toFixed(2)}</span>
@@ -1123,6 +1198,19 @@ function StepCleaningQuote({
           Final amount is based on actual hours worked.
         </p>
       </div>
+
+      {quote.belowMinimum && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-6">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800 mb-1">Minimum Booking Applied</p>
+            <p className="text-xs text-amber-700 leading-relaxed">
+              Your selected tasks total ~{quote.taskMinutes} min, but our minimum is {quote.minHours || 2}h.
+              This ensures fair compensation for your cleaner&apos;s travel and setup time.
+            </p>
+          </div>
+        </div>
+      )}
 
       {summary && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6">
@@ -1900,6 +1988,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [recurringInstances, setRecurringInstances] = useState(4)
   const [assignPreference, setAssignPreference] = useState<'same_cleaner' | 'any_cleaner'>('any_cleaner')
   const [cleaningScheduledFor, setCleaningScheduledFor] = useState('')
+  const [propertyType, setPropertyType] = useState<PropertyType | ''>('')
+  const [bedrooms, setBedrooms] = useState(3)
+  const [bathrooms, setBathrooms] = useState(2)
 
   const [classifySuggestion, setClassifySuggestion] = useState<{
     suggestedCategory: TradieCategory
@@ -1994,9 +2085,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [existingJobId])
 
 
-  const cleaningStepMap: Record<number, number> = { 10: 2, 11: 3, 4: 4, 12: 5, 13: 6 }
+  const cleaningStepMap: Record<number, number> = { 10: 2, 14: 3, 11: 4, 4: 5, 12: 6, 13: 7 }
   const effectiveStep = isAgencyCategory ? (cleaningStepMap[currentStep] ?? currentStep) : currentStep
-  const effectiveTotalSteps = isAgencyCategory ? 6 : totalSteps
+  const effectiveTotalSteps = isAgencyCategory ? 7 : totalSteps
   const progress = Math.min((effectiveStep / effectiveTotalSteps) * 100, 100)
 
 
@@ -2238,27 +2329,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
   const handleCleaningTypeSelect = async (type: CleaningType) => {
     setCleaningType(type)
-    setCurrentStep(11)
-    setIsTemplateLoading(true)
-    try {
-      const res = await api.get<CleaningTaskTemplate>(`/api/cleaning/templates/${type}`)
-      const tmpl = res.data
-      setCleaningTemplate(tmpl)
-      if (tmpl) {
-        const defaults: Record<number, { selected: boolean; subtasks: Set<string> }> = {}
-        tmpl.tasks.forEach((task, idx) => {
-          if (task.isDefault) {
-            const subs = new Set(task.subtasks.filter((s) => s.isDefault).map((s) => s.title))
-            defaults[idx] = { selected: true, subtasks: subs }
-          }
-        })
-        setSelectedCleaningTasks(defaults)
-      }
-    } catch {
-      setCleaningTemplate(null)
-    } finally {
-      setIsTemplateLoading(false)
-    }
+    setCurrentStep(14)
   }
 
   const handleToggleCleaningTask = (idx: number) => {
@@ -2310,7 +2381,6 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           return {
             title: task.title,
             subtasks: Array.from(v.subtasks),
-            estimatedMinutes: task.estimatedMinutes,
           }
         })
 
@@ -2319,6 +2389,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           cleaningType,
           selectedTasks: tasks,
           category: category || 'cleaning',
+          propertyDetails: { propertyType, bedrooms, bathrooms },
         }),
         api.post<{ summary: CleaningSummary }>('/api/cleaning/summary', {
           cleaningType,
@@ -2356,7 +2427,6 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           return {
             title: task.title,
             subtasks: Array.from(v.subtasks).map((s) => ({ title: s })),
-            estimatedMinutes: task.estimatedMinutes,
             order: task.order,
           }
         })
@@ -2383,6 +2453,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         preferredTime: 'scheduled',
         scheduledFor: datetimeLocalInStateToISO(cleaningScheduledFor, locationState),
         isAgencyManaged: true,
+        propertyDetails: { propertyType, bedrooms, bathrooms },
       }
 
       const res = await api.post<{ job: Job; quote: Quote; clientSecret: string; payment?: unknown }>(
@@ -2408,11 +2479,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             estimatedHours: cleaningQuote.estimatedHours,
           })
         } catch {
-          // recurring schedule creation is non-blocking
         }
       }
 
-      // Always set createdQuote from response — step 8 (payment) needs it
       if (res.data.quote) {
         setCreatedQuote(res.data.quote)
       }
@@ -2444,6 +2513,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } else if (currentStep === 10) {
       setCurrentStep(1)
     } else if (currentStep === 11) {
+      setCurrentStep(14)
+    } else if (currentStep === 14) {
       setCurrentStep(10)
     } else if (currentStep === 12) {
       setCurrentStep(4)
@@ -2934,6 +3005,111 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
           />
         )}
 
+        {currentStep === 14 && (
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-[var(--upwork-green)] text-sm font-medium rounded-full mb-3">
+                <Check className="w-3.5 h-3.5" />
+                {CLEANING_TYPE_LABELS[cleaningType] || cleaningType}
+              </span>
+              <h1 className="text-3xl md:text-4xl font-bold text-[var(--upwork-navy)] mb-2">Property Details</h1>
+              <p className="text-[var(--upwork-gray)]">This helps us estimate the time needed for your clean</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
+              {([
+                { value: 'studio' as PropertyType, icon: '🏢', desc: 'Open-plan single space' },
+                { value: '1bed_apartment' as PropertyType, icon: '🛏️', desc: '1 bedroom unit' },
+                { value: '2bed_apartment' as PropertyType, icon: '🏬', desc: '2 bedroom unit' },
+                { value: 'single_storey' as PropertyType, icon: '🏠', desc: 'Single level house' },
+                { value: 'townhouse' as PropertyType, icon: '🏘️', desc: '2-level townhouse' },
+                { value: 'double_storey' as PropertyType, icon: '🏡', desc: '2-storey house' },
+                { value: 'commercial' as PropertyType, icon: '🏗️', desc: 'Office or commercial' },
+              ]).map(pt => (
+                <button
+                  key={pt.value}
+                  onClick={() => setPropertyType(pt.value)}
+                  className={`px-4 py-4 rounded-xl border text-left transition-all ${
+                    propertyType === pt.value
+                      ? 'bg-[var(--upwork-navy)] text-white border-[var(--upwork-navy)]'
+                      : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-navy)]'
+                  }`}
+                >
+                  <div className="text-2xl mb-2">{pt.icon}</div>
+                  <div className="text-sm font-medium">{PROPERTY_TYPE_LABELS[pt.value]}</div>
+                  <div className={`text-xs mt-1 ${propertyType === pt.value ? 'text-gray-300' : 'text-gray-400'}`}>{pt.desc}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-[var(--upwork-navy)] mb-3">Bedrooms</label>
+              <div className="flex gap-2 flex-wrap">
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={`bed-${n}`}
+                    onClick={() => setBedrooms(n)}
+                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border transition-all ${
+                      bedrooms === n
+                        ? 'bg-[var(--upwork-green)] text-white border-[var(--upwork-green)]'
+                        : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-green)]'
+                    }`}
+                  >
+                    {n === 5 ? '5+' : n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <label className="block text-sm font-semibold text-[var(--upwork-navy)] mb-3">Bathrooms</label>
+              <div className="flex gap-2 flex-wrap">
+                {[1, 2, 3, 4].map(n => (
+                  <button
+                    key={`bath-${n}`}
+                    onClick={() => setBathrooms(n)}
+                    className={`px-5 py-2.5 rounded-full text-sm font-semibold border transition-all ${
+                      bathrooms === n
+                        ? 'bg-[var(--upwork-green)] text-white border-[var(--upwork-green)]'
+                        : 'bg-white text-[var(--upwork-navy)] border-gray-300 hover:border-[var(--upwork-green)]'
+                    }`}
+                  >
+                    {n === 4 ? '4+' : n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setIsTemplateLoading(true)
+                setCurrentStep(11)
+                api.get<CleaningTaskTemplate>(`/api/cleaning/templates/${cleaningType}`)
+                  .then(res => {
+                    const tmpl = res.data
+                    setCleaningTemplate(tmpl)
+                    if (tmpl) {
+                      const defaults: Record<number, { selected: boolean; subtasks: Set<string> }> = {}
+                      tmpl.tasks.forEach((task, idx) => {
+                        if (task.isDefault) {
+                          const subs = new Set(task.subtasks.filter(s => s.isDefault).map(s => s.title))
+                          defaults[idx] = { selected: true, subtasks: subs }
+                        }
+                      })
+                      setSelectedCleaningTasks(defaults)
+                    }
+                  })
+                  .catch(() => setCleaningTemplate(null))
+                  .finally(() => setIsTemplateLoading(false))
+              }}
+              disabled={!propertyType}
+              className="w-full py-3 px-4 rounded-xl bg-[var(--upwork-green)] text-white font-semibold text-lg hover:opacity-90 disabled:opacity-40 transition-all"
+            >
+              Continue to Task Selection
+            </button>
+          </div>
+        )}
+
         {currentStep === 11 && (
           <StepCleaningTasks
             template={cleaningTemplate}
@@ -2943,6 +3119,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             onNext={handleCleaningTasksNext}
             isLoading={isTemplateLoading}
             cleaningType={cleaningType}
+            propertyType={propertyType || null}
           />
         )}
 
