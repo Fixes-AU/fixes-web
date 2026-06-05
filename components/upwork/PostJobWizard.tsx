@@ -742,6 +742,8 @@ function StepCleaningTasks({
   isLoading,
   cleaningType,
   propertyType,
+  bedrooms,
+  bathrooms,
 }: {
   template: CleaningTaskTemplate | null
   selectedTasks: Record<number, { selected: boolean; subtasks: Set<string> }>
@@ -751,6 +753,8 @@ function StepCleaningTasks({
   isLoading: boolean
   cleaningType: string
   propertyType: PropertyType | null
+  bedrooms: number
+  bathrooms: number
 }) {
   const anySelected = Object.values(selectedTasks).some((t) => t.selected)
 
@@ -773,7 +777,18 @@ function StepCleaningTasks({
     })
   }
   const multiplier = propertyType ? PROPERTY_TYPE_MULTIPLIERS[propertyType] || 1.0 : 1.0
-  const adjustedMinutes = Math.round(liveMinutes * multiplier)
+  let adjustedMinutes = Math.round(liveMinutes * multiplier)
+  
+  if (propertyType) {
+    const bedDiff = bedrooms - 3
+    const bathDiff = bathrooms - 2
+    if (bedDiff > 0) adjustedMinutes += bedDiff * 15
+    else if (bedDiff < 0) adjustedMinutes += bedDiff * 10
+    if (bathDiff > 0) adjustedMinutes += bathDiff * 30
+    else if (bathDiff < 0) adjustedMinutes += bathDiff * 20
+    adjustedMinutes = Math.max(adjustedMinutes, 30)
+  }
+
   const liveHours = Math.ceil((adjustedMinutes / 60) * 2) / 2
 
   if (isLoading) {
@@ -3120,6 +3135,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             isLoading={isTemplateLoading}
             cleaningType={cleaningType}
             propertyType={propertyType || null}
+            bedrooms={bedrooms}
+            bathrooms={bathrooms}
           />
         )}
 
