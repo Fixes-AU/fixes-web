@@ -72,13 +72,21 @@ function SkillBadge({ level }: { level: string | null }) {
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium capitalize ${color}`}>{level}</span>
 }
 
-const USD_PER_INPUT_TOKEN  = 0.10 / 1_000_000
-const USD_PER_OUTPUT_TOKEN = 0.40 / 1_000_000
-const AUD_PER_USD          = 1.55
+const PRICING: Record<string, { in: number, out: number }> = {
+  'gemini-3.5-flash':      { in: 0.15  / 1_000_000, out: 0.60 / 1_000_000 },
+  'gemini-3.1-flash-lite': { in: 0.075 / 1_000_000, out: 0.30 / 1_000_000 },
+  'gemini-2.5-flash':      { in: 0.10  / 1_000_000, out: 0.40 / 1_000_000 },
+  'gemini-2.5-flash-lite': { in: 0.075 / 1_000_000, out: 0.30 / 1_000_000 },
+}
+const AUD_PER_USD = 1.55
 
-function calcCostAud(tokensIn: number | null, tokensOut: number | null): number | null {
-  if (tokensIn == null && tokensOut == null) return null
-  const usd = ((tokensIn ?? 0) * USD_PER_INPUT_TOKEN) + ((tokensOut ?? 0) * USD_PER_OUTPUT_TOKEN)
+function calcCostAud(tokensIn: number | null, tokensOut: number | null, tokensTotal: number | null, modelVersion: string | null): number | null {
+  if (tokensIn == null && tokensTotal == null) return null
+  
+  const actualTokensOut = Math.max(0, (tokensTotal ?? 0) - (tokensIn ?? 0))
+  
+  const rates = PRICING[modelVersion || ''] || PRICING['gemini-3.5-flash']
+  const usd = ((tokensIn ?? 0) * rates.in) + (actualTokensOut * rates.out)
   return Math.round(usd * AUD_PER_USD * 10000) / 10000 
 }
 
@@ -298,8 +306,8 @@ export default function AiLogDetailPage() {
           <div>
             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Est. Cost (AUD)</p>
             <span className="text-sm font-bold text-emerald-700">
-              {calcCostAud(log.tokensIn, log.tokensOut) != null
-                ? `A$${calcCostAud(log.tokensIn, log.tokensOut)?.toFixed(4)}`
+              {calcCostAud(log.tokensIn, log.tokensOut, log.tokensTotal, log.modelVersion) != null
+                ? `A$${calcCostAud(log.tokensIn, log.tokensOut, log.tokensTotal, log.modelVersion)?.toFixed(4)}`
                 : '—'}
             </span>
           </div>

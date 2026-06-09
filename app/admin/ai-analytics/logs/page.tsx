@@ -31,16 +31,20 @@ interface AiLog {
 }
 
 const PRICING: Record<string, { in: number, out: number }> = {
+  'gemini-3.5-flash':      { in: 0.15  / 1_000_000, out: 0.60 / 1_000_000 },
+  'gemini-3.1-flash-lite': { in: 0.075 / 1_000_000, out: 0.30 / 1_000_000 },
+  'gemini-2.5-flash':      { in: 0.10  / 1_000_000, out: 0.40 / 1_000_000 },
   'gemini-2.5-flash-lite': { in: 0.075 / 1_000_000, out: 0.30 / 1_000_000 },
-  'gemini-2.0-flash':      { in: 0.10  / 1_000_000, out: 0.40 / 1_000_000 },
 }
 const AUD_PER_USD = 1.55
 
-function calcCostAud(tokensIn: number | null, tokensOut: number | null, modelVersion: string | null): number | null {
-  if (tokensIn == null && tokensOut == null) return null
+function calcCostAud(tokensIn: number | null, tokensOut: number | null, tokensTotal: number | null, modelVersion: string | null): number | null {
+  if (tokensIn == null && tokensTotal == null) return null
   
-  const rates = PRICING[modelVersion || ''] || PRICING['gemini-2.0-flash']
-  const usd = ((tokensIn ?? 0) * rates.in) + ((tokensOut ?? 0) * rates.out)
+  const actualTokensOut = Math.max(0, (tokensTotal ?? 0) - (tokensIn ?? 0))
+  
+  const rates = PRICING[modelVersion || ''] || PRICING['gemini-3.5-flash']
+  const usd = ((tokensIn ?? 0) * rates.in) + (actualTokensOut * rates.out)
   return Math.round(usd * AUD_PER_USD * 10000) / 10000 
 }
 
@@ -178,7 +182,7 @@ export default function AiLogsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {logs.map((log) => {
-                  const costAud = calcCostAud(log.tokensIn, log.tokensOut, log.modelVersion)
+                  const costAud = calcCostAud(log.tokensIn, log.tokensOut, log.tokensTotal, log.modelVersion)
                   return (
                     <tr key={log._id} className="hover:bg-purple-50/40 transition-colors">
                       <td className="pl-4 pr-1 py-3">
@@ -296,7 +300,7 @@ export default function AiLogsPage() {
       )}
 
       <p className="text-[10px] text-gray-400 text-center mt-4">
-        Cost estimates based on dynamic model pricing (e.g. gemini-2.0-flash: $0.10/1M in, $0.40/1M out USD) · converted at ~1.55 AUD/USD
+        Cost estimates based on dynamic model pricing (e.g. gemini-3.5-flash: $0.15/1M in, $0.60/1M out USD) · converted at ~1.55 AUD/USD
       </p>
     </div>
   )
