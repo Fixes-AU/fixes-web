@@ -9,7 +9,6 @@ import {
   PricingPlans,
   Testimonials,
   TrustedBy,
-  CTASection,
   Footer,
 } from "@/components/upwork"
 
@@ -23,7 +22,6 @@ export default function Home() {
       <PricingPlans />
       <Testimonials />
       <TrustedBy />
-      <CTASection />
       <Footer />
     </main>
   )
