@@ -1,0 +1,35 @@
+
+<style>
+* { box-sizing: border-box; }
+.hero { background: #0f2d0a; border-radius: 16px; padding: 4rem 3rem; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -80px; left: -80px; width: 320px; height: 320px; border-radius: 50%; background: #1a4a10; opacity: 0.5; }
+.hero::after { content: ''; position: absolute; bottom: -100px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: #1a4a10; opacity: 0.4; }
+.inner { position: relative; z-index: 2; max-width: 640px; margin: 0 auto; }
+.eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.12em; color: #97C459; text-transform: uppercase; margin: 0 0 1.5rem; }
+.headline { font-size: 26px; font-weight: 500; color: #EAF3DE; line-height: 1.4; margin: 0 0 2.5rem; }
+.divider { width: 40px; height: 2px; background: #639922; margin: 0 auto 2.5rem; border-radius: 2px; }
+.body-text { font-size: 15px; color: #9FE1CB; line-height: 1.9; margin: 0 0 2rem; }
+.body-text span { color: #EAF3DE; font-weight: 500; }
+.closer { font-size: 16px; font-weight: 500; color: #97C459; margin: 0; line-height: 1.6; }
+</style>
+
+<div class="hero">
+  <div class="inner">
+    <p class="eyebrow">Our purpose</p>
+    <h2 class="headline">We reimagine the way<br>Australians and Kiwis get things fixed.</h2>
+    <div class="divider"></div>
+    <p class="body-text">
+      Getting things fixed is what we power. It's our lifeblood.<br>
+      It runs through every job posted, every tradie matched,<br>
+      every handshake at the front door.<br><br>
+      It's what gets us out of bed each morning.<br>
+      It pushes us to constantly reimagine how we can connect people better —<br>
+      <span>for you</span>. For every leaking tap, every rewire, every renovation.<br>
+      For every tradie who deserves steady work.<br>
+      For every homeowner who just needs it done right.<br><br>
+      Across <span>Australia and New Zealand</span>. In your suburb.<br>
+      At the incredible speed of now.
+    </p>
+    <p class="closer">fixes.com.au — work worth doing, done.</p>
+  </div>
+</div>

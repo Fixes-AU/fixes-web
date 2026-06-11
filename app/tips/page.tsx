@@ -166,7 +166,7 @@ const PAYMENT_FACTS = [
 ]
 
 const SUPPORT_LINKS = [
-  { label: 'About Fixes', href: '/about' },
+  { label: 'About Fixes', href: '/about-us' },
   { label: 'Post a Job (Client Portal)', href: '/post-job' },
   { label: 'Become a Fixer', href: '/i-want-to-work' },
 ]

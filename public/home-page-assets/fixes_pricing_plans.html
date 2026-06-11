@@ -1,0 +1,82 @@
+
+<style>
+* { box-sizing: border-box; }
+.wrap { padding: 2rem 1rem; background: #f5f7f2; border-radius: 12px; }
+.head { text-align: center; margin-bottom: 2rem; }
+.head h2 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 8px; }
+.head p { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 780px; margin: 0 auto; }
+.card { background: var(--color-background-primary); border: 1px solid #dde8d4; border-radius: 16px; padding: 1.75rem; position: relative; display: flex; flex-direction: column; }
+.card.popular { border: 2px solid #3B6D11; }
+.badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #3B6D11; color: #EAF3DE; font-size: 12px; font-weight: 500; padding: 4px 16px; border-radius: 20px; white-space: nowrap; }
+.plan-name { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 4px; }
+.plan-sub { font-size: 13px; color: var(--color-text-secondary); margin: 0 0 1rem; }
+.plan-pitch { font-size: 14px; color: var(--color-text-primary); line-height: 1.6; margin: 0 0 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid #dde8d4; }
+.price-row { margin-bottom: 1.25rem; }
+.price-free { font-size: 22px; font-weight: 500; color: #3B6D11; }
+.price-amt { font-size: 28px; font-weight: 500; color: var(--color-text-primary); }
+.price-per { font-size: 13px; color: var(--color-text-secondary); }
+.includes { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 12px; }
+.feature-list { list-style: none; padding: 0; margin: 0 0 1.5rem; flex: 1; }
+.feature-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 10px; line-height: 1.5; }
+.feature-list li i { color: #3B6D11; font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+.btn { display: block; width: 100%; padding: 13px; border-radius: 50px; font-size: 14px; font-weight: 500; text-align: center; cursor: pointer; border: none; margin-top: auto; }
+.btn-outline { background: transparent; border: 1.5px solid #3B6D11; color: #3B6D11; }
+.btn-solid { background: #3B6D11; color: #EAF3DE; }
+.compare { text-align: center; margin-top: 1.25rem; font-size: 13px; color: #3B6D11; cursor: pointer; }
+.compare i { font-size: 14px; vertical-align: -2px; }
+</style>
+
+<h2 class="sr-only">Choose how you want to hire a tradie — two plan options for homeowners and businesses</h2>
+
+<div class="wrap">
+  <div class="head">
+    <h2>Choose how you want to hire</h2>
+    <p>Flexible options designed to fit your hiring needs</p>
+  </div>
+
+  <div class="cards">
+
+    <div class="card">
+      <p class="plan-name">Home Owner</p>
+      <p class="plan-sub">For one-off home repairs and projects</p>
+      <p class="plan-pitch">Book a tradie for any job around the home — no subscription, no lock-in. Just post, hire, and pay when the work is done.</p>
+      <div class="price-row">
+        <span class="price-free">Free to join</span><br>
+        <span class="price-per">Only pay for the job you book</span>
+      </div>
+      <p class="includes">Includes:</p>
+      <ul class="feature-list">
+        <li><i class="ti ti-check" aria-hidden="true"></i>Post jobs for free — no upfront cost</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Get matched with nearby, top-rated tradies</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>View tradie profiles, ratings and reviews</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Message and book directly in the app</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Secure payment — only released when job is approved</li>
+      </ul>
+      <button class="btn btn-outline">Get started for free</button>
+    </div>
+
+    <div class="card popular">
+      <span class="badge">Popular</span>
+      <p class="plan-name">Business</p>
+      <p class="plan-sub">For ongoing work, teams and job sites</p>
+      <p class="plan-pitch">Hire multiple tradies across your work sites with premium tools, priority matching and centralised billing — all in one place.</p>
+      <div class="price-row">
+        <span class="price-amt">$299</span>
+        <span class="price-per">/ month + job costs</span>
+      </div>
+      <p class="includes">Everything in Home Owner, plus:</p>
+      <ul class="feature-list">
+        <li><i class="ti ti-check" aria-hidden="true"></i>Unlimited job postings across multiple sites</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Priority matching with vetted, experienced tradies</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Team access — manage hiring with roles and permissions</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Centralised billing — track all job spend in one place</li>
+        <li><i class="ti ti-check" aria-hidden="true"></i>Dedicated account support for your business</li>
+      </ul>
+      <button class="btn btn-solid">Get started today</button>
+    </div>
+
+  </div>
+
+  <p class="compare">Compare features across plans <i class="ti ti-chevron-right" aria-hidden="true"></i></p>
+</div>

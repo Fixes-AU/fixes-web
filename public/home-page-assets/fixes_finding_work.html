@@ -1,0 +1,52 @@
+
+<style>
+.step-wrap { display: flex; align-items: flex-start; gap: 0; justify-content: center; padding: 2rem 1rem 1.5rem; }
+.step { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; max-width: 200px; }
+.connector { flex: 1; max-width: 60px; height: 2px; background: #C0DD97; margin-top: 36px; }
+.icon-circle { width: 72px; height: 72px; border-radius: 50%; background: #EAF3DE; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position: relative; }
+.step-num { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #3B6D11; color: #EAF3DE; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+.step-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 8px; }
+.step-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin: 0; }
+.icon-circle i { font-size: 28px; color: #3B6D11; }
+.section-head { text-align: center; padding-top: 1.5rem; }
+.section-head h2 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 0.25rem; }
+</style>
+
+<h2 class="sr-only">How fixes.com.au works for finding work as a tradie — three steps</h2>
+
+<div class="section-head">
+  <h2>How it works</h2>
+</div>
+
+<div class="step-wrap">
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">1</span>
+      <i class="ti ti-wifi" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Go online</p>
+    <p class="step-desc">Create your profile and go online to let customers know you're available.</p>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">2</span>
+      <i class="ti ti-bell-ringing" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Receive nearby jobs</p>
+    <p class="step-desc">Get notified of local jobs that match your trade and skills instantly.</p>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">3</span>
+      <i class="ti ti-cash" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Get paid as you deliver</p>
+    <p class="step-desc">Complete the work and receive payment securely once the job is done.</p>
+  </div>
+</div>

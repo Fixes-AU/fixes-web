@@ -1,0 +1,52 @@
+
+<style>
+.step-wrap { display: flex; align-items: flex-start; gap: 0; justify-content: center; padding: 2rem 1rem 1.5rem; }
+.step { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; max-width: 200px; }
+.connector { flex: 1; max-width: 60px; height: 2px; background: #C0DD97; margin-top: 36px; }
+.icon-circle { width: 72px; height: 72px; border-radius: 50%; background: #EAF3DE; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; position: relative; }
+.step-num { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: #3B6D11; color: #EAF3DE; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+.step-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 8px; }
+.step-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin: 0; }
+.icon-circle i { font-size: 28px; color: #3B6D11; }
+.section-head { text-align: center; padding-top: 1.5rem; }
+.section-head h2 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 0.25rem; }
+</style>
+
+<h2 class="sr-only">How fixes.com.au works for hiring a tradie — three steps</h2>
+
+<div class="section-head">
+  <h2>How it works</h2>
+</div>
+
+<div class="step-wrap">
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">1</span>
+      <i class="ti ti-file-description" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Post your job</p>
+    <p class="step-desc">Add details, timing and photos so tradies know exactly what's needed.</p>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">2</span>
+      <i class="ti ti-map-pin" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Get connected to a top-rated tradie</p>
+    <p class="step-desc">We match you with nearby, highly rated tradies ready for your job.</p>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="step">
+    <div class="icon-circle">
+      <span class="step-num">3</span>
+      <i class="ti ti-circle-check" aria-hidden="true"></i>
+    </div>
+    <p class="step-title">Get your job done</p>
+    <p class="step-desc">Your tradie gets to work and you pay only when the job is complete.</p>
+  </div>
+</div>
