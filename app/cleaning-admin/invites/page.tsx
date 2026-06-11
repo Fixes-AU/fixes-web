@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Mail, Loader2, Copy, Check, XCircle, Plus } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface Invite {
   _id: string
@@ -29,6 +30,8 @@ export default function InvitesPage() {
   const [formCategory, setFormCategory] = useState<'cleaning' | 'waste_removal'>('cleaning')
   const [createError, setCreateError] = useState('')
   const [createSuccess, setCreateSuccess] = useState('')
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [pendingRevoke, setPendingRevoke] = useState<string | null>(null)
 
   const fetchInvites = () => {
     setIsLoading(true)
@@ -40,22 +43,30 @@ export default function InvitesPage() {
 
   useEffect(() => { fetchInvites() }, [])
 
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!formEmail.trim()) {
       setCreateError('Email is required so we can send the invitation link')
       return
     }
-    setIsCreating(true)
     setCreateError('')
     setCreateSuccess('')
+    setShowCreateDialog(true)
+  }
+
+  const executeCreate = async (token: string) => {
+    setIsCreating(true)
     const recipientEmail = formEmail.trim()
     try {
-      const res = await api.post<{ invite: Invite; inviteUrl: string; emailSent?: boolean }>(
+      const res = await api.raw<{ success: boolean; data: { invite: Invite; inviteUrl: string; emailSent?: boolean }; message: string }>(
         '/api/cleaning-admin/invites',
         {
-          category: formCategory,
-          email: recipientEmail,
-          name: formName.trim() || undefined,
+          method: 'POST',
+          body: {
+            category: formCategory,
+            email: recipientEmail,
+            name: formName.trim() || undefined,
+          },
+          headers: { 'X-Admin-Action-Token': token },
         }
       )
       setShowForm(false)
@@ -74,11 +85,16 @@ export default function InvitesPage() {
     }
   }
 
-  const handleRevoke = async (id: string) => {
-    try {
-      await api.patch(`/api/cleaning-admin/invites/${id}/revoke`)
-      fetchInvites()
-    } catch {}
+  const handleRevoke = (id: string) => {
+    setPendingRevoke(id)
+  }
+
+  const executeRevoke = async (token: string) => {
+    if (!pendingRevoke) return
+    await api.raw(`/api/cleaning-admin/invites/${pendingRevoke}/revoke`, {
+      method: 'PATCH',
+      headers: { 'X-Admin-Action-Token': token },
+    })
   }
 
   const copyLink = (token: string) => {
@@ -191,6 +207,30 @@ export default function InvitesPage() {
           </div>
         )}
       </div>
+
+      <AdminActionConfirmDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        title="Create Cleaner Invite"
+        description={`This will generate an invite link and send it to ${formEmail || 'the cleaner'}. Enter your password to confirm.`}
+        action="cleaning_invite:create"
+        variant="default"
+        confirmLabel="Create Invite"
+        onConfirm={executeCreate}
+        onSuccess={() => setShowCreateDialog(false)}
+      />
+
+      <AdminActionConfirmDialog
+        open={!!pendingRevoke}
+        onOpenChange={(open) => { if (!open) setPendingRevoke(null) }}
+        title="Revoke Invite"
+        description="This will invalidate the invite link. The cleaner will no longer be able to register with it. Enter your password to confirm."
+        action="cleaning_invite:revoke"
+        variant="destructive"
+        confirmLabel="Revoke Invite"
+        onConfirm={executeRevoke}
+        onSuccess={() => { setPendingRevoke(null); fetchInvites() }}
+      />
     </div>
   )
 }

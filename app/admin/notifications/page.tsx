@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { Bell, Megaphone, Send, Users, Wrench, Globe } from 'lucide-react'
 import { api } from '@/lib/api'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 type Target = 'tradie' | 'client' | 'all'
 
@@ -36,19 +37,27 @@ export default function AdminNotificationsPage() {
   const [loading,  setLoading]  = useState(false)
   const [result,   setResult]   = useState<{ total: number; failures: number } | null>(null)
   const [error,    setError]    = useState<string | null>(null)
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
 
   const canSend = title.trim() && body.trim() && !loading
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!canSend) return
-    setLoading(true)
     setResult(null)
     setError(null)
+    setShowPasswordDialog(true)
+  }
 
+  const executeSend = async (token: string) => {
+    setLoading(true)
     try {
-      const res = await api.post<{ total: number; failures: number }>(
+      const res = await api.raw<{ success: boolean; data: { total: number; failures: number }; message: string }>(
         '/api/admin/notifications/broadcast',
-        { title: title.trim(), body: body.trim(), target }
+        {
+          method: 'POST',
+          body: { title: title.trim(), body: body.trim(), target },
+          headers: { 'X-Admin-Action-Token': token },
+        }
       )
       setResult(res.data)
       setTitle('')
@@ -163,6 +172,18 @@ export default function AdminNotificationsPage() {
         <Send className="w-4 h-4" />
         {loading ? 'Sending…' : `Send to ${TARGET_OPTIONS.find(o => o.value === target)?.label}`}
       </button>
+
+      <AdminActionConfirmDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        title="Broadcast Notification"
+        description={`This will send a push notification to ${TARGET_OPTIONS.find(o => o.value === target)?.label?.toLowerCase()}. Enter your password to confirm.`}
+        action="notification:broadcast"
+        variant="default"
+        confirmLabel="Send Broadcast"
+        onConfirm={executeSend}
+        onSuccess={() => setShowPasswordDialog(false)}
+      />
     </div>
   )
 }

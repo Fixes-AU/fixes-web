@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { Trash2, Filter, RefreshCw, ChevronDown, Check, X } from 'lucide-react'
 import { api } from '@/lib/api'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 
 interface DeleteRequest {
@@ -48,6 +49,7 @@ export default function DeleteRequestsPage() {
   const [statusFilter, setStatusFilter]     = useState('all')
   const [expanded, setExpanded]             = useState<string | null>(null)
   const [updating, setUpdating]             = useState<string | null>(null)
+  const [pendingAction, setPendingAction]   = useState<{ id: string; status: 'approved' | 'rejected' } | null>(null)
 
   const loadRequests = async (status = statusFilter) => {
     setLoading(true)
@@ -71,16 +73,21 @@ export default function DeleteRequestsPage() {
     loadRequests(val)
   }
 
-  const updateStatus = async (id: string, newStatus: 'approved' | 'rejected') => {
-    if (!window.confirm(`Are you sure you want to ${newStatus} this request?`)) return
-    
+  const requestUpdateStatus = (id: string, newStatus: 'approved' | 'rejected') => {
+    setPendingAction({ id, status: newStatus })
+  }
+
+  const executeUpdateStatus = async (token: string) => {
+    if (!pendingAction) return
+    const { id, status: newStatus } = pendingAction
     setUpdating(id)
     try {
       const endpointAction = newStatus === 'approved' ? 'approve' : 'reject'
-      await api.patch(`/api/admin/delete-requests/${id}/${endpointAction}`)
+      await api.raw(`/api/admin/delete-requests/${id}/${endpointAction}`, {
+        method: 'PATCH',
+        headers: { 'X-Admin-Action-Token': token },
+      })
       setRequests(prev => prev.map(r => r._id === id ? { ...r, status: newStatus } : r))
-    } catch (err: any) {
-      alert(err.message || 'Failed to update request')
     } finally {
       setUpdating(null)
     }
@@ -212,7 +219,7 @@ export default function DeleteRequestsPage() {
                         <div className="flex flex-wrap items-center gap-2 pt-1">
                           <button
                             disabled={updating === req._id}
-                            onClick={() => updateStatus(req._id, 'approved')}
+                            onClick={() => requestUpdateStatus(req._id, 'approved')}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700 transition-opacity disabled:opacity-50 hover:opacity-80"
                           >
                             <Check className="w-3.5 h-3.5" />
@@ -221,7 +228,7 @@ export default function DeleteRequestsPage() {
                           
                           <button
                             disabled={updating === req._id}
-                            onClick={() => updateStatus(req._id, 'rejected')}
+                            onClick={() => requestUpdateStatus(req._id, 'rejected')}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-100 text-red-700 transition-opacity disabled:opacity-50 hover:opacity-80"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -237,6 +244,20 @@ export default function DeleteRequestsPage() {
           </div>
         )}
       </div>
+      <AdminActionConfirmDialog
+        open={!!pendingAction}
+        onOpenChange={(open) => { if (!open) setPendingAction(null) }}
+        title={pendingAction?.status === 'approved' ? 'Approve Deletion Request' : 'Reject Deletion Request'}
+        description={pendingAction?.status === 'approved'
+          ? 'This will permanently deactivate the user\'s account. Enter your password to confirm.'
+          : 'This will reject the deletion request and keep the account active. Enter your password to confirm.'
+        }
+        action={pendingAction?.status === 'approved' ? 'delete_request:approve' : 'delete_request:reject'}
+        variant="destructive"
+        confirmLabel={pendingAction?.status === 'approved' ? 'Approve & Deactivate' : 'Reject Request'}
+        onConfirm={executeUpdateStatus}
+        onSuccess={() => { setPendingAction(null); loadRequests() }}
+      />
     </div>
   )
 }

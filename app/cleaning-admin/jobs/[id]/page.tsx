@@ -10,6 +10,7 @@ import {
 import { api, ApiError } from '@/lib/api'
 import { CLEANING_TYPE_LABELS, JOB_STATUS_LABELS, JOB_STATUS_COLORS } from '@/lib/constants'
 import type { Job } from '@/lib/types'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface Cleaner {
   _id: string
@@ -35,6 +36,7 @@ export default function CleaningJobDetailPage() {
   const [quoteHours, setQuoteHours] = useState('')
   const [quoteRate, setQuoteRate] = useState('')
   const [isSavingQuote, setIsSavingQuote] = useState(false)
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false)
 
   const fetchJob = useCallback(async () => {
     try {
@@ -102,16 +104,23 @@ export default function CleaningJobDetailPage() {
     }
   }
 
-  const handleSaveQuote = async () => {
+  const handleSaveQuote = () => {
+    setShowQuoteDialog(true)
+  }
+
+  const executeSaveQuote = async (token: string) => {
     setIsSavingQuote(true)
     try {
-      await api.patch(`/api/cleaning-admin/jobs/${jobId}/quote`, {
-        estimatedHours: Number(quoteHours),
-        ratePerHour: Number(quoteRate),
+      await api.raw(`/api/cleaning-admin/jobs/${jobId}/quote`, {
+        method: 'PATCH',
+        body: {
+          estimatedHours: Number(quoteHours),
+          ratePerHour: Number(quoteRate),
+        },
+        headers: { 'X-Admin-Action-Token': token },
       })
       setEditingQuote(false)
       fetchJob()
-    } catch {
     } finally {
       setIsSavingQuote(false)
     }
@@ -294,6 +303,18 @@ export default function CleaningJobDetailPage() {
           </div>
         </div>
       </div>
+
+      <AdminActionConfirmDialog
+        open={showQuoteDialog}
+        onOpenChange={setShowQuoteDialog}
+        title="Update Job Quote"
+        description={`This will change the quote for job ${job?.jobCode || ''}. The new total will be $${(Number(quoteRate) * Number(quoteHours)).toFixed(2)}. Enter your password to confirm.`}
+        action="cleaning_job:quote_update"
+        variant="default"
+        confirmLabel="Save Quote"
+        onConfirm={executeSaveQuote}
+        onSuccess={() => setShowQuoteDialog(false)}
+      />
     </div>
   )
 }

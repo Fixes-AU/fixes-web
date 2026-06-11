@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react'
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2, ArrowLeft, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import { api } from '@/lib/api'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 type DisputeStatus = 'open' | 'under_review' | 'resolved_paid' | 'resolved_refunded' | 'resolved_split'
 
@@ -31,6 +32,7 @@ export default function AdminDisputesPage() {
   const [splitAmount, setSplitAmount] = useState<number>(0)
   const [resolutionNotes, setResolutionNotes] = useState('')
   const [isResolving, setIsResolving] = useState(false)
+  const [showResolveDialog, setShowResolveDialog] = useState(false)
 
   const fetchDisputes = async () => {
     setLoading(true)
@@ -48,20 +50,24 @@ export default function AdminDisputesPage() {
     fetchDisputes()
   }, [])
 
-  const handleResolve = async () => {
+  const handleResolve = () => {
     if (!selectedDispute || !resolutionNotes) return
+    setShowResolveDialog(true)
+  }
+
+  const executeResolve = async (token: string) => {
+    if (!selectedDispute) return
     setIsResolving(true)
     try {
-      await api.post(`/api/disputes/${selectedDispute._id}/resolve`, {
-        action: resolveAction,
-        tradieSplitAmount: resolveAction === 'split' ? splitAmount : undefined,
-        resolutionNotes
+      await api.raw(`/api/disputes/${selectedDispute._id}/resolve`, {
+        method: 'POST',
+        body: {
+          action: resolveAction,
+          tradieSplitAmount: resolveAction === 'split' ? splitAmount : undefined,
+          resolutionNotes
+        },
+        headers: { 'X-Admin-Action-Token': token },
       })
-      alert('Dispute resolved successfully')
-      setSelectedDispute(null)
-      fetchDisputes()
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Resolution failed')
     } finally {
       setIsResolving(false)
     }
@@ -190,6 +196,22 @@ export default function AdminDisputesPage() {
              </div>
           )}
         </div>
+
+        <AdminActionConfirmDialog
+          open={showResolveDialog}
+          onOpenChange={setShowResolveDialog}
+          title="Finalize Dispute Resolution"
+          description={`This will ${resolveAction === 'refund_client' ? 'refund the client' : resolveAction === 'payout_tradie' ? 'pay out the tradie' : 'split funds between parties'}. This action involves real money and cannot be undone. Enter your password to confirm.`}
+          action="dispute:resolve"
+          variant="destructive"
+          confirmLabel="Finalize Resolution"
+          onConfirm={executeResolve}
+          onSuccess={() => {
+            setShowResolveDialog(false)
+            setSelectedDispute(null)
+            fetchDisputes()
+          }}
+        />
       </div>
     )
   }

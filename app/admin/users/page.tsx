@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Search, User as UserIcon, Ban, CheckCircle2, Loader2 } from 'lucide-react'
 import { api } from '@/lib/api'
 import type { User } from '@/lib/types'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 type RoleFilter = 'all' | 'client' | 'tradie' | 'admin'
 
@@ -18,6 +19,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all')
   const [searchInput, setSearchInput] = useState('')
+  const [pendingBan, setPendingBan] = useState<{ userId: string; userName: string; isActive: boolean } | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true)
@@ -35,8 +37,16 @@ export default function AdminUsersPage() {
 
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
-  const handleBan = async (userId: string) => {
-    try { await api.patch(`/api/admin/users/${userId}/ban`); fetchUsers() } catch { /* silent */ }
+  const handleBan = (user: User) => {
+    setPendingBan({ userId: user._id, userName: user.name, isActive: user.isActive })
+  }
+
+  const executeBan = async (token: string) => {
+    if (!pendingBan) return
+    await api.raw(`/api/admin/users/${pendingBan.userId}/ban`, {
+      method: 'PATCH',
+      headers: { 'X-Admin-Action-Token': token },
+    })
   }
 
   const roleColors: Record<string, string> = {
@@ -155,7 +165,7 @@ export default function AdminUsersPage() {
                           View
                         </Link>
                         {u.role !== 'admin' && (
-                          <button onClick={() => handleBan(u._id)}
+                          <button onClick={() => handleBan(u)}
                             className={`text-[10px] px-2.5 py-1 rounded-lg transition-colors ${
                               u.isActive ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
                             }`}>
@@ -181,6 +191,21 @@ export default function AdminUsersPage() {
             className="px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs text-gray-500 disabled:opacity-30 hover:bg-gray-50 transition-colors">Next</button>
         </div>
       )}
+
+      <AdminActionConfirmDialog
+        open={!!pendingBan}
+        onOpenChange={(open) => { if (!open) setPendingBan(null) }}
+        title={pendingBan?.isActive ? `Ban ${pendingBan?.userName}` : `Unban ${pendingBan?.userName}`}
+        description={pendingBan?.isActive
+          ? 'This will suspend the user\'s account and prevent them from logging in. Enter your password to confirm.'
+          : 'This will reactivate the user\'s account. Enter your password to confirm.'
+        }
+        action="user:ban_toggle"
+        variant={pendingBan?.isActive ? 'destructive' : 'default'}
+        confirmLabel={pendingBan?.isActive ? 'Ban User' : 'Unban User'}
+        onConfirm={executeBan}
+        onSuccess={() => { setPendingBan(null); fetchUsers() }}
+      />
     </div>
   )
 }

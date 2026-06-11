@@ -22,6 +22,7 @@ import {
 import { api, ApiError } from '@/lib/api'
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS } from '@/lib/constants'
 import type { Job, Quote, User as UserType } from '@/lib/types'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface Payment {
   _id: string
@@ -87,6 +88,7 @@ export default function AdminJobDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [pendingAction, setPendingAction] = useState<{ key: string; endpoint: string; method: 'post' | 'patch'; actionName: string; title: string; description: string } | null>(null)
 
   const fetchJob = useCallback(async () => {
     try {
@@ -101,14 +103,21 @@ export default function AdminJobDetailPage() {
 
   useEffect(() => { fetchJob() }, [fetchJob])
 
-  const runAction = async (action: string, endpoint: string, method: 'post' | 'patch' = 'post') => {
-    setActionLoading(action)
+  const requestAction = (key: string, endpoint: string, actionName: string, title: string, description: string, method: 'post' | 'patch' = 'post') => {
     setMessage(null)
+    setPendingAction({ key, endpoint, method, actionName, title, description })
+  }
+
+  const executeAction = async (token: string) => {
+    if (!pendingAction) return
+    const { key, endpoint, method } = pendingAction
+    setActionLoading(key)
     try {
-      const res = method === 'post'
-        ? await api.post<{ job?: JobDetail; payment?: Payment }>(endpoint)
-        : await api.patch<{ job?: JobDetail }>(endpoint)
-      setMessage({ type: 'success', text: getSuccessMessage(action) })
+      await api.raw(endpoint, {
+        method: method.toUpperCase() as 'POST' | 'PATCH',
+        headers: { 'X-Admin-Action-Token': token },
+      })
+      setMessage({ type: 'success', text: getSuccessMessage(key) })
       await fetchJob()
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Action failed'
@@ -291,7 +300,7 @@ export default function AdminJobDetailPage() {
                       alt={`Completion photo ${i + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                     />
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5">
+                    <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/50 to-transparent px-2 py-1.5">
                       <p className="text-[10px] text-white/80">Photo {i + 1}</p>
                     </div>
                   </a>
@@ -340,7 +349,7 @@ export default function AdminJobDetailPage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/50 to-transparent px-2 py-1.5">
+                <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-black/50 to-transparent px-2 py-1.5">
                   <p className="text-[10px] text-white/80">Photo {i + 1}</p>
                 </div>
               </a>
@@ -376,7 +385,13 @@ export default function AdminJobDetailPage() {
               color={canSimulateAccept
                 ? 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700'
                 : 'bg-slate-700/50 border-slate-600 text-slate-400 cursor-not-allowed'}
-              onClick={() => runAction('simulate-accept', `/api/admin/jobs/${jobId}/simulate-accept`)}
+              onClick={() => requestAction(
+                'simulate-accept',
+                `/api/admin/jobs/${jobId}/simulate-accept`,
+                'dev_job:simulate_accept',
+                'Simulate Tradie Accept',
+                'This will change the job status from dispatching to accepted. Enter your password to confirm.'
+              )}
               disabled={!canSimulateAccept}
               isLoading={actionLoading === 'simulate-accept'}
             />
@@ -397,7 +412,13 @@ export default function AdminJobDetailPage() {
               color={canSimulateComplete
                 ? 'bg-purple-600 border-purple-500 text-white hover:bg-purple-700'
                 : 'bg-slate-700/50 border-slate-600 text-slate-400 cursor-not-allowed'}
-              onClick={() => runAction('simulate-complete', `/api/admin/jobs/${jobId}/simulate-complete`)}
+              onClick={() => requestAction(
+                'simulate-complete',
+                `/api/admin/jobs/${jobId}/simulate-complete`,
+                'dev_job:simulate_complete',
+                'Simulate Job Complete',
+                'This will mark the job as completed. Enter your password to confirm.'
+              )}
               disabled={!canSimulateComplete}
               isLoading={actionLoading === 'simulate-complete'}
             />
@@ -418,7 +439,13 @@ export default function AdminJobDetailPage() {
               color={canCapture
                 ? 'bg-green-600 border-green-500 text-white hover:bg-green-700'
                 : 'bg-slate-700/50 border-slate-600 text-slate-400 cursor-not-allowed'}
-              onClick={() => runAction('capture', `/api/payments/capture/${jobId}`)}
+              onClick={() => requestAction(
+                'capture',
+                `/api/payments/capture/${jobId}`,
+                'payment:capture',
+                'Capture Payment',
+                `This will capture $${payment?.amount ?? '—'} AUD and credit $${payment?.tradieEarnings ?? '—'} AUD to the tradie\'s wallet. This action involves real money. Enter your password to confirm.`
+              )}
               disabled={!canCapture}
               isLoading={actionLoading === 'capture'}
             />
@@ -432,6 +459,18 @@ export default function AdminJobDetailPage() {
           </div>
         )}
       </div>
+
+      <AdminActionConfirmDialog
+        open={!!pendingAction}
+        onOpenChange={(open) => { if (!open) setPendingAction(null) }}
+        title={pendingAction?.title ?? ''}
+        description={pendingAction?.description ?? ''}
+        action={pendingAction?.actionName ?? ''}
+        variant={pendingAction?.actionName === 'payment:capture' ? 'destructive' : 'default'}
+        confirmLabel={pendingAction?.title ?? 'Confirm'}
+        onConfirm={executeAction}
+        onSuccess={() => setPendingAction(null)}
+      />
     </div>
   )
 }

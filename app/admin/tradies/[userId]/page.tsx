@@ -11,6 +11,7 @@ import {
 import { api, ApiError } from '@/lib/api'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import type { TradieCategory } from '@/lib/types'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface TradieDoc {
   type: string; label: string; url: string | null; publicId: string | null
@@ -34,6 +35,7 @@ export default function AdminTradieDocumentsPage() {
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
   const [showRejectInput, setShowRejectInput] = useState<string | null>(null)
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const [pendingDocAction, setPendingDocAction] = useState<{ docType: string; action: 'verify' | 'reject' } | null>(null)
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3000)
@@ -49,27 +51,37 @@ export default function AdminTradieDocumentsPage() {
 
   useEffect(() => { fetchDocs() }, [fetchDocs])
 
-  const handleVerify = async (docType: string) => {
-    setActionLoading(docType)
-    try {
-      await api.patch(`/api/admin/tradies/${userId}/documents/${docType}/verify`)
-      showToast('Document verified ✓', 'success'); fetchDocs()
-    } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Failed to verify', 'error')
-    } finally { setActionLoading(null) }
+  const handleVerify = (docType: string) => {
+    setPendingDocAction({ docType, action: 'verify' })
   }
 
-  const handleReject = async (docType: string) => {
+  const handleReject = (docType: string) => {
+    setPendingDocAction({ docType, action: 'reject' })
+  }
+
+  const executeDocAction = async (token: string) => {
+    if (!pendingDocAction) return
+    const { docType, action } = pendingDocAction
     setActionLoading(docType)
     try {
-      await api.patch(`/api/admin/tradies/${userId}/documents/${docType}/reject`, { reason: rejectReason[docType] || '' })
-      showToast('Document rejected', 'success')
-      setShowRejectInput(null)
-      setRejectReason((prev) => { const n = { ...prev }; delete n[docType]; return n })
+      const endpoint = action === 'verify' ? 'verify' : 'reject'
+      const body = action === 'reject' ? { reason: rejectReason[docType] || '' } : undefined
+      await api.raw(`/api/admin/tradies/${userId}/documents/${docType}/${endpoint}`, {
+        method: 'PATCH',
+        body,
+        headers: { 'X-Admin-Action-Token': token },
+      })
+      showToast(action === 'verify' ? 'Document verified ✓' : 'Document rejected', 'success')
+      if (action === 'reject') {
+        setShowRejectInput(null)
+        setRejectReason((prev) => { const n = { ...prev }; delete n[docType]; return n })
+      }
       fetchDocs()
     } catch (err) {
-      showToast(err instanceof ApiError ? err.message : 'Failed to reject', 'error')
-    } finally { setActionLoading(null) }
+      showToast(err instanceof ApiError ? err.message : `Failed to ${action}`, 'error')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   if (isLoading) return (
@@ -251,6 +263,21 @@ export default function AdminTradieDocumentsPage() {
           )
         })}
       </div>
+
+      <AdminActionConfirmDialog
+        open={!!pendingDocAction}
+        onOpenChange={(open) => { if (!open) setPendingDocAction(null) }}
+        title={pendingDocAction?.action === 'verify' ? 'Verify Document' : 'Reject Document'}
+        description={pendingDocAction?.action === 'verify'
+          ? 'This will mark the document as verified and update the tradie\'s compliance status. Enter your password to confirm.'
+          : 'This will reject the document and require the tradie to re-upload. Enter your password to confirm.'
+        }
+        action={pendingDocAction?.action === 'verify' ? 'tradie_document:verify' : 'tradie_document:reject'}
+        variant={pendingDocAction?.action === 'reject' ? 'destructive' : 'default'}
+        confirmLabel={pendingDocAction?.action === 'verify' ? 'Verify Document' : 'Reject Document'}
+        onConfirm={executeDocAction}
+        onSuccess={() => setPendingDocAction(null)}
+      />
     </div>
   )
 }

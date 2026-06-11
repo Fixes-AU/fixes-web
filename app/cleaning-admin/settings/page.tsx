@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Settings, Loader2, Save, AlertCircle, Info } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface CleaningConfigData {
   dispatchMode: 'manual' | 'auto'
@@ -21,6 +22,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
 
   useEffect(() => {
     api.get<{
@@ -41,25 +43,24 @@ export default function SettingsPage() {
       .finally(() => setIsLoading(false))
   }, [])
 
-  const handleSave = async () => {
-    setIsSaving(true)
+  const handleSave = () => {
     setSaveError('')
     setSaveSuccess(false)
-    try {
-      await api.patch('/api/cleaning-admin/config', {
+    setShowPasswordDialog(true)
+  }
+
+  const executeSave = async (token: string) => {
+    await api.raw('/api/cleaning-admin/config', {
+      method: 'PATCH',
+      body: {
         dispatchMode: config.dispatchMode,
         autoAssignRules: {
           maxRadiusKm: config.autoAssignRules.maxRadius,
           minRating: config.autoAssignRules.preferredRating,
         },
-      })
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Failed to save settings')
-    } finally {
-      setIsSaving(false)
-    }
+      },
+      headers: { 'X-Admin-Action-Token': token },
+    })
   }
 
   if (isLoading) {
@@ -78,6 +79,22 @@ export default function SettingsPage() {
           <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
+
+      <AdminActionConfirmDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        title="Update Dispatch Settings"
+        description="This will change how cleaners are dispatched to jobs. Enter your password to confirm."
+        action="cleaning_config:update"
+        variant="default"
+        confirmLabel="Save Settings"
+        onConfirm={executeSave}
+        onSuccess={() => {
+          setSaveSuccess(true)
+          setTimeout(() => setSaveSuccess(false), 3000)
+        }}
+        onError={(err) => setSaveError(err.message)}
+      />
 
       {saveSuccess && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl">

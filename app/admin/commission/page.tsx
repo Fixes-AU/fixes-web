@@ -5,6 +5,7 @@ import { Loader2, Save, AlertCircle, Percent } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { CATEGORY_LABELS } from '@/lib/constants'
 import type { JobCategory } from '@/lib/types'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface CommissionRate {
   _id?: string
@@ -30,6 +31,7 @@ export default function CommissionPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
 
   useEffect(() => {
     api.get<{ data: PlatformConfig }>('/api/admin/platform-config')
@@ -56,24 +58,23 @@ export default function CommissionPage() {
     )
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
+  const handleSave = () => {
     setSaveError('')
     setSaveSuccess(false)
-    try {
-      await api.patch('/api/admin/platform-config', {
+    setShowPasswordDialog(true)
+  }
+
+  const executeSave = async (token: string) => {
+    await api.raw('/api/admin/platform-config', {
+      method: 'PATCH',
+      body: {
         commissionRates: rates.map((r) => ({
           category: r.category,
           platformPercentage: r.platformPercentage,
         })),
-      })
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Failed to save commission rates')
-    } finally {
-      setIsSaving(false)
-    }
+      },
+      headers: { 'X-Admin-Action-Token': token },
+    })
   }
 
   if (isLoading) {
@@ -99,6 +100,22 @@ export default function CommissionPage() {
           <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
+
+      <AdminActionConfirmDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        title="Update Commission Rates"
+        description="This will change the platform/tradie revenue split for all future jobs. Enter your password to confirm."
+        action="platform_config:update"
+        variant="destructive"
+        confirmLabel="Save Changes"
+        onConfirm={executeSave}
+        onSuccess={() => {
+          setSaveSuccess(true)
+          setTimeout(() => setSaveSuccess(false), 3000)
+        }}
+        onError={(err) => setSaveError(err.message)}
+      />
 
       {saveSuccess && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl">

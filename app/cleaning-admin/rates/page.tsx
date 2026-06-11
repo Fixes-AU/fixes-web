@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { DollarSign, Loader2, Save, AlertCircle, Info } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { CLEANING_TYPE_LABELS } from '@/lib/constants'
+import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface Rate {
   cleaningType: string
@@ -27,6 +28,7 @@ export default function RatesPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
 
   useEffect(() => {
     api.get<ApiRate[]>('/api/cleaning-admin/rates')
@@ -62,25 +64,24 @@ export default function RatesPage() {
     setRates((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: Number(value) || 0 } : r))
   }
 
-  const handleSave = async () => {
-    setIsSaving(true)
+  const handleSave = () => {
     setSaveError('')
     setSaveSuccess(false)
-    try {
-      await api.patch('/api/cleaning-admin/rates', {
+    setShowPasswordDialog(true)
+  }
+
+  const executeSave = async (token: string) => {
+    await api.raw('/api/cleaning-admin/rates', {
+      method: 'PATCH',
+      body: {
         rates: rates.map((r) => ({
           cleaningType: r.cleaningType,
           ratePerHour: r.ratePerHour,
           minHours: r.minimumHours,
         })),
-      })
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Failed to save rates')
-    } finally {
-      setIsSaving(false)
-    }
+      },
+      headers: { 'X-Admin-Action-Token': token },
+    })
   }
 
   if (isLoading) {
@@ -99,6 +100,22 @@ export default function RatesPage() {
           <Save className="w-4 h-4" /> {isSaving ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
+
+      <AdminActionConfirmDialog
+        open={showPasswordDialog}
+        onOpenChange={setShowPasswordDialog}
+        title="Update Hourly Rates"
+        description="This will change the cleaning rates used for all future job quotes. Enter your password to confirm."
+        action="cleaning_rates:update"
+        variant="destructive"
+        confirmLabel="Save Rates"
+        onConfirm={executeSave}
+        onSuccess={() => {
+          setSaveSuccess(true)
+          setTimeout(() => setSaveSuccess(false), 3000)
+        }}
+        onError={(err) => setSaveError(err.message)}
+      />
 
       {saveSuccess && (
         <div className="mb-4 flex items-center gap-2 bg-green-50 text-green-700 text-sm px-4 py-3 rounded-xl">
