@@ -1,47 +1,65 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Users, CreditCard, UserCircle, Send, DollarSign, ChevronRight } from "lucide-react"
+import { ChevronRight, MapPin, CheckCircle2, FileText, Wifi, BellRing } from "lucide-react"
+
+const CashIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+    <path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+    <path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+    <path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2" />
+  </svg>
+)
 
 const hiringSteps = [
   {
     icon: FileText,
-    title: "Posting jobs is always free",
-    description: "Generate a job post with AI or create your own and filter talent matches.",
-    cta: "Create a job",
+    title: "Post your job",
+    description: "Add details, timing and photos so tradies know exactly what's needed.",
+    cta: "",
   },
   {
-    icon: Users,
-    title: "Get proposals and hire",
-    description: "Screen, interview, or book a consult with an expert before hiring.",
-    cta: "Explore experts",
+    icon: MapPin,
+    title: "Get connected to a top-rated tradie",
+    description: "We match you with nearby, highly rated tradies ready for your job.",
+    cta: "",
   },
   {
-    icon: CreditCard,
-    title: "Pay when work is done",
-    description: "Release payments after approving work, by milestone or upon project completion.",
-    cta: "View pricing",
+    icon: CheckCircle2,
+    title: "Get your job done",
+    description: "Your tradie gets to work and you pay only when the job is complete.",
+    cta: "",
   },
 ]
 
 const workingSteps = [
   {
-    icon: UserCircle,
-    title: "Find clients and remote jobs",
-    description: "Create your profile to highlight your best work and attract top clients.",
-    cta: "Create a profile",
+    icon: Wifi,
+    title: "Go online",
+    description: "Create your profile and go online to let customers know you're available.",
+    cta: "",
   },
   {
-    icon: Send,
-    title: "Submit proposals for work",
-    description: "Negotiate rates for the projects you want or reply to invites from clients.",
-    cta: "Search jobs",
+    icon: BellRing,
+    title: "Receive nearby jobs",
+    description: "Get notified of local jobs that match your trade and skills instantly.",
+    cta: "",
   },
   {
-    icon: DollarSign,
-    title: "Get paid as you deliver work",
-    description: "Land a contract, do the work you love, and get paid on time.",
-    cta: "Estimate earnings",
+    icon: CashIcon,
+    title: "Get paid as you deliver",
+    description: "Complete the work and receive payment securely once the job is done.",
+    cta: "",
   },
 ]
 
@@ -81,21 +99,17 @@ export function HowItWorks() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-12 md:gap-0 mt-8">
           {steps.map((step, index) => {
             const Icon = step.icon
             return (
-              <div key={index} className="relative">
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-12 left-1/2 w-full h-0.5 bg-(--upwork-border)" />
-                )}
-                
-                <div className="relative flex flex-col items-center text-center">
+              <div key={index} className="flex flex-col md:flex-row items-center md:items-start w-full md:w-auto">
+                <div className="flex flex-col items-center text-center flex-1 max-w-70 px-4">
                   <div className="relative mb-6">
                     <div className="w-24 h-24 rounded-full bg-(--upwork-light-gray) flex items-center justify-center">
                       <Icon className="w-10 h-10 text-(--upwork-green)" />
                     </div>
-                    <span className="absolute -top-2 -right-2 w-8 h-8 bg-(--upwork-navy) text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    <span className="absolute -top-1 -right-1 w-7 h-7 bg-(--upwork-green) text-white rounded-full flex items-center justify-center text-sm font-bold">
                       {index + 1}
                     </span>
                   </div>
@@ -103,14 +117,20 @@ export function HowItWorks() {
                   <h3 className="text-xl font-bold text-(--upwork-navy) mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-(--upwork-gray) mb-4 max-w-xs">
+                  <p className="text-(--upwork-gray) mb-4">
                     {step.description}
                   </p>
-                  <button className="flex items-center gap-1 text-(--upwork-green) font-medium hover:underline">
-                    {step.cta}
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                  {step.cta && (
+                    <button className="flex items-center gap-1 text-(--upwork-green) font-medium hover:underline">
+                      {step.cta}
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
+
+                {index < steps.length - 1 && (
+                  <div className="hidden md:block flex-1 min-w-10 max-w-20 h-0.5 bg-[#C0DD97] mt-12 mx-2" />
+                )}
               </div>
             )
           })}
