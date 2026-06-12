@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState } from "react"
 import { 
   Hammer, 
@@ -16,16 +17,16 @@ import {
 } from "lucide-react"
 
 const categories = [
-  { id: "building", label: "Building & Construction", icon: Hammer },
-  { id: "electrical", label: "Electrical", icon: Zap },
-  { id: "plumbing", label: "Plumbing & Gas", icon: Droplets },
-  { id: "mechanical", label: "Mechanical & Fitting", icon: Wrench },
-  { id: "automotive", label: "Automotive", icon: Car },
-  { id: "hvac", label: "HVAC & Refrigeration", icon: Flame },
-  { id: "landscaping", label: "Landscaping & Civil", icon: TreeDeciduous },
-  { id: "finishing", label: "Finishing Trades", icon: Home },
-  { id: "metal", label: "Metal & Welding", icon: HardHat },
-  { id: "painting", label: "Painting & Decorating", icon: Paintbrush },
+  { id: "building", slug: "carpenter", label: "Building & Construction", icon: Hammer },
+  { id: "electrical", slug: "electrician", label: "Electrical", icon: Zap },
+  { id: "plumbing", slug: "plumber", label: "Plumbing & Gas", icon: Droplets },
+  { id: "mechanical", slug: "hvac", label: "Mechanical & Fitting", icon: Wrench },
+  { id: "automotive", slug: "other", label: "Automotive", icon: Car },
+  { id: "hvac", slug: "hvac", label: "HVAC & Refrigeration", icon: Flame },
+  { id: "landscaping", slug: "labourer", label: "Landscaping & Civil", icon: TreeDeciduous },
+  { id: "finishing", slug: "plasterer", label: "Finishing Trades", icon: Home },
+  { id: "metal", slug: "other", label: "Metal & Welding", icon: HardHat },
+  { id: "painting", slug: "painter", label: "Painting & Decorating", icon: Paintbrush },
 ]
 
 export function CategoryTabs() {
@@ -44,8 +45,9 @@ export function CategoryTabs() {
             const isActive = activeCategory === category.id
             
             return (
-              <button
+              <Link
                 key={category.id}
+                href={`/categories/${category.slug}`}
                 onClick={() => setActiveCategory(category.id)}
                 className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
                   isActive
@@ -65,16 +67,19 @@ export function CategoryTabs() {
                 }`}>
                   {category.label}
                 </span>
-              </button>
+              </Link>
             )
           })}
         </div>
 
         <div className="flex justify-center mt-8">
-          <button className="flex items-center gap-2 text-(--upwork-green) font-medium hover:underline">
+          <Link
+            href="/categories"
+            className="flex items-center gap-2 text-(--upwork-green) font-medium hover:underline"
+          >
             View all trade categories
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
