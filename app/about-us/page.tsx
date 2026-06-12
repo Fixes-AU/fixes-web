@@ -106,7 +106,7 @@ export default function AboutUsPage() {
             move ahead.
           </p>
           <Link
-            href="#"
+            href="/blog"
             className="inline-flex items-center gap-2 px-4 sm:px-7 py-1.5 sm:py-3 font-bold text-[10px] sm:text-sm text-(--upwork-navy) w-fit transition-colors hover:opacity-90"
             style={{ backgroundColor: '#A4FF43', borderRadius: '27px' }}
           >
