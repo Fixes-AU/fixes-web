@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Search, ArrowRight, ChevronRight } from "lucide-react"
 
 const categoryTags = [
@@ -37,15 +38,15 @@ export function HeroSection() {
       <div className="max-w-7xl mx-auto mb-6">
         <div className="bg-[#d4f7dc] rounded-full py-4 px-6 flex items-center justify-between">
           <p className="text-(--upwork-navy) font-medium text-sm md:text-base">
-            Stop doing everything. Hire the top 1% of talent on Business Plus.
+            <span className="font-semibold">Stop doing everything.</span> Manage your team and multiple sites on Fixes Business.
           </p>
-          <a
-            href="#"
+          <Link
+            href="/register?plan=business"
             className="flex items-center gap-1 text-(--upwork-navy) font-semibold text-sm hover:underline whitespace-nowrap"
           >
             Get started
             <ChevronRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </div>
 

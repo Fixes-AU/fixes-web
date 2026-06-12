@@ -20,8 +20,8 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-[#FFFCE9] border-b border-(--upwork-border)">
       <div className="bg-(--upwork-navy) text-white py-2 px-4 text-center text-sm">
         <span className="font-semibold">Stop doing everything.</span>{" "}
-        Hire the top 1% of talent on Business Plus.{" "}
-        <Link href="#" className="underline hover:no-underline">
+        Manage your team and multiple sites on Fixes Business.{" "}
+        <Link href="/register?plan=business" className="underline hover:no-underline">
           Get started
         </Link>
       </div>
