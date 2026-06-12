@@ -72,33 +72,47 @@ export function Footer() {
             It&apos;s easier in the apps
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-342.5 mx-auto">
-            <div
-              className="flex items-center gap-4 bg-white px-5 py-5 w-full"
+            <Link
+              href="/app/fixes"
+              className="flex items-center gap-4 bg-white px-5 py-5 w-full hover:shadow-lg transition-shadow"
               style={{ borderRadius: '23px', maxWidth: '675px', height: 'auto', minHeight: '120px' }}
             >
-              <div className="shrink-0 w-20 h-20 lg:w-24 lg:h-24 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400">
-                QR
+              <div className="shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg overflow-hidden">
+                <Image
+                  src="/qr-fixes-client.png"
+                  alt="Scan to download Fixes"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="grow min-w-0">
                 <p className="text-[0.95rem] lg:text-lg font-bold text-black">Download the Fixes app</p>
                 <p className="text-xs lg:text-sm text-gray-400">Scan to download</p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 shrink-0" />
-            </div>
+            </Link>
 
-            <div
-              className="flex items-center gap-4 bg-white px-5 py-5 w-full"
+            <Link
+              href="/app/fixer"
+              className="flex items-center gap-4 bg-white px-5 py-5 w-full hover:shadow-lg transition-shadow"
               style={{ borderRadius: '23px', maxWidth: '675px', height: 'auto', minHeight: '120px' }}
             >
-              <div className="shrink-0 w-20 h-20 lg:w-24 lg:h-24 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400">
-                QR
+              <div className="shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg overflow-hidden">
+                <Image
+                  src="/qr-fixer-tradie.png"
+                  alt="Scan to download Fixer"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="grow min-w-0">
                 <p className="text-[0.95rem] lg:text-lg font-bold text-black">Download the Fixer Tradie app</p>
                 <p className="text-xs lg:text-sm text-gray-400">Scan to download</p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-400 shrink-0" />
-            </div>
+            </Link>
           </div>
         </div>
       </div>
