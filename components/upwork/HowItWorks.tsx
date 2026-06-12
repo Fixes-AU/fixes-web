@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { ChevronRight, MapPin, CheckCircle2, FileText, Wifi, BellRing } from "lucide-react"
 
 const CashIcon = ({ className }: { className?: string }) => (
@@ -138,15 +139,22 @@ export function HowItWorks() {
 
         <div className="mt-16 p-8 bg-(--upwork-light-gray) rounded-2xl text-center">
           <h3 className="text-xl font-bold text-(--upwork-navy) mb-2">
-            Get insights into freelancer pricing
+            {activeTab === "hiring" 
+              ? "Get a free AI-powered quote" 
+              : "Ready to find local jobs?"}
           </h3>
-          <p className="text-(--upwork-gray) mb-6">
-            {"We'll calculate the average cost for freelancers with the skills you need."}
+          <p className="text-(--upwork-gray) mb-6 max-w-2xl mx-auto">
+            {activeTab === "hiring"
+              ? "Describe your job, upload photos, and our AI will calculate an instant, fair price for your specific needs."
+              : "Join thousands of tradies on Fixes getting paid for the work they do best."}
           </p>
-          <button className="inline-flex items-center gap-2 px-6 py-3 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-medium rounded-full transition-colors">
-            Next
+          <Link 
+            href={activeTab === "hiring" ? "/post-job" : "/register"}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-medium rounded-full transition-colors"
+          >
+            {activeTab === "hiring" ? "Get a Quote" : "Sign Up as a Tradie"}
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
