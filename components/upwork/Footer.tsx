@@ -10,37 +10,37 @@ const manrope = Manrope({
 
 const footerLinks: Record<string, { label: string; href: string }[]> = {
   "For Clients / Homeowners": [
-    { label: "Articles", href: "#" },
-    { label: "FAQs", href: "#" },
-    { label: "Licensing", href: "#" },
-    { label: "Council Regulations", href: "#" },
-    { label: "Trust & Quality", href: "#" },
-    { label: "Job Poster T&Cs", href: "#" },
-    { label: "Direct Contracts", href: "#" },
+    { label: "Articles", href: "/articles" },
+    { label: "FAQs", href: "/faqs" },
+    { label: "Licensing", href: "/licensing" },
+    { label: "Council Regulations", href: "/council-regulations" },
+    { label: "Trust & Quality", href: "/trust-and-quality" },
+    { label: "Job Poster T&Cs", href: "/job-poster-tcs" },
+    { label: "Direct Contracts", href: "/direct-contracts" },
   ],
   "For Tradies": [
     { label: "Register with Fixer", href: "/i-want-to-work" },
-    { label: "How to Find Work", href: "#" },
-    { label: "Direct Contracts", href: "#" },
-    { label: "How Fixes Works", href: "#" },
-    { label: "FAQs", href: "#" },
-    { label: "Member Login", href: "#" },
+    { label: "How to Find Work", href: "/how-to-find-work" },
+    { label: "Direct Contracts", href: "/direct-contracts" },
+    { label: "How Fixes Works", href: "/how-fixes-works" },
+    { label: "FAQs", href: "/faqs-tradie" },
+    { label: "Member Login", href: "/app/fixer" },
   ],
   "Resources": [
     { label: "Help & Support", href: "/support" },
-    { label: "Fixes Reviews", href: "#" },
-    { label: "Resources", href: "#" },
+    { label: "Fixes Reviews", href: "/reviews" },
+    { label: "Resources", href: "/resources" },
     { label: "Blog", href: "/blog" },
-    { label: "Community", href: "#" },
+    { label: "Community", href: "/community" },
   ],
   "Company": [
     { label: "About Us", href: "/about-us" },
     { label: "Leadership", href: "/about-us#team" },
     { label: "Investor Relations", href: "/investors" },
-    { label: "Careers", href: "#" },
+    { label: "Careers", href: "/careers" },
     { label: "Our Impact", href: "/community-impact" },
-    { label: "Press", href: "#" },
-    { label: "Contact Us", href: "#" },
+    { label: "Press", href: "/press" },
+    { label: "Contact Us", href: "/contact-us" },
     { label: "Trust, Safety & Security", href: "/safety" },
   ],
 }
@@ -54,11 +54,12 @@ const socialLinks = [
 ]
 
 const bottomLinks = [
-  "Terms of Service",
-  "Privacy Policy",
-  "CA Notice at Collection",
-  "Cookie Settings",
-  "Accessibility",
+  { label: "Terms of Service", href: "/terms-of-service" },
+  { label: "Client Privacy Policy", href: "/privacy-policy/client" },
+  { label: "Tradie Privacy Policy", href: "/privacy-policy/tradie" },
+  { label: "CA Notice at Collection", href: "/ca-notice" },
+  { label: "Cookie Settings", href: "/cookie-settings" },
+  { label: "Accessibility", href: "/accessibility" },
 ]
 
 const FixesQRLogo = () => (
@@ -203,11 +204,11 @@ export function Footer() {
             <div className="flex flex-wrap items-center gap-4">
               {bottomLinks.map((link) => (
                 <Link
-                  key={link}
-                  href="#"
+                  key={link.label}
+                  href={link.href}
                   className="text-sm text-gray-400 hover:text-white transition-colors"
                 >
-                  {link}
+                  {link.label}
                 </Link>
               ))}
             </div>
