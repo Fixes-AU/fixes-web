@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
  
 const APP_STORE_URL = "https://apps.apple.com/us/app/fixes/id6777596020"
-const PLAY_STORE_URL = ""
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.fixesau.app"
 
 export default async function FixesAppRedirect() {
   const headersList = await headers()
