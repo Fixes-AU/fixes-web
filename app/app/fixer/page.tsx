@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
  
-const APP_STORE_URL = "https://apps.apple.com/us/app/fixer/id6771212204"
+const APP_STORE_URL = "https://apps.apple.com/au/app/fixer/id6771212204"
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.fixerau.app"
 
 export default async function FixerAppRedirect() {
