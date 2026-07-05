@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2, AlertTriangle, UploadCloud, X, Image as ImageIcon } from 'lucide-react'
 import { api } from '@/lib/api'
+import { uploadFile } from '@/lib/uploadService'
 
 const REASONS = [
   { value: '', label: 'Select a reason' },
@@ -24,26 +25,6 @@ interface EvidenceFile {
   localUri: string
   url: string
   publicId: string
-}
-
-async function uploadFileToCloudinary(file: File): Promise<{ url: string; publicId: string }> {
-  const signRes = await api.post<any>('/api/uploads/sign', { folder: 'dispute_evidence' })
-  const { signature, timestamp, cloudName, apiKey, folder } = signRes.data.data
-
-  const form = new FormData()
-  form.append('file', file)
-  form.append('api_key', apiKey)
-  form.append('timestamp', String(timestamp))
-  form.append('signature', signature)
-  form.append('folder', folder)
-
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: 'POST',
-    body: form,
-  })
-  if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
-  const { secure_url, public_id } = await res.json()
-  return { url: secure_url, publicId: public_id }
 }
 
 export default function ClientDisputePage() {
@@ -72,7 +53,7 @@ export default function ClientDisputePage() {
       for (let i = 0; i < files.length; i++) {
         setUploadingIdx(evidence.length + i)
         const localUri = URL.createObjectURL(files[i])
-        const { url, publicId } = await uploadFileToCloudinary(files[i])
+        const { url, publicId } = await uploadFile(files[i], 'dispute_evidence')
         setEvidence(prev => [...prev, { localUri, url, publicId }])
       }
     } catch {

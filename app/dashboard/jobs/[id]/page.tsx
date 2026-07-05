@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
+import { uploadFile } from '@/lib/uploadService'
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS, AGENCY_CATEGORIES } from '@/lib/constants'
 import { SkeletonJobDetail, SkeletonChatMessages } from '../../_components/skeletons'
 import CleaningTaskList from '../../_components/CleaningTaskList'
@@ -688,20 +689,7 @@ function LiveTrackingMap({ jobId, jobCode, jobLocation, initialTradieLocation, i
 
 
 async function signAndUpload(file: File): Promise<{ url: string; publicId: string }> {
-  const signRes = await api.post<any>('/api/uploads/sign', { folder: 'dispute_evidence' })
-  const { signature, timestamp, cloudName, apiKey, folder } = signRes.data.data
-  const form = new FormData()
-  form.append('file', file)
-  form.append('api_key', apiKey)
-  form.append('timestamp', String(timestamp))
-  form.append('signature', signature)
-  form.append('folder', folder)
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: 'POST', body: form,
-  })
-  if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
-  const { secure_url, public_id } = await res.json()
-  return { url: secure_url, publicId: public_id }
+  return uploadFile(file, 'dispute_evidence')
 }
 
 function DisputeEvidenceSection({ job, user }: { job: Job; user: any }) {

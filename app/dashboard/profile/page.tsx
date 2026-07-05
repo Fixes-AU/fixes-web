@@ -25,6 +25,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { loadStripe } from '@stripe/stripe-js'
 import { useAuth } from '@/contexts/auth-context'
 import { api } from '@/lib/api'
+import { uploadAvatar } from '@/lib/uploadService'
 
 export default function DashboardProfilePage() {
   const { user, profile, refreshUser, logout } = useAuth()
@@ -181,33 +182,7 @@ export default function DashboardProfilePage() {
 
     setIsUploadingAvatar(true)
     try {
-      const signRes = await api.post<{
-        signature: string
-        timestamp: number
-        cloudName: string
-        apiKey: string
-        folder: string
-      }>('/api/uploads/sign', { folder: 'avatars' })
-      const signed = signRes.data
-
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('api_key', signed.apiKey)
-      formData.append('timestamp', String(signed.timestamp))
-      formData.append('signature', signed.signature)
-      formData.append('folder', signed.folder)
-
-      const cloudRes = await fetch(
-        `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
-        { method: 'POST', body: formData }
-      )
-      if (!cloudRes.ok) throw new Error('Cloudinary upload failed')
-      const cloudData = await cloudRes.json()
-
-      await api.post('/api/uploads/avatar', {
-        publicId: cloudData.public_id,
-        url: cloudData.secure_url,
-      })
+      await uploadAvatar(file)
 
       await refreshUser()
       showToast('Avatar updated!', 'success')
