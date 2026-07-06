@@ -21,9 +21,10 @@ import {
   Bot,
   MessageSquareCodeIcon,
   MessageSquareWarning,
-    Trash2,
+  Trash2,
   ClipboardList,
   Percent,
+  CreditCard,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
@@ -40,9 +41,10 @@ const sidebarLinks = [
   { href: '/admin/ai-analytics',   label: 'AI Analytics',   icon: Bot },
     { href: '/admin/delete-requests',label: 'Delete Requests',icon: Trash2 },
 
-  { href: '/admin/disputes',   label: 'Dispute Center',   icon: MessageSquareWarning },
-  { href: '/admin/commission',     label: 'Commission',     icon: Percent },
-  { href: '/admin/profile',        label: 'My Profile',     icon: User },
+  { href: '/admin/disputes',      label: 'Dispute Center',  icon: MessageSquareWarning },
+  { href: '/admin/commission',     label: 'Commission',      icon: Percent },
+  { href: '/admin/transactions',   label: 'Transactions',    icon: CreditCard },
+  { href: '/admin/profile',        label: 'My Profile',      icon: User },
 ]
 
 function timeAgo(iso: string) {

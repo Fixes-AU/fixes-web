@@ -899,6 +899,7 @@ export default function JobDetailPage() {
   const [rescheduleError, setRescheduleError] = useState('')
 
   const [recurringSchedule, setRecurringSchedule] = useState<any | null>(null)
+  const [completionOtp, setCompletionOtp] = useState<string | null>(null)
 
   const fetchJob = useCallback(async () => {
     try {
@@ -971,7 +972,10 @@ export default function JobDetailPage() {
 
     socket.on('job:status_update', handleStatusUpdate)
     socket.on('dispatch:finding_tradie', handleFindingTradie)
-    const handleOtpSent = () => fetchJob()
+    const handleOtpSent = (data: any) => {
+      if (data?.otp) setCompletionOtp(data.otp)
+      fetchJob()
+    }
     socket.on('job:otp_sent', handleOtpSent)
 
     const handleCleaningTaskUpdate = () => fetchJob()
@@ -1413,6 +1417,17 @@ export default function JobDetailPage() {
             isAlreadyInProgress={job.status === 'in_progress'}
           />
         )}
+
+      {completionOtp && job.status === 'in_progress' && (
+        <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center">
+          <p className="text-sm font-medium text-emerald-800 mb-2">
+            Share this code with your tradie to confirm the job:
+          </p>
+          <p className="text-4xl font-bold text-emerald-600 tracking-[0.3em] font-mono">
+            {completionOtp}
+          </p>
+        </div>
+      )}
 
       {job.status === 'completed' && !(job as any).disputeId && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
