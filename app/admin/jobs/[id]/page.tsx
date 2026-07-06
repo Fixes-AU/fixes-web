@@ -27,11 +27,13 @@ import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialo
 interface Payment {
   _id: string
   stripePaymentIntentId: string
+  stripeTransferId?: string | null
   amount: number
   platformFee: number
   tradieEarnings: number
-  status: 'pending' | 'captured' | 'refunded'
+  status: 'pending' | 'captured' | 'released' | 'refunded'
   capturedAt?: string
+  releasedAt?: string
   createdAt: string
 }
 
@@ -132,6 +134,7 @@ export default function AdminJobDetailPage() {
       case 'simulate-accept': return '✅ Tradie acceptance simulated — job is now Accepted'
       case 'simulate-complete': return '✅ Job marked as Completed — Capture is now available'
       case 'capture': return '✅ Payment captured — tradie wallet credited'
+      case 'repair-wallet': return '✅ Wallet repaired — tradie credited and Stripe transfer initiated'
       default: return '✅ Done'
     }
   }
@@ -154,6 +157,7 @@ export default function AdminJobDetailPage() {
   const canSimulateAccept = job.status === 'dispatching'
   const canSimulateComplete = ['accepted', 'on_the_way', 'in_progress'].includes(job.status)
   const canCapture = job.status === 'completed' && payment?.status === 'pending'
+  const needsWalletRepair = job.status === 'completed' && payment?.status === 'captured' && !payment?.stripeTransferId
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -452,10 +456,44 @@ export default function AdminJobDetailPage() {
           </div>
         </div>
 
-        {payment?.status === 'captured' && (
+        {payment?.status === 'captured' && !payment?.stripeTransferId && (
+          <div className="mt-4 flex items-center gap-2 text-amber-400 text-xs font-medium">
+            <AlertCircle className="w-4 h-4" />
+            Payment captured but transfer to tradie is missing — use Repair Wallet below
+          </div>
+        )}
+
+        {payment?.status === 'captured' && payment?.stripeTransferId && (
           <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-medium">
             <CheckCircle className="w-4 h-4" />
-            Payment captured successfully — Tradie earned ${payment.tradieEarnings} AUD
+            Payment captured & transferred — Tradie earned ${payment.tradieEarnings} AUD
+          </div>
+        )}
+
+        {payment?.status === 'released' && (
+          <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-medium">
+            <CheckCircle className="w-4 h-4" />
+            Payment released — Tradie earned ${payment.tradieEarnings} AUD
+          </div>
+        )}
+
+        {needsWalletRepair && (
+          <div className="mt-4">
+            <ActionButton
+              label="Repair Wallet"
+              description={`Credit $${payment?.tradieEarnings ?? '—'} AUD to tradie wallet + trigger Stripe transfer`}
+              icon={DollarSign}
+              color="bg-amber-600 border-amber-500 text-white hover:bg-amber-700"
+              onClick={() => requestAction(
+                'repair-wallet',
+                `/api/admin/jobs/${jobId}/repair-wallet`,
+                'payment:repair_wallet',
+                'Repair Wallet & Transfer',
+                `This will credit $${payment?.tradieEarnings ?? '—'} AUD to the tradie's wallet and initiate the Stripe transfer. This involves real money. Enter your password to confirm.`
+              )}
+              disabled={false}
+              isLoading={actionLoading === 'repair-wallet'}
+            />
           </div>
         )}
       </div>
