@@ -21,7 +21,13 @@ interface TradieDoc {
 interface TradieUser { _id: string; name: string; email: string; fixId: string }
 
 interface TradieDocsResponse {
-  tradie: TradieUser; categories: string[]; isFullyVerified: boolean; documents: TradieDoc[]
+  tradie: TradieUser; categories: string[]; isFullyVerified: boolean; abn: string | null; documents: TradieDoc[]
+}
+
+const formatAbn = (abn?: string | null) => {
+  const digits = (abn ?? '').replace(/\s+/g, '')
+  if (digits.length !== 11) return abn || 'Not provided'
+  return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`
 }
 
 export default function AdminTradieDocumentsPage() {
@@ -98,7 +104,7 @@ export default function AdminTradieDocumentsPage() {
     </div>
   )
 
-  const { tradie, categories, isFullyVerified, documents } = data
+  const { tradie, categories, isFullyVerified, abn, documents } = data
   const uploaded = documents.filter((d) => d.url)
   const verified = documents.filter((d) => d.isVerified)
   const pending = documents.filter((d) => d.url && !d.isVerified)
@@ -141,6 +147,9 @@ export default function AdminTradieDocumentsPage() {
               </div>
               <p className="text-xs text-gray-400">{tradie.email}</p>
               <p className="text-[10px] text-gray-400 font-mono">{tradie.fixId}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="font-semibold text-gray-700">ABN:</span> {formatAbn(abn)}
+              </p>
             </div>
           </div>
 

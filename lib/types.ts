@@ -54,7 +54,6 @@ export type TradieCategory =
   | 'waste_removal'
 
 export type DocumentType =
-  | 'abn'
   | 'insurance'
   | 'white_card'
   | 'a_grade_license'
@@ -102,6 +101,7 @@ export interface TradieProfile {
   }
   serviceRadiusKm: number
   stripeAccountId: string | null
+  abn: string | null
   documents: TradieDocument[]
   isFullyVerified: boolean
   createdAt: string
@@ -452,6 +452,7 @@ export interface TradieDocumentsResponse {
   tradie: User
   categories: TradieCategory[]
   isFullyVerified: boolean
+  abn: string | null
   documents: TradieDocument[]
 }
 
