@@ -86,7 +86,9 @@ interface ScopeChangeData {
   originalPrice: number
   newPrice: number
   priceDifference: number
-  newQuoteOptions: { tier: string; suggestedFixedPrice: number; estimatedHours: { min: number; max: number }; reasoning?: string }[]
+  gstAmount?: number
+  totalIncGst?: number
+  newQuoteOptions: { tier: string; suggestedFixedPrice: number; gstAmount?: number; totalIncGst?: number; estimatedHours: { min: number; max: number }; reasoning?: string }[]
   proofPhotos: { url: string; publicId: string }[]
   proofDescription: string | null
   createdAt: string
@@ -94,7 +96,16 @@ interface ScopeChangeData {
 
 export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeChangeData }) {
   const sc = scopeChange
-  const priceDiff = sc.priceDifference ?? (sc.newPrice - sc.originalPrice)
+  const selectedOption = sc.newQuoteOptions?.[0]
+  const originalTotal = Math.round((Number(sc.originalPrice) || 0) * 1.1 * 100) / 100
+  const newSubtotal = Number(selectedOption?.suggestedFixedPrice ?? sc.newPrice) || 0
+  const newGst = Number(selectedOption?.gstAmount ?? sc.gstAmount) > 0
+    ? Number(selectedOption?.gstAmount ?? sc.gstAmount)
+    : Math.round(newSubtotal * 0.1 * 100) / 100
+  const newTotal = Number(selectedOption?.totalIncGst ?? sc.totalIncGst) > 0
+    ? Number(selectedOption?.totalIncGst ?? sc.totalIncGst)
+    : Math.round((newSubtotal + newGst) * 100) / 100
+  const priceDiff = sc.priceDifference ?? Math.round((newTotal - originalTotal) * 100) / 100
   const isIncrease = priceDiff > 0
 
   return (
@@ -129,11 +140,11 @@ export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeC
           <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
             <div className="flex justify-between px-3 py-2 bg-white">
               <span className="text-gray-500">Original Price</span>
-              <span className="font-medium text-gray-900">${sc.originalPrice?.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">${originalTotal.toFixed(2)} incl. GST</span>
             </div>
             <div className="flex justify-between px-3 py-2 bg-orange-100/50 border-t border-orange-100">
               <span className="text-orange-700">New Price</span>
-              <span className="font-bold text-orange-800">${sc.newPrice?.toFixed(2)}</span>
+              <span className="font-bold text-orange-800">${newTotal.toFixed(2)} incl. GST</span>
             </div>
             <div className="flex justify-between px-3 py-2 bg-white border-t border-orange-100">
               <span className="text-gray-500">Difference</span>

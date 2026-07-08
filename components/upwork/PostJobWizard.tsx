@@ -1308,7 +1308,23 @@ const TIER_CONFIG: Record<string, { label: string; icon: React.ElementType; colo
   premium: { label: 'Premium Service', icon: Star, colorClass: 'text-emerald-600', bgClass: 'bg-emerald-50', borderClass: 'border-emerald-200' },
 }
 
+function roundMoney(value: number | undefined | null) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
+
+function quoteBreakdown(option?: QuoteOption | null) {
+  const subtotal = roundMoney(option?.suggestedFixedPrice)
+  const gstAmount = Number(option?.gstAmount) > 0 ? roundMoney(option?.gstAmount) : roundMoney(subtotal * 0.1)
+  const totalIncGst = Number(option?.totalIncGst) > 0 ? roundMoney(option?.totalIncGst) : roundMoney(subtotal + gstAmount)
+  return { subtotal, gstAmount, totalIncGst }
+}
+
+function formatMoney(value: number | undefined | null) {
+  return `$${roundMoney(value).toFixed(2)}`
+}
+
 function PremiumQuoteCard({ option }: { option: QuoteOption }) {
+  const breakdown = quoteBreakdown(option)
   return (
     <div className="w-full text-left rounded-2xl border-2 border-[var(--upwork-green)] bg-green-50 shadow-md p-5">
       <div className="flex items-center justify-between mb-3">
@@ -1323,11 +1339,14 @@ function PremiumQuoteCard({ option }: { option: QuoteOption }) {
 
       <div className="mb-3">
         <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-          ${option.suggestedFixedPrice}
+          {formatMoney(breakdown.totalIncGst)}
           <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
         </div>
         <div className="text-xs text-gray-400 mt-0.5">
-          Range: ${option.price.min} – ${option.price.max}
+          Subtotal {formatMoney(breakdown.subtotal)} + GST {formatMoney(breakdown.gstAmount)}
+        </div>
+        <div className="text-xs text-gray-400 mt-0.5">
+          Range ex GST: ${option.price.min} – ${option.price.max}
         </div>
       </div>
 
@@ -1482,7 +1501,10 @@ function StepQuote({
       {showRescheduleSection && morningOptions[0] ? (
         (() => {
           const mo = morningOptions[0]
-          const eveningPrice = quote.options[0]?.suggestedFixedPrice ?? 0
+          const eveningOption = quote.options[0]
+          const eveningPrice = eveningOption?.suggestedFixedPrice ?? 0
+          const eveningBreakdown = quoteBreakdown(eveningOption)
+          const morningBreakdown = quoteBreakdown(mo)
           const savings = Math.round(((eveningPrice - mo.suggestedFixedPrice) / eveningPrice) * 100)
           return (
             <>
@@ -1507,11 +1529,14 @@ function StepQuote({
                   </div>
                   <div className="mb-2">
                     <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-                      ${quote.options[0]?.suggestedFixedPrice}
+                      {formatMoney(eveningBreakdown.totalIncGst)}
                       <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      Range: ${quote.options[0]?.price.min} – ${quote.options[0]?.price.max}
+                      Subtotal {formatMoney(eveningBreakdown.subtotal)} + GST {formatMoney(eveningBreakdown.gstAmount)}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Range ex GST: ${quote.options[0]?.price.min} – ${quote.options[0]?.price.max}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
@@ -1553,13 +1578,16 @@ function StepQuote({
                   <div className="mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-2xl font-bold text-blue-900">
-                        ${mo.suggestedFixedPrice}
+                        {formatMoney(morningBreakdown.totalIncGst)}
                         <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
                       </span>
-                      <span className="text-sm text-gray-400 line-through">${eveningPrice}</span>
+                      <span className="text-sm text-gray-400 line-through">{formatMoney(eveningBreakdown.totalIncGst)}</span>
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      Range: ${mo.price.min} – ${mo.price.max}
+                      Subtotal {formatMoney(morningBreakdown.subtotal)} + GST {formatMoney(morningBreakdown.gstAmount)}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Range ex GST: ${mo.price.min} – ${mo.price.max}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
@@ -1624,7 +1652,7 @@ function StepQuote({
                       ) : pickedIsAfterHours ? (
                         <><Moon className="w-4 h-4" /> Book at After-Hours Rate</>
                       ) : (
-                        <><Sunrise className="w-4 h-4" /> Book Morning at ${mo.suggestedFixedPrice}</>
+                        <><Sunrise className="w-4 h-4" /> Book Morning at {formatMoney(morningBreakdown.totalIncGst)}</>
                       )}
                     </button>
                     <button
@@ -1646,7 +1674,7 @@ function StepQuote({
                     {isAccepting ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
                     ) : (
-                      <>Accept Tonight at ${eveningPrice} <ChevronRight className="w-4 h-4" /></>
+                      <>Accept Tonight at {formatMoney(eveningBreakdown.totalIncGst)} <ChevronRight className="w-4 h-4" /></>
                     )}
                   </button>
                   <button
@@ -1717,7 +1745,10 @@ function StepQuote({
         const weekdayOpts = quote.weekdayOptions || []
         const wo = weekdayOpts[0]
         if (!wo) return null
-        const weekendPrice = quote.options[0]?.suggestedFixedPrice ?? wo.suggestedFixedPrice
+        const weekendOption = quote.options[0]
+        const weekendPrice = weekendOption?.suggestedFixedPrice ?? wo.suggestedFixedPrice
+        const weekendBreakdown = quoteBreakdown(weekendOption || wo)
+        const weekdayBreakdown = quoteBreakdown(wo)
         const savings = Math.round(((weekendPrice - wo.suggestedFixedPrice) / weekendPrice) * 100)
         const isWeekdaySelected = !!selectedWeekdayTier
         return (
@@ -1743,8 +1774,11 @@ function StepQuote({
                 </div>
                 <div className="mb-2">
                   <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-                    ${weekendPrice}
+                    {formatMoney(weekendBreakdown.totalIncGst)}
                     <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    Subtotal {formatMoney(weekendBreakdown.subtotal)} + GST {formatMoney(weekendBreakdown.gstAmount)}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
@@ -1783,10 +1817,13 @@ function StepQuote({
                 <div className="mb-2">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-bold text-purple-900">
-                      ${wo.suggestedFixedPrice}
+                    {formatMoney(weekdayBreakdown.totalIncGst)}
                       <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
                     </span>
-                    <span className="text-sm text-gray-400 line-through">${weekendPrice}</span>
+                    <span className="text-sm text-gray-400 line-through">{formatMoney(weekendBreakdown.totalIncGst)}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    Subtotal {formatMoney(weekdayBreakdown.subtotal)} + GST {formatMoney(weekdayBreakdown.gstAmount)}
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
@@ -1840,7 +1877,7 @@ function StepQuote({
                   {isRescheduling ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Rescheduling...</>
                   ) : (
-                    <><Calendar className="w-4 h-4" /> Book Weekday at ${wo.suggestedFixedPrice}</>
+                    <><Calendar className="w-4 h-4" /> Book Weekday at {formatMoney(weekdayBreakdown.totalIncGst)}</>
                   )}
                 </button>
               ) : (
@@ -1852,7 +1889,7 @@ function StepQuote({
                   {isAccepting ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
                   ) : (
-                    <>Accept Weekend at ${weekendPrice} <ChevronRight className="w-4 h-4" /></>
+                    <>Accept Weekend at {formatMoney(weekendBreakdown.totalIncGst)} <ChevronRight className="w-4 h-4" /></>
                   )}
                 </button>
               )}
@@ -2302,7 +2339,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       )
 
       const selectedOption = createdQuote?.options.find(o => o.tier === selectedTier)
-      setAcceptedPrice(selectedOption?.suggestedFixedPrice ?? 0)
+      setAcceptedPrice(quoteBreakdown(selectedOption).totalIncGst)
 
       if (paymentMethodId) {
         router.push('/dashboard')
@@ -2361,8 +2398,17 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       const secret = acceptRes.data.clientSecret
       if (!secret) throw new Error('No client secret returned.')
 
+      const allQuoteOptions = [
+        ...(createdQuote?.options ?? []),
+        ...(createdQuote?.morningOptions ?? []),
+        ...(createdQuote?.weekdayOptions ?? []),
+      ]
+      const selectedOption = allQuoteOptions.find(option =>
+        option.tier === tier && Number(option.suggestedFixedPrice) === Number(price)
+      )
+
       setSelectedTier(tier)
-      setAcceptedPrice(price)
+      setAcceptedPrice(quoteBreakdown(selectedOption || ({ suggestedFixedPrice: price } as QuoteOption)).totalIncGst)
       setClientSecret(secret)
       setCurrentStep(8)
 
@@ -2832,7 +2878,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             <p className="text-[var(--upwork-gray)] text-sm">
               Your payment of{' '}
               <span className="font-semibold text-[var(--upwork-navy)]">
-                ${acceptedPrice} AUD
+                {formatMoney(acceptedPrice)} AUD
               </span>{' '}
               is held in escrow until your job is completed.
             </p>
@@ -2886,7 +2932,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   {isPayingWithSaved ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Confirming…</>
                   ) : (
-                    <><ShieldCheck className="w-4 h-4" /> Pay ${acceptedPrice} AUD</>
+                    <><ShieldCheck className="w-4 h-4" /> Pay {formatMoney(acceptedPrice)} AUD</>
                   )}
                 </button>
                 <button

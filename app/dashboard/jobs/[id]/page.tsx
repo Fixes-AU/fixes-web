@@ -71,6 +71,21 @@ const STATUS_STEPS: { status: JobStatus; label: string; icon: React.ElementType 
   { status: 'completed', label: 'Completed', icon: CheckCircle2 },
 ]
 
+function roundMoney(value: number | undefined | null) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
+
+function quoteBreakdown(option?: Quote['options'][number] | null) {
+  const subtotal = roundMoney(option?.suggestedFixedPrice)
+  const gstAmount = Number(option?.gstAmount) > 0 ? roundMoney(option?.gstAmount) : roundMoney(subtotal * 0.1)
+  const totalIncGst = Number(option?.totalIncGst) > 0 ? roundMoney(option?.totalIncGst) : roundMoney(subtotal + gstAmount)
+  return { subtotal, gstAmount, totalIncGst }
+}
+
+function formatMoney(value: number | undefined | null) {
+  return `$${roundMoney(value).toFixed(2)}`
+}
+
 function StatusTimeline({ currentStatus }: { currentStatus: JobStatus }) {
   if (currentStatus === 'cancelled' || currentStatus === 'no_tradie_found' || currentStatus === 'disputed') {
     return (
@@ -1065,7 +1080,7 @@ export default function JobDetailPage() {
       refundAmount = preview.data?.refundAmount ?? 0
     } catch {
       const matrix = CANCEL_MATRIX[job.status]
-      const price  = selectedQuoteOption?.suggestedFixedPrice ?? 0
+      const price  = selectedQuoteOption ? quoteBreakdown(selectedQuoteOption).totalIncGst : 0
       feeAmount    = Math.round(price * (matrix?.clientLoss ?? 0) * 100) / 100
       refundAmount = Math.round((price - feeAmount) * 100) / 100
     }
@@ -1250,6 +1265,7 @@ export default function JobDetailPage() {
   const selectedQuoteOption = quote
     ? quote.options?.find((o) => o.tier === quote.selectedTier) || quote.options?.[0]
     : null
+  const selectedQuoteBreakdown = quoteBreakdown(selectedQuoteOption)
   const assignedTradie =
     typeof job.assignedTradieId === 'object' ? (job.assignedTradieId as User) : null
   const canChat = assignedTradie && !['cancelled', 'no_tradie_found'].includes(job.status)
@@ -1452,8 +1468,11 @@ export default function JobDetailPage() {
             <div>
               <p className="text-sm font-semibold text-amber-800 mb-0.5">Quote Ready — Your Decision</p>
               <p className="text-xs text-amber-600">
-                Fixed price: <span className="font-bold">${selectedQuoteOption?.suggestedFixedPrice}</span> •
+                Total incl. GST: <span className="font-bold">{formatMoney(selectedQuoteBreakdown.totalIncGst)}</span> •
                 Est. {selectedQuoteOption?.estimatedHours.min}–{selectedQuoteOption?.estimatedHours.max}h work
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Subtotal {formatMoney(selectedQuoteBreakdown.subtotal)} + GST {formatMoney(selectedQuoteBreakdown.gstAmount)}
               </p>
               {rejectError && (
                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1620,15 +1639,27 @@ export default function JobDetailPage() {
               </h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-(--upwork-gray)">Price Range</span>
+                  <span className="text-(--upwork-gray)">Price Range (ex GST)</span>
                   <span className="font-medium text-(--upwork-navy)">
                     ${selectedQuoteOption?.price.min} – ${selectedQuoteOption?.price.max}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-(--upwork-gray)">Fixed Price</span>
+                  <span className="text-(--upwork-gray)">Subtotal</span>
+                  <span className="text-(--upwork-navy)">
+                    {formatMoney(selectedQuoteBreakdown.subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-(--upwork-gray)">GST (10%)</span>
+                  <span className="text-(--upwork-navy)">
+                    {formatMoney(selectedQuoteBreakdown.gstAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-(--upwork-gray)">Total incl. GST</span>
                   <span className="font-semibold text-(--upwork-green)">
-                    ${selectedQuoteOption?.suggestedFixedPrice}
+                    {formatMoney(selectedQuoteBreakdown.totalIncGst)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

@@ -50,11 +50,24 @@ interface TrackingJob {
       estimatedHours: { min: number; max: number }
       price: { min: number; max: number }
       suggestedFixedPrice: number
+      gstAmount?: number
+      totalIncGst?: number
       confidence: number
       reasoning: string
     } | null
   } | null
   activeScopeChange?: any | null
+}
+
+function roundMoney(value: number | undefined | null) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
+
+function quoteBreakdown(option?: NonNullable<NonNullable<TrackingJob['quote']>['option']> | null) {
+  const subtotal = roundMoney(option?.suggestedFixedPrice)
+  const gstAmount = Number(option?.gstAmount) > 0 ? roundMoney(option?.gstAmount) : roundMoney(subtotal * 0.1)
+  const totalIncGst = Number(option?.totalIncGst) > 0 ? roundMoney(option?.totalIncGst) : roundMoney(subtotal + gstAmount)
+  return { subtotal, gstAmount, totalIncGst }
 }
 
 interface TrackingData {
@@ -462,9 +475,21 @@ export default function TrackJobPage() {
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Fixed Price</span>
+                    <span className="text-gray-500">Subtotal</span>
+                    <span className="text-gray-900">
+                      ${quoteBreakdown(job.quote.option).subtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">GST (10%)</span>
+                    <span className="text-gray-900">
+                      ${quoteBreakdown(job.quote.option).gstAmount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total incl. GST</span>
                     <span className="font-semibold text-green-600">
-                      ${job.quote.option.suggestedFixedPrice?.toFixed(2)}
+                      ${quoteBreakdown(job.quote.option).totalIncGst.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">

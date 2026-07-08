@@ -221,6 +221,8 @@ export interface ScopeChange {
   originalPrice: number
   newPrice: number
   priceDifference: number
+  gstAmount?: number
+  totalIncGst?: number
   newQuoteOptions: QuoteOption[]
   selectedNewTier: SkillLevel | null
   proofPhotos: JobImage[]
@@ -247,6 +249,8 @@ export interface QuoteOption {
     currency: string
   }
   suggestedFixedPrice: number
+  gstAmount?: number
+  totalIncGst?: number
   confidence: number
   reasoning: string
 }

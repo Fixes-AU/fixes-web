@@ -136,6 +136,12 @@ export default function AdminJobsPage() {
                 {jobs.map((job) => {
                   const client = typeof job.clientId === 'object' ? (job.clientId as User) : null
                   const quote = typeof job.quote === 'object' ? (job.quote as Quote) : null
+                  const selectedOption = quote?.options?.find(o => o.tier === job.selectedTier) || quote?.options?.[0]
+                  const quoteTotal = selectedOption
+                    ? Number(selectedOption.totalIncGst) > 0
+                      ? Number(selectedOption.totalIncGst)
+                      : Math.round((Number(selectedOption.suggestedFixedPrice) || 0) * 1.1 * 100) / 100
+                    : null
                   return (
                     <tr key={job._id} className="hover:bg-blue-50/50 transition-colors cursor-pointer">
                       <td className="px-4 py-3">
@@ -152,9 +158,7 @@ export default function AdminJobsPage() {
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <span className="text-xs text-gray-600">
-                          {quote
-                            ? `$${(quote.options?.find(o => o.tier === job.selectedTier) || quote.options?.[0])?.suggestedFixedPrice ?? '—'}`
-                            : '—'}
+                          {quoteTotal != null ? `$${quoteTotal.toFixed(2)}` : '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">

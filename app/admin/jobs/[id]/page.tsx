@@ -153,6 +153,12 @@ export default function AdminJobDetailPage() {
 
   const payment = typeof job.payment === 'object' && job.payment ? job.payment as Payment : null
   const quote = typeof job.quote === 'object' && job.quote ? job.quote as Quote : null
+  const selectedOption = quote?.options?.find(o => o.tier === job.selectedTier) || quote?.options?.[0]
+  const quoteTotal = selectedOption
+    ? Number(selectedOption.totalIncGst) > 0
+      ? Number(selectedOption.totalIncGst)
+      : Math.round((Number(selectedOption.suggestedFixedPrice) || 0) * 1.1 * 100) / 100
+    : null
 
   const canSimulateAccept = job.status === 'dispatching'
   const canSimulateComplete = ['accepted', 'on_the_way', 'in_progress'].includes(job.status)
@@ -215,9 +221,7 @@ export default function AdminJobDetailPage() {
             <div className="flex justify-between">
               <dt className="text-xs text-gray-500">Quote Price</dt>
               <dd className="text-xs font-semibold text-gray-900">
-                {quote
-                  ? `$${(quote.options?.find(o => o.tier === job.selectedTier) || quote.options?.[0])?.suggestedFixedPrice ?? '—'} AUD`
-                  : '—'}
+                {quoteTotal != null ? `$${quoteTotal.toFixed(2)} AUD` : '—'}
               </dd>
             </div>
             <div className="flex justify-between">

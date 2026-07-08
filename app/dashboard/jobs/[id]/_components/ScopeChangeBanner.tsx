@@ -10,6 +10,21 @@ import { Job, ScopeChange, QuoteOption } from '@/lib/types'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
+function roundMoney(value: number | undefined | null) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
+
+function quoteBreakdown(option?: QuoteOption | null) {
+  const subtotal = roundMoney(option?.suggestedFixedPrice)
+  const gstAmount = Number(option?.gstAmount) > 0 ? roundMoney(option?.gstAmount) : roundMoney(subtotal * 0.1)
+  const totalIncGst = Number(option?.totalIncGst) > 0 ? roundMoney(option?.totalIncGst) : roundMoney(subtotal + gstAmount)
+  return { subtotal, gstAmount, totalIncGst }
+}
+
+function formatMoney(value: number | undefined | null) {
+  return `$${roundMoney(value).toFixed(2)}`
+}
+
 function PaymentForm({
   amount,
   onSuccess,
@@ -249,7 +264,9 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
         <div className="mb-6">
           {scopeChange.newQuoteOptions[0] && (() => {
             const opt = scopeChange.newQuoteOptions[0]
-            const priceDiff = opt.suggestedFixedPrice - scopeChange.originalPrice
+            const breakdown = quoteBreakdown(opt)
+            const originalTotal = roundMoney(scopeChange.originalPrice * 1.1)
+            const priceDiff = scopeChange.priceDifference ?? roundMoney(breakdown.totalIncGst - originalTotal)
             return (
               <div className="relative border-2 rounded-xl p-4 border-emerald-500 bg-green-50/50 shadow-md">
                 <div className="absolute -top-3 -right-3 bg-emerald-500 text-white rounded-full p-1 shadow-sm">
@@ -263,13 +280,16 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
                 </div>
 
                 <div className="text-2xl font-bold text-gray-900 mb-1">
-                  ${opt.suggestedFixedPrice}
+                  {formatMoney(breakdown.totalIncGst)} incl. GST
                 </div>
+                <p className="text-xs text-gray-500 mb-2">
+                  Subtotal {formatMoney(breakdown.subtotal)} + GST {formatMoney(breakdown.gstAmount)}
+                </p>
 
                 {priceDiff > 0 ? (
-                  <p className="text-xs font-medium text-amber-600 mb-3">+${priceDiff} additional</p>
+                  <p className="text-xs font-medium text-amber-600 mb-3">+{formatMoney(priceDiff)} additional incl. GST</p>
                 ) : priceDiff < 0 ? (
-                  <p className="text-xs font-medium text-green-600 mb-3">-${Math.abs(priceDiff)} refund</p>
+                  <p className="text-xs font-medium text-green-600 mb-3">-{formatMoney(Math.abs(priceDiff))} refund incl. GST</p>
                 ) : (
                   <p className="text-xs font-medium text-gray-500 mb-3">No price change</p>
                 )}
