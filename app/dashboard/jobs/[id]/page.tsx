@@ -1048,19 +1048,9 @@ export default function JobDetailPage() {
     if (!job) return
     setCancelError('')
 
-    if (job.status === 'dispatching' || job.status === 'payment_pending') {
-      setIsCancelling(true)
-      try {
-        await api.patch(`/api/jobs/${job._id}/cancel`)
-        router.push('/dashboard/jobs')
-      } catch (err) {
-        if (err instanceof ApiError) {
-          setCancelError(err.message)
-        } else {
-          setCancelError('Failed to cancel job. Please try again.')
-        }
-        setIsCancelling(false)
-      }
+    if (['analyzing', 'quoted', 'dispatching', 'payment_pending'].includes(job.status)) {
+      setCancelModal({ feeAmount: 0, refundAmount: 0, isFree: true, context: '' })
+      setIsCancelling(false)
       return
     }
 
@@ -1709,6 +1699,35 @@ export default function JobDetailPage() {
               {job.preferredTime === '1-2weeks' ? 'In 1–2 Weeks' : job.preferredTime === 'no-rush' ? 'No Rush' : 'Now'}
             </p>
           </div>
+
+          {['analyzing', 'quoted'].includes(job.status) && !cancelResult && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-gray-600 mb-1 flex items-center gap-1.5">
+                <XCircle className="w-4 h-4" />
+                Changed your mind?
+              </h3>
+              <p className="text-xs text-gray-400 mb-3">
+                No cancellation fee — cancel for free at this stage.
+              </p>
+              {cancelError && (
+                <p className="text-xs text-red-500 flex items-center gap-1 mb-2">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {cancelError}
+                </p>
+              )}
+              <button
+                onClick={handleCancelJob}
+                disabled={isCancelling}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-all disabled:opacity-50"
+              >
+                {isCancelling ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />Loading...</>
+                ) : (
+                  <><XCircle className="w-4 h-4" />Cancel Job</>
+                )}
+              </button>
+            </div>
+          )}
 
           {['accepted', 'on_the_way', 'in_progress'].includes(job.status) && !cancelResult && !job.isAgencyManaged && (
             <div className="bg-white border border-red-100 rounded-xl p-5">
