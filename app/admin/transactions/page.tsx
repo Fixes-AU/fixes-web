@@ -37,7 +37,7 @@ interface Transaction {
   platformFee: number
   tradieEarnings: number
   platformCommissionRate: number
-  status: 'pending' | 'captured' | 'released' | 'refunded' | 'disputed'
+  status: 'pending' | 'captured' | 'released' | 'refunded' | 'disputed' | 'requires_manual_review'
   stripePaymentIntentId: string
   stripeTransferId: string | null
   liveMode: boolean
@@ -67,6 +67,7 @@ const STATUS_OPTIONS = [
   { label: 'Released', value: 'released' },
   { label: 'Refunded', value: 'refunded' },
   { label: 'Disputed', value: 'disputed' },
+  { label: 'Needs Review', value: 'requires_manual_review' },
 ]
 
 const STATUS_STYLES: Record<string, string> = {
@@ -75,6 +76,7 @@ const STATUS_STYLES: Record<string, string> = {
   released: 'bg-green-100 text-green-700',
   refunded: 'bg-gray-100 text-gray-500',
   disputed: 'bg-red-100 text-red-600',
+  requires_manual_review: 'bg-orange-100 text-orange-700',
 }
 
 const CHANNEL_STYLES: Record<string, string> = {
