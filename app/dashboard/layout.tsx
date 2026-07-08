@@ -19,6 +19,7 @@ import {
   ChevronDown,
   Loader2,
   ShieldAlert,
+  Receipt,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { SkeletonDashboardLayout } from './_components/skeletons'
@@ -27,6 +28,7 @@ import { NotificationsProvider, useWebNotifications } from '@/contexts/notificat
 const sidebarLinks = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/jobs', label: 'My Jobs', icon: Briefcase },
+  { href: '/dashboard/payments', label: 'Payments', icon: Receipt },
   { href: '/dashboard/find-talent', label: 'Find Tradies', icon: Search },
   { href: '/post-job', label: 'Post a Job', icon: PlusCircle },
   { href: '/dashboard/profile', label: 'My Profile', icon: User },
