@@ -59,6 +59,61 @@ interface Stats {
   byStatus: Record<string, number>
 }
 
+interface PayoutAttempt {
+  _id: string
+  attemptRef: string
+  tradieId: PopulatedUser | null
+  source: 'manual_cashout' | 'auto_cashout' | 'admin' | 'webhook_reconciliation'
+  stripeAccountId: string
+  stripePayoutId: string | null
+  stripeBalanceTransactionId: string | null
+  destination: string | null
+  currency: string
+  grossAmount: number
+  feeAmount: number
+  netAmount: number
+  requestedMethod: 'instant' | 'standard'
+  resolvedMethod: 'instant' | 'standard' | null
+  fallbackUsed: boolean
+  status: 'created' | 'processing' | 'pending' | 'in_transit' | 'paid' | 'failed' | 'canceled' | 'blocked' | 'unknown'
+  walletDebitStatus: 'not_started' | 'debited' | 'failed'
+  reasonCode: string | null
+  failureCode: string | null
+  failureMessage: string | null
+  instantFailureCode: string | null
+  instantFailureMessage: string | null
+  eligibilitySnapshot: {
+    reasonCode?: string
+    reason?: string
+    cashoutReady?: boolean
+    instantAvailableBalance?: number
+    instantNetAvailableBalance?: number
+    destination?: string | null
+  } | null
+  balanceSnapshot: {
+    walletBalance?: number
+    stripeAvailable?: number
+    stripeInstantAvailable?: number | null
+    stripeInstantNetAvailable?: number | null
+  } | null
+  requestedAt: string
+  completedAt: string | null
+  createdAt: string
+}
+
+interface PayoutStats {
+  totalAttempts: number
+  grossAmount: number
+  feeAmount: number
+  netAmount: number
+  byStatus: Record<string, number>
+  byResolvedMethod: Record<string, number>
+  byRequestedMethod: Record<string, number>
+  fallbackCount: number
+  walletDebitFailedCount: number
+  unresolvedFailureCount: number
+}
+
 
 const STATUS_OPTIONS = [
   { label: 'All', value: 'all' },
@@ -82,6 +137,24 @@ const STATUS_STYLES: Record<string, string> = {
 const CHANNEL_STYLES: Record<string, string> = {
   marketplace: 'bg-violet-100 text-violet-700',
   cleaning_agency: 'bg-teal-100 text-teal-700',
+}
+
+const PAYOUT_STATUS_STYLES: Record<string, string> = {
+  created: 'bg-gray-100 text-gray-600',
+  processing: 'bg-blue-100 text-blue-700',
+  pending: 'bg-yellow-100 text-yellow-700',
+  in_transit: 'bg-indigo-100 text-indigo-700',
+  paid: 'bg-green-100 text-green-700',
+  failed: 'bg-red-100 text-red-700',
+  canceled: 'bg-gray-100 text-gray-500',
+  blocked: 'bg-orange-100 text-orange-700',
+  unknown: 'bg-slate-100 text-slate-600',
+}
+
+const PAYOUT_METHOD_STYLES: Record<string, string> = {
+  instant: 'bg-emerald-100 text-emerald-700',
+  standard: 'bg-blue-100 text-blue-700',
+  unresolved: 'bg-gray-100 text-gray-500',
 }
 
 const LIMIT = 25
@@ -132,8 +205,12 @@ function StatCard({
 export default function AdminTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
+  const [payoutAttempts, setPayoutAttempts] = useState<PayoutAttempt[]>([])
+  const [payoutStats, setPayoutStats] = useState<PayoutStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isStatsLoading, setIsStatsLoading] = useState(true)
+  const [isPayoutLoading, setIsPayoutLoading] = useState(true)
+  const [isPayoutStatsLoading, setIsPayoutStatsLoading] = useState(true)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
 
@@ -175,8 +252,37 @@ export default function AdminTransactionsPage() {
     } catch { /* silent */ } finally { setIsLoading(false) }
   }, [page, sort, statusFilter, channelFilter, search, fromDate, toDate])
 
+  const fetchPayoutStats = useCallback(async () => {
+    setIsPayoutStatsLoading(true)
+    try {
+      const qs = new URLSearchParams()
+      if (fromDate) qs.set('from', fromDate)
+      if (toDate) qs.set('to', toDate)
+      const res = await api.get<PayoutStats>(`/api/admin/payout-attempts/stats?${qs}`)
+      setPayoutStats(res.data)
+    } catch { /* silent */ } finally { setIsPayoutStatsLoading(false) }
+  }, [fromDate, toDate])
+
+  const fetchPayoutAttempts = useCallback(async () => {
+    setIsPayoutLoading(true)
+    try {
+      const qs = new URLSearchParams()
+      qs.set('page', '1')
+      qs.set('limit', '8')
+      qs.set('sort', '-createdAt')
+      if (search) qs.set('search', search)
+      if (fromDate) qs.set('from', fromDate)
+      if (toDate) qs.set('to', toDate)
+
+      const res = await api.getPaginated<PayoutAttempt>(`/api/admin/payout-attempts?${qs}`)
+      setPayoutAttempts(res.data)
+    } catch { /* silent */ } finally { setIsPayoutLoading(false) }
+  }, [search, fromDate, toDate])
+
   useEffect(() => { fetchStats() }, [fetchStats])
   useEffect(() => { fetchTransactions() }, [fetchTransactions])
+  useEffect(() => { fetchPayoutStats() }, [fetchPayoutStats])
+  useEffect(() => { fetchPayoutAttempts() }, [fetchPayoutAttempts])
 
   const applySearch = () => { setSearch(searchInput); setPage(1) }
 
@@ -243,7 +349,7 @@ export default function AdminTransactionsPage() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { fetchTransactions(); fetchStats() }}
+            onClick={() => { fetchTransactions(); fetchStats(); fetchPayoutAttempts(); fetchPayoutStats() }}
             className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
             title="Refresh"
           >
@@ -298,6 +404,136 @@ export default function AdminTransactionsPage() {
             />
           </>
         ) : null}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900">Instant Payout Attempts</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Tradie bank cashout monitoring - instant, fallback, failure, and eligibility state</p>
+          </div>
+          {isPayoutLoading && <Loader2 className="w-4 h-4 text-[#2563EB] animate-spin" />}
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 p-4 border-b border-gray-100 bg-gray-50/50">
+          {isPayoutStatsLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 bg-white rounded-lg border border-gray-200 animate-pulse" />
+            ))
+          ) : payoutStats ? (
+            <>
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Attempts</p>
+                <p className="text-lg font-bold text-gray-900">{payoutStats.totalAttempts}</p>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Instant</p>
+                <p className="text-lg font-bold text-emerald-600">{payoutStats.byResolvedMethod?.instant ?? 0}</p>
+              </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Fallback</p>
+                <p className="text-lg font-bold text-blue-600">{payoutStats.fallbackCount}</p>
+              </div>
+              <div className={`bg-white rounded-lg border p-3 ${payoutStats.unresolvedFailureCount > 0 ? 'border-red-200 bg-red-50/60' : 'border-gray-200'}`}>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Blocked/Failed</p>
+                <p className={`text-lg font-bold ${payoutStats.unresolvedFailureCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                  {payoutStats.unresolvedFailureCount}
+                </p>
+              </div>
+              <div className={`bg-white rounded-lg border p-3 ${payoutStats.walletDebitFailedCount > 0 ? 'border-red-200 bg-red-50/60' : 'border-gray-200'}`}>
+                <p className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">Wallet Debit Fail</p>
+                <p className={`text-lg font-bold ${payoutStats.walletDebitFailedCount > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                  {payoutStats.walletDebitFailedCount}
+                </p>
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        {isPayoutLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="w-5 h-5 text-[#2563EB] animate-spin" />
+          </div>
+        ) : payoutAttempts.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-gray-400">No payout attempts found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-white border-b border-gray-100">
+                  <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Attempt / Tradie</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Gross / Net</th>
+                  <th className="text-center px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Method</th>
+                  <th className="text-center px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Eligibility</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider hidden xl:table-cell">Stripe</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {payoutAttempts.map(attempt => {
+                  const method = attempt.resolvedMethod || attempt.requestedMethod || 'unresolved'
+                  const statusStyle = PAYOUT_STATUS_STYLES[attempt.status] ?? PAYOUT_STATUS_STYLES.unknown
+                  const methodStyle = PAYOUT_METHOD_STYLES[method] ?? PAYOUT_METHOD_STYLES.unresolved
+                  const eligibilityReason = attempt.eligibilitySnapshot?.reason || attempt.failureMessage || attempt.reasonCode || 'No reason recorded'
+
+                  return (
+                    <tr key={attempt._id} className={attempt.status === 'failed' || attempt.status === 'blocked' ? 'bg-red-50/20' : 'hover:bg-blue-50/30'}>
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-mono text-gray-700">{attempt.attemptRef || 'No ref'}</p>
+                        <p className="text-[11px] text-gray-500">{attempt.tradieId?.name ?? 'Unknown tradie'}</p>
+                        <p className="text-[10px] text-gray-400">{fmtDate(attempt.createdAt)}</p>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <p className="text-xs font-semibold text-gray-900">{fmt(attempt.grossAmount)}</p>
+                        <p className="text-[11px] text-green-600">{fmt(attempt.netAmount)} net</p>
+                        <p className="text-[10px] text-violet-500">{fmt(attempt.feeAmount)} fee</p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${methodStyle}`}>
+                          {method}
+                        </span>
+                        {attempt.fallbackUsed && (
+                          <p className="text-[9px] text-blue-600 mt-1">fallback used</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusStyle}`}>
+                          {attempt.status}
+                        </span>
+                        <p className={`text-[9px] mt-1 ${attempt.walletDebitStatus === 'failed' ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                          wallet {attempt.walletDebitStatus}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        <p className="text-[11px] text-gray-600 max-w-72 truncate" title={eligibilityReason}>{eligibilityReason}</p>
+                        <p className="text-[10px] text-gray-400">
+                          instant {fmt(attempt.balanceSnapshot?.stripeInstantAvailable ?? 0)}
+                          {' / net '}
+                          {fmt(attempt.balanceSnapshot?.stripeInstantNetAvailable ?? 0)}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 hidden xl:table-cell">
+                        <p className="text-[10px] font-mono text-gray-400 max-w-44 truncate" title={attempt.stripePayoutId || undefined}>
+                          {attempt.stripePayoutId || 'No payout id'}
+                        </p>
+                        <p className="text-[10px] font-mono text-gray-400 max-w-44 truncate" title={attempt.stripeAccountId}>
+                          {attempt.stripeAccountId}
+                        </p>
+                        {attempt.destination && (
+                          <p className="text-[10px] font-mono text-gray-400 max-w-44 truncate" title={attempt.destination}>
+                            dest {attempt.destination}
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 mb-4">
