@@ -150,6 +150,20 @@ export interface JobLocation {
   }
 }
 
+export interface JobPaymentSummary {
+  _id: string
+  amount: number
+  gstAmount?: number
+  platformFee: number
+  tradieEarnings: number
+  status: string
+  paymentRef?: string
+  escrowReleaseAt?: string | null
+  capturedAt?: string | null
+  releasedAt?: string | null
+  createdAt?: string
+}
+
 export interface Job {
   _id: string
   jobCode: string
@@ -168,7 +182,7 @@ export interface Job {
   isWeekend: boolean        
   quote: string | Quote | null
   assignedTradieId: string | User | null
-  payment: string | null
+  payment: string | JobPaymentSummary | null
   clientReview: string | Review | null
   tradieReview: string | Review | null
   disputeId?: string | null
