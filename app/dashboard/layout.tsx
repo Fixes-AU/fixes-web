@@ -48,7 +48,16 @@ function timeAgo(iso: string) {
 function BellMenu() {
   const { notifications, unreadCount, markRead, markAllRead } = useWebNotifications()
   const [open, setOpen] = useState(false)
+  const router = useRouter()
   const top10 = notifications.slice(0, 10)
+
+  const handleNotifClick = (n: any) => {
+    markRead(n._id)
+    setOpen(false)
+    if (n.data?.jobId) {
+      router.push(`/dashboard/jobs/${n.data.jobId}`)
+    }
+  }
 
   return (
     <div className="relative">
@@ -82,7 +91,7 @@ function BellMenu() {
                 top10.map(n => (
                   <button
                     key={n._id}
-                    onClick={() => markRead(n._id)}
+                    onClick={() => handleNotifClick(n)}
                     className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors ${
                       !n.isRead ? 'bg-blue-50/60' : ''
                     }`}
