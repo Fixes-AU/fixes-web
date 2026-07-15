@@ -68,6 +68,7 @@ export default function AdminTeamPage() {
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
   const [customPerms, setCustomPerms] = useState<string[]>([])
+  const [editingSuperAdmin, setEditingSuperAdmin] = useState(false)
   const [pendingSave, setPendingSave] = useState(false)
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -106,6 +107,7 @@ export default function AdminTeamPage() {
   const openEditor = (admin: AdminUser) => {
     setEditingAdmin(admin)
     setCustomPerms([...(admin.adminPermissions || [])])
+    setEditingSuperAdmin(admin.isSuperAdmin)
 
     if (config) {
       const currentPerms = admin.adminPermissions || []
@@ -142,10 +144,16 @@ export default function AdminTeamPage() {
       ? { preset: selectedPreset }
       : {
         permissions: customPerms,
-        isFullAdmin: false,
-        isCleaningAdmin: customPerms.length === config?.presets.cleaning_admin?.length &&
+        isFullAdmin: config?.presets.full_admin?.length === customPerms.length &&
+          config?.presets.full_admin?.every(p => customPerms.includes(p)),
+        isCleaningAdmin: config?.presets.cleaning_admin?.length === customPerms.length &&
           config?.presets.cleaning_admin?.every(p => customPerms.includes(p)),
       }
+
+    // Include super admin toggle if changed
+    if (editingSuperAdmin !== editingAdmin.isSuperAdmin) {
+      body.isSuperAdmin = editingSuperAdmin
+    }
 
     await api.raw(`/api/admin/users/${editingAdmin._id}/permissions`, {
       method: 'PATCH',
@@ -278,18 +286,16 @@ export default function AdminTeamPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {!admin.isSuperAdmin && !isSelf ? (
+                      {!isSelf ? (
                         <button
                           onClick={() => openEditor(admin)}
                           className="text-[10px] px-2.5 py-1 rounded-lg bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE] transition-colors font-medium"
                         >
                           Edit Permissions
                         </button>
-                      ) : admin.isSuperAdmin ? (
-                        <span className="text-[10px] text-purple-400 flex items-center justify-end gap-1">
-                          <Crown className="w-3 h-3" /> Protected
-                        </span>
-                      ) : null}
+                      ) : (
+                        <span className="text-[10px] text-gray-300">(you)</span>
+                      )}
                     </td>
                   </tr>
                 )
@@ -316,6 +322,22 @@ export default function AdminTeamPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-purple-200 bg-purple-50/50">
+                <div className="flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-purple-500" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Super Admin Access</p>
+                    <p className="text-[10px] text-gray-400">Full access including admin management</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setEditingSuperAdmin(!editingSuperAdmin)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${editingSuperAdmin ? 'bg-purple-500' : 'bg-gray-200'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${editingSuperAdmin ? 'translate-x-4' : ''}`} />
+                </button>
+              </div>
+
               <div>
                 <p className="text-xs font-semibold text-gray-700 mb-3">Quick Presets</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">

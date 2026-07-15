@@ -19,30 +19,67 @@ import {
   Bug,
   Bell,
   Bot,
-  MessageSquareCodeIcon,
   MessageSquareWarning,
   Trash2,
   ClipboardList,
   Percent,
   CreditCard,
+  Crown,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
 
-const sidebarLinks = [
-  { href: '/admin',                label: 'Dashboard',       icon: LayoutDashboard, permission: 'view:dashboard' },
-  { href: '/admin/users',          label: 'Users',           icon: Users,           permission: 'view:users' },
-  { href: '/admin/waitlist-leads', label: 'Waitlist Leads',  icon: ClipboardList,   permission: 'view:waitlist_leads' },
-  { href: '/admin/jobs',           label: 'Jobs',            icon: Briefcase,       permission: 'view:jobs' },
-  { href: '/admin/tradies',        label: 'Verification',    icon: ShieldCheck,     permission: 'view:tradies' },
-  { href: '/admin/bug-reports',    label: 'Bug Reports',     icon: Bug,             permission: 'view:bug_reports' },
-  { href: '/admin/notifications',  label: 'Notifications',   icon: Bell,            permission: 'view:notifications' },
-  { href: '/admin/ai-analytics',   label: 'AI Analytics',    icon: Bot,             permission: 'view:ai_analytics' },
-  { href: '/admin/delete-requests',label: 'Delete Requests', icon: Trash2,          permission: 'view:delete_requests' },
-  { href: '/admin/disputes',       label: 'Dispute Center',  icon: MessageSquareWarning, permission: 'view:disputes' },
-  { href: '/admin/commission',     label: 'Commission',      icon: Percent,         permission: 'view:commission' },
-  { href: '/admin/transactions',   label: 'Transactions',    icon: CreditCard,      permission: 'view:transactions' },
-  { href: '/admin/profile',        label: 'My Profile',      icon: User,            permission: null },
+interface SidebarLink {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  permission: string | null
+}
+
+interface SidebarGroup {
+  label: string
+  links: SidebarLink[]
+}
+
+const sidebarGroups: SidebarGroup[] = [
+  {
+    label: 'Overview',
+    links: [
+      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, permission: 'view:dashboard' },
+    ],
+  },
+  {
+    label: 'Management',
+    links: [
+      { href: '/admin/users', label: 'Users', icon: Users, permission: 'view:users' },
+      { href: '/admin/waitlist-leads', label: 'Waitlist Leads', icon: ClipboardList, permission: 'view:waitlist_leads' },
+      { href: '/admin/jobs', label: 'Jobs', icon: Briefcase, permission: 'view:jobs' },
+      { href: '/admin/tradies', label: 'Verification', icon: ShieldCheck, permission: 'view:tradies' },
+    ],
+  },
+  {
+    label: 'Operations',
+    links: [
+      { href: '/admin/disputes', label: 'Dispute Center', icon: MessageSquareWarning, permission: 'view:disputes' },
+      { href: '/admin/bug-reports', label: 'Bug Reports', icon: Bug, permission: 'view:bug_reports' },
+      { href: '/admin/notifications', label: 'Notifications', icon: Bell, permission: 'view:notifications' },
+      { href: '/admin/ai-analytics', label: 'AI Analytics', icon: Bot, permission: 'view:ai_analytics' },
+      { href: '/admin/delete-requests', label: 'Delete Requests', icon: Trash2, permission: 'view:delete_requests' },
+    ],
+  },
+  {
+    label: 'Finance',
+    links: [
+      { href: '/admin/commission', label: 'Commission', icon: Percent, permission: 'view:commission' },
+      { href: '/admin/transactions', label: 'Transactions', icon: CreditCard, permission: 'view:transactions' },
+    ],
+  },
+  {
+    label: 'Account',
+    links: [
+      { href: '/admin/profile', label: 'My Profile', icon: User, permission: null },
+    ],
+  },
 ]
 
 function hasPermission(user: any, permission: string | null): boolean {
@@ -118,10 +155,49 @@ function AdminBellMenu() {
   )
 }
 
+function SidebarNav({ links, closeMobile }: { links: SidebarGroup[]; closeMobile?: () => void }) {
+  const pathname = usePathname()
+  const isActive = (href: string) =>
+    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
+
+  return (
+    <>
+      {links.map((group) => {
+        if (group.links.length === 0) return null
+        return (
+          <div key={group.label} className="mb-1">
+            <p className="px-3 pt-4 pb-1.5 text-[9px] font-bold text-gray-300 uppercase tracking-[0.12em]">
+              {group.label}
+            </p>
+            {group.links.map((link) => {
+              const Icon = link.icon
+              const active = isActive(link.href)
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMobile}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                    active
+                      ? 'bg-[#2563EB] text-white'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {link.label}
+                </Link>
+              )
+            })}
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
 function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth()
   const router = useRouter()
-  const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const isAdmin = user?.role === 'admin'
@@ -140,14 +216,21 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  const visibleLinks = sidebarLinks.filter(link => hasPermission(user, link.permission))
-  const isSuperAdmin = user?.isSuperAdmin === true
-  if (isSuperAdmin) {
-    visibleLinks.push({ href: '/admin/team', label: 'Team', icon: Users, permission: null })
-  }
+  // Build visible groups filtered by permission
+  const visibleGroups: SidebarGroup[] = sidebarGroups
+    .map(group => ({
+      ...group,
+      links: group.links.filter(link => hasPermission(user, link.permission)),
+    }))
+    .filter(group => group.links.length > 0)
 
-  const isActive = (href: string) =>
-    href === '/admin' ? pathname === '/admin' : pathname.startsWith(href)
+  // Add Team link for super admins under a separate Admin section
+  if (user?.isSuperAdmin === true) {
+    visibleGroups.push({
+      label: 'Admin',
+      links: [{ href: '/admin/team', label: 'Team', icon: Crown, permission: null }],
+    })
+  }
 
   const handleLogout = () => {
     logout()
@@ -203,26 +286,9 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <div className="flex h-[calc(100vh-56px)] overflow-hidden">
-        <aside className="hidden lg:flex flex-col w-52 bg-white border-r border-gray-200 py-5 px-3">
-          <nav className="flex flex-col gap-1 flex-1">
-            {visibleLinks.map((link) => {
-              const Icon = link.icon
-              const active = isActive(link.href)
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active
-                      ? 'bg-[#2563EB] text-white'
-                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {link.label}
-                </Link>
-              )
-            })}
+        <aside className="hidden lg:flex flex-col w-52 bg-white border-r border-gray-200 py-2 px-3">
+          <nav className="flex flex-col flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <SidebarNav links={visibleGroups} />
           </nav>
           <button
             onClick={handleLogout}
@@ -236,27 +302,9 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
         {sidebarOpen && (
           <>
             <div className="lg:hidden fixed inset-0 bg-black/30 z-40" onClick={() => setSidebarOpen(false)} />
-            <aside className="lg:hidden fixed left-0 top-14 bottom-0 w-60 bg-white border-r border-gray-200 py-5 px-3 z-50 flex flex-col">
-              <nav className="flex flex-col gap-1 flex-1">
-                {visibleLinks.map((link) => {
-                  const Icon = link.icon
-                  const active = isActive(link.href)
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                        active
-                          ? 'bg-[#2563EB] text-white'
-                          : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {link.label}
-                    </Link>
-                  )
-                })}
+            <aside className="lg:hidden fixed left-0 top-14 bottom-0 w-60 bg-white border-r border-gray-200 py-2 px-3 z-50 flex flex-col">
+              <nav className="flex flex-col flex-1 overflow-y-auto [scrollbar-width:none]">
+                <SidebarNav links={visibleGroups} closeMobile={() => setSidebarOpen(false)} />
               </nav>
               <button
                 onClick={handleLogout}
