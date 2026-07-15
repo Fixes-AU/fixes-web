@@ -33,6 +33,8 @@ export interface User {
   isActive: boolean
   isCleaningAdmin?: boolean
   isFullAdmin?: boolean
+  isSuperAdmin?: boolean
+  adminPermissions?: string[]
   stripeCustomerId: string | null
   fixId: string
   createdAt: string
