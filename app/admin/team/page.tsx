@@ -431,7 +431,6 @@ export default function AdminTeamPage() {
                 </button>
                 <button
                   onClick={() => {
-                    setEditingAdmin(null)
                     setPendingSave(true)
                   }}
                   className="text-xs px-4 py-2 rounded-lg bg-[#2563EB] text-white font-medium hover:bg-[#1D4ED8] transition-colors"
