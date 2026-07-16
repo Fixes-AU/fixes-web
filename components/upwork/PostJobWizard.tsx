@@ -593,13 +593,13 @@ function StepTime({
 }) {
   const now = new Date()
   const minDt = new Date(now.getTime() + 5 * 60 * 1000)
-  const maxDt = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+  const maxDt = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
   const toDatetimeLocal = (d: Date) =>
     new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 
   const options: { value: PreferredTime; label: string; desc: string; icon: string }[] = [
     { value: 'now', label: 'Now', desc: 'Dispatch a tradie immediately', icon: '⚡' },
-    { value: 'scheduled', label: 'Schedule for Later', desc: 'Choose a time (up to 24h ahead)', icon: '🗓️' },
+    { value: 'scheduled', label: 'Schedule for Later', desc: 'Choose a time up to 90 days ahead', icon: '🗓️' },
     { value: '1-2weeks', label: 'In 1–2 Weeks', desc: 'Flexible timing', icon: '📅' },
     { value: 'no-rush', label: 'No Rush', desc: 'Whenever available', icon: '😌' },
   ]
@@ -653,11 +653,11 @@ function StepTime({
             className="w-full px-4 py-3 border border-blue-300 rounded-xl text-[var(--upwork-navy)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--upwork-green)] focus:border-transparent"
           />
           <p className="text-xs text-blue-600 mt-2">
-            ⚡ Tradies will receive the dispatch at your chosen time. Max 24 hours ahead.
+            ⚡ Tradies will receive the dispatch at your chosen time. Max 90 days ahead.
           </p>
           {scheduledFor && !scheduledValid && (
             <p className="text-xs text-red-600 mt-1">
-              Please choose a time at least 5 minutes from now and within 24 hours.
+              Please choose a time at least 5 minutes from now and within 90 days.
             </p>
           )}
           <button
