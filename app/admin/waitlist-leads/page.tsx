@@ -57,6 +57,8 @@ export default function WaitlistLeadsPage() {
     carpentry: 'Carpentry',
     emergency_make_safe: 'Emergency Make Safe',
     general_labourer: 'General Labourer',
+    handyman: 'Handyman',
+    gardening_landscaping: 'Gardening & Landscaping',
     other: 'Other Trade',
   }
 

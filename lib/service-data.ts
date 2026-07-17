@@ -194,20 +194,62 @@ export const SERVICE_DATA: ServiceMeta[] = [
     slug: 'labourer',
     category: 'general_labourer',
     label: 'General Labourer',
-    tagline: 'Cleanup, rubbish removal & heavy lifting',
+    tagline: 'Moving, demolition assist & site labour',
     description:
-      'Need help with rubbish removal, garden cleanup, demolition assist, or heavy lifting? Our general labourers handle the hard work so you don\'t have to.',
+      'Get practical help with heavy lifting, moving, material handling, demolition assistance, and general site labour.',
     accent: '#64748B',
     popularTasks: [
-      { label: 'Rubbish removal', preFilledTitle: 'Rubbish removal from property' },
-      { label: 'Garden cleanup', preFilledTitle: 'Garden cleanup and green waste removal' },
       { label: 'Moving / lifting', preFilledTitle: 'Help with heavy lifting and moving' },
       { label: 'Demolition assist', preFilledTitle: 'Assist with demolition work' },
+      { label: 'Site cleanup', preFilledTitle: 'General site cleanup assistance' },
+      { label: 'Material handling', preFilledTitle: 'Help moving materials on site' },
     ],
     howItWorks: [
-      { title: 'Describe the job', desc: 'Tell us what needs doing — cleanup, removal, lifting. Photos help us scope it accurately.' },
-      { title: 'Fair instant quote', desc: 'Our AI estimates the time, effort, and disposal costs to give you a transparent price.' },
+      { title: 'Describe the job', desc: 'Tell us what needs moving, lifting, clearing, or assisting. Photos help us scope it accurately.' },
+      { title: 'Fair instant quote', desc: 'Our AI estimates the time and labour required to give you a transparent price.' },
       { title: 'Labourer dispatched', desc: 'A reliable, insured labourer arrives to get the hard work done.' },
+    ],
+  },
+  {
+    slug: 'handyman',
+    category: 'handyman',
+    label: 'Handyman',
+    tagline: 'Minor repairs, assembly & odd jobs',
+    description:
+      'Get help with furniture assembly, TV mounting, minor non-licensed repairs, and odd jobs around your property. For regulated electrical, plumbing, HVAC, or building work, choose the relevant licensed trade category.',
+    accent: '#8B5CF6',
+    popularTasks: [
+      { label: 'Minor repairs', preFilledTitle: 'Minor repairs around the property' },
+      { label: 'Furniture assembly', preFilledTitle: 'Assemble furniture' },
+      { label: 'TV wall mount', preFilledTitle: 'Mount TV on wall' },
+      { label: 'Odd jobs', preFilledTitle: 'Miscellaneous odd jobs around the property' },
+    ],
+    howItWorks: [
+      { title: 'Describe the task', desc: 'Tell us what needs fixing, assembling, or mounting and include photos where helpful.' },
+      { title: 'Get a clear quote', desc: 'Receive transparent pricing based on the task, materials, and estimated time.' },
+      { title: 'Handyman dispatched', desc: 'A vetted, insured handyman arrives at your chosen time.' },
+    ],
+  },
+  {
+    slug: 'gardening-landscaping',
+    category: 'gardening_landscaping',
+    label: 'Gardening & Landscaping',
+    tagline: 'Garden care, planting & outdoor improvements',
+    description:
+      'Book help with lawn mowing, pruning, garden cleanup, planting, turf, and basic landscaping. Larger specialist projects can be assessed from your job details and photos.',
+    accent: '#22C55E',
+    popularTasks: [
+      { label: 'Lawn mowing', preFilledTitle: 'Mow and edge the lawn' },
+      { label: 'Pruning', preFilledTitle: 'Prune shrubs and garden plants' },
+      { label: 'Garden cleanup', preFilledTitle: 'Garden cleanup and maintenance' },
+      { label: 'Planting', preFilledTitle: 'Plant and prepare garden beds' },
+      { label: 'Lay turf', preFilledTitle: 'Prepare and lay new turf' },
+      { label: 'Basic landscaping', preFilledTitle: 'Basic landscaping improvements' },
+    ],
+    howItWorks: [
+      { title: 'Describe your outdoor space', desc: 'Share the property size, required garden work, access details, and photos.' },
+      { title: 'Get a tailored quote', desc: 'Receive transparent pricing based on labour, materials, and green-waste requirements.' },
+      { title: 'Gardener dispatched', desc: 'A vetted, insured gardening professional arrives at your chosen time.' },
     ],
   },
   {
@@ -256,21 +298,18 @@ export const SERVICE_DATA: ServiceMeta[] = [
   {
     slug: 'other',
     category: 'other',
-    label: 'Other / Handyman',
-    tagline: 'Everything else — handyman & more',
+    label: 'Other',
+    tagline: 'Jobs that do not fit another category',
     description:
-      'TV mounting, furniture assembly, odd jobs, and anything that doesn\'t quite fit the other categories. Our versatile handymen can tackle it all.',
-    accent: '#8B5CF6',
+      'Describe a job that does not match one of the listed service categories and we will help identify the right service.',
+    accent: '#71717A',
     popularTasks: [
-      { label: 'Handyman work', preFilledTitle: 'General handyman work' },
-      { label: 'Furniture assembly', preFilledTitle: 'Assemble furniture' },
-      { label: 'TV wall mount', preFilledTitle: 'Mount TV on wall' },
-      { label: 'Odd jobs', preFilledTitle: 'Miscellaneous odd jobs around the house' },
+      { label: 'Describe another job', preFilledTitle: 'Other service request' },
     ],
     howItWorks: [
-      { title: 'Describe your job', desc: 'Tell us what you need done — no job is too big or too small for our network.' },
-      { title: 'AI-powered quote', desc: 'Get a fair, transparent quote in seconds based on your specific requirements.' },
-      { title: 'Handyman dispatched', desc: 'A reliable, insured tradesperson arrives at your chosen time.' },
+      { title: 'Describe your job', desc: 'Tell us what you need done and include clear photos where possible.' },
+      { title: 'Review the service match', desc: 'We assess the request and identify the most appropriate service path.' },
+      { title: 'Get connected', desc: 'An eligible service provider can then be matched to the job.' },
     ],
   },
 ]

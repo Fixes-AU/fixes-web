@@ -72,6 +72,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   carpentry:           '#EF4444',
   emergency_make_safe: '#DC2626',
   general_labourer:    '#6B7280',
+  handyman:            '#8B5CF6',
+  gardening_landscaping: '#22C55E',
   other:               '#9CA3AF',
 }
 

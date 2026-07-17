@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import {
   Zap, Droplets, Wind, Paintbrush, PaintRoller,
   Grid, Hammer, ShieldAlert, HardHat, Sparkles,
-  Trash2, CircleEllipsis, ArrowRight, ChevronRight,
+  Trash2, CircleEllipsis, ArrowRight, ChevronRight, Wrench, Leaf,
   CheckCircle2, Shield, Clock, Star,
   ArrowLeft,
 } from 'lucide-react'
@@ -23,6 +23,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   carpentry: Hammer,
   emergency_make_safe: ShieldAlert,
   general_labourer: HardHat,
+  handyman: Wrench,
+  gardening_landscaping: Leaf,
   cleaning: Sparkles,
   waste_removal: Trash2,
   other: CircleEllipsis,

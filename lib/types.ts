@@ -52,6 +52,8 @@ export type TradieCategory =
   | 'carpentry'
   | 'emergency_make_safe'
   | 'general_labourer'
+  | 'handyman'
+  | 'gardening_landscaping'
   | 'cleaning'
   | 'waste_removal'
 
