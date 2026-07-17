@@ -60,7 +60,7 @@ export function HeroSection() {
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source
-              src="https://www.pexels.com/download/video/8964929/"
+              src="/home-page-assets/fixes-hero.mp4"
               type="video/mp4"
             />
           </video>
