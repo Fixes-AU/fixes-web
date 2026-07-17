@@ -18,6 +18,9 @@ import {
   ChevronRight,
   Camera,
   ShieldCheck,
+  Search,
+  MapPin,
+  UserPlus,
 } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS } from '@/lib/constants'
@@ -80,6 +83,196 @@ function ActionButton({
     </button>
   )
 }
+
+
+interface AvailableTradie {
+  userId: string
+  name: string
+  email: string
+  phone: string
+  avatarUrl: string | null
+  rating: { average: number; count: number }
+  distance: number | null
+  isOnline: boolean
+  categories: string[]
+}
+
+function ManualAssignPanel({ jobId, onAssigned }: { jobId: string; onAssigned: () => void }) {
+  const [tradies, setTradies] = useState<AvailableTradie[]>([])
+  const [filteredTradies, setFilteredTradies] = useState<AvailableTradie[]>([])
+  const [search, setSearch] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [isAssigning, setIsAssigning] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [expanded, setExpanded] = useState(false)
+
+  const fetchTradies = useCallback(async () => {
+    setIsLoading(true)
+    setError('')
+    try {
+      const res = await api.get<AvailableTradie[]>(`/api/admin/jobs/${jobId}/available-tradies`)
+      const data = Array.isArray(res.data) ? res.data : []
+      setTradies(data)
+      setFilteredTradies(data)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to load tradies')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [jobId])
+
+  useEffect(() => {
+    if (expanded && tradies.length === 0) fetchTradies()
+  }, [expanded]) // eslint-disable-line
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setFilteredTradies(tradies)
+    } else {
+      const q = search.toLowerCase()
+      setFilteredTradies(
+        tradies.filter(t =>
+          t.name.toLowerCase().includes(q) ||
+          t.email.toLowerCase().includes(q) ||
+          t.phone.includes(q)
+        )
+      )
+    }
+  }, [search, tradies])
+
+  const handleAssign = async (tradie: AvailableTradie) => {
+    if (!window.confirm(`Assign ${tradie.name} to this job? This will set the job to "accepted" immediately.`)) return
+    setIsAssigning(tradie.userId)
+    setError('')
+    setSuccess('')
+    try {
+      await api.post(`/api/admin/jobs/${jobId}/manual-assign`, { tradieId: tradie.userId })
+      setSuccess(`✅ ${tradie.name} has been assigned to this job`)
+      onAssigned()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Assignment failed')
+    } finally {
+      setIsAssigning(null)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border-2 border-blue-200 p-5 mb-6">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+            <UserPlus className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-left">
+            <h2 className="text-sm font-semibold text-gray-900">Assign Tradie Manually</h2>
+            <p className="text-[11px] text-gray-400">Select a verified tradie to assign directly</p>
+          </div>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+      </button>
+
+      {expanded && (
+        <div className="mt-4 space-y-3">
+          {success && (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, email, or phone..."
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 text-gray-800 placeholder:text-gray-400"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+            </div>
+          ) : filteredTradies.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-6">
+              {tradies.length === 0 ? 'No verified tradies found for this category' : 'No tradies match your search'}
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {filteredTradies.map((tradie) => (
+                <div
+                  key={tradie.userId}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                        {tradie.avatarUrl ? (
+                          <img src={tradie.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${tradie.isOnline ? 'bg-green-500' : 'bg-gray-300'
+                        }`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{tradie.name}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                        <span className={tradie.isOnline ? 'text-green-600 font-medium' : ''}>
+                          {tradie.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                        {tradie.distance != null && (
+                          <span className="flex items-center gap-0.5">
+                            <MapPin className="w-2.5 h-2.5" />
+                            {tradie.distance}km
+                          </span>
+                        )}
+                        {tradie.rating.count > 0 && (
+                          <span>⭐ {tradie.rating.average} ({tradie.rating.count})</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAssign(tradie)}
+                    disabled={isAssigning !== null}
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                  >
+                    {isAssigning === tradie.userId ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-3 h-3" />
+                    )}
+                    Assign
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-[10px] text-gray-400 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            Assigning sets the job to &ldquo;accepted&rdquo; immediately. The tradie will be notified in their app.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 export default function AdminJobDetailPage() {
   const params = useParams()
@@ -186,11 +379,10 @@ export default function AdminJobDetailPage() {
       </div>
 
       {message && (
-        <div className={`flex items-start gap-2 px-4 py-3 rounded-xl mb-5 text-sm ${
-          message.type === 'success'
+        <div className={`flex items-start gap-2 px-4 py-3 rounded-xl mb-5 text-sm ${message.type === 'success'
             ? 'bg-green-50 border border-green-200 text-green-800'
             : 'bg-red-50 border border-red-200 text-red-700'
-        }`}>
+          }`}>
           {message.type === 'success'
             ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
             : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
@@ -243,11 +435,10 @@ export default function AdminJobDetailPage() {
             <dl className="space-y-3">
               <div className="flex justify-between">
                 <dt className="text-xs text-gray-500">Status</dt>
-                <dd className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  payment.status === 'captured' ? 'bg-green-100 text-green-700' :
-                  payment.status === 'refunded' ? 'bg-red-100 text-red-600' :
-                  'bg-amber-100 text-amber-700'
-                }`}>
+                <dd className={`text-xs font-semibold px-2 py-0.5 rounded-full ${payment.status === 'captured' ? 'bg-green-100 text-green-700' :
+                    payment.status === 'refunded' ? 'bg-red-100 text-red-600' :
+                      'bg-amber-100 text-amber-700'
+                  }`}>
                   {payment.status === 'pending' ? 'Authorized (Escrow)' : payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                 </dd>
               </div>
@@ -273,6 +464,10 @@ export default function AdminJobDetailPage() {
           )}
         </div>
       </div>
+
+      {(job.status === 'dispatching' || job.status === 'scheduled') && (
+        <ManualAssignPanel jobId={jobId} onAssigned={fetchJob} />
+      )}
 
       {(job.completionPhotos?.length > 0 || job.status === 'completed') && (
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
@@ -379,12 +574,11 @@ export default function AdminJobDetailPage() {
 
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-              !canSimulateAccept && ['accepted','on_the_way','in_progress','completed'].includes(job.status)
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${!canSimulateAccept && ['accepted', 'on_the_way', 'in_progress', 'completed'].includes(job.status)
                 ? 'bg-green-500 text-white'
                 : canSimulateAccept ? 'bg-yellow-400 text-slate-900' : 'bg-slate-600 text-slate-400'
-            }`}>
-              {(!canSimulateAccept && ['accepted','on_the_way','in_progress','completed'].includes(job.status)) ? '✓' : '1'}
+              }`}>
+              {(!canSimulateAccept && ['accepted', 'on_the_way', 'in_progress', 'completed'].includes(job.status)) ? '✓' : '1'}
             </div>
             <ActionButton
               label="Simulate Tradie Accept"
@@ -406,11 +600,10 @@ export default function AdminJobDetailPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-              job.status === 'completed' ? 'bg-green-500 text-white'
-              : canSimulateComplete ? 'bg-yellow-400 text-slate-900'
-              : 'bg-slate-600 text-slate-400'
-            }`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${job.status === 'completed' ? 'bg-green-500 text-white'
+                : canSimulateComplete ? 'bg-yellow-400 text-slate-900'
+                  : 'bg-slate-600 text-slate-400'
+              }`}>
               {job.status === 'completed' ? '✓' : '2'}
             </div>
             <ActionButton
@@ -433,11 +626,10 @@ export default function AdminJobDetailPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-              payment?.status === 'captured' ? 'bg-green-500 text-white'
-              : canCapture ? 'bg-yellow-400 text-slate-900'
-              : 'bg-slate-600 text-slate-400'
-            }`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${payment?.status === 'captured' ? 'bg-green-500 text-white'
+                : canCapture ? 'bg-yellow-400 text-slate-900'
+                  : 'bg-slate-600 text-slate-400'
+              }`}>
               {payment?.status === 'captured' ? '✓' : '3'}
             </div>
             <ActionButton
