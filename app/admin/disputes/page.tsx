@@ -38,7 +38,7 @@ export default function AdminDisputesPage() {
     setLoading(true)
     try {
       const res = await api.get<any>('/api/disputes/admin/all')
-      setDisputes(res.data.data || [])
+      setDisputes(Array.isArray(res.data) ? res.data : res.data?.data || [])
     } catch (err) {
       console.error(err)
     } finally {

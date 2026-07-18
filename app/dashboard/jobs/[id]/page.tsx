@@ -1436,24 +1436,22 @@ export default function JobDetailPage() {
       )}
 
       {job.status === 'completed' && !(job as any).disputeId && (
-        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-amber-800 mb-0.5 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" /> Notice an issue?
+              <p className="text-sm font-semibold text-blue-800 mb-0.5 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" /> Need help with this job?
               </p>
-              <p className="text-xs text-amber-700 max-w-lg">
-                {job.isAgencyManaged
-                  ? 'If the cleaner did not complete the job properly or damaged something, you can open a dispute and our team will investigate.'
-                  : 'Your payment is held in escrow for 48 hours. If the tradie did not complete the job properly or damaged something, you can raise a dispute to freeze the funds while our team investigates.'}
+              <p className="text-xs text-blue-700 max-w-lg">
+                If something does not look right after completion, contact Help & Support and our team will review the job before taking any payment action.
               </p>
             </div>
             <div className="shrink-0 flex items-center">
               <button
-                onClick={() => router.push(`/dashboard/jobs/${job._id}/dispute`)}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors whitespace-nowrap"
+                onClick={() => router.push('/support')}
+                className="px-4 py-2 bg-(--upwork-navy) text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
               >
-                {job.isAgencyManaged ? 'Open Dispute' : 'Raise Dispute'}
+                Help & Support
               </button>
             </div>
           </div>
