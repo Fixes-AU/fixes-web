@@ -1446,7 +1446,13 @@ export default function JobDetailPage() {
                 If something does not look right after completion, contact Help & Support and our team will review the job before taking any payment action.
               </p>
             </div>
-            <div className="shrink-0 flex items-center">
+            <div className="shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <a
+                href={`fixes://support?jobId=${encodeURIComponent(job._id)}`}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap text-center"
+              >
+                Open in App
+              </a>
               <button
                 onClick={() => router.push(`/dashboard/support?jobId=${job._id}`)}
                 className="px-4 py-2 bg-(--upwork-navy) text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
