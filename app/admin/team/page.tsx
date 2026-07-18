@@ -40,7 +40,7 @@ const PRESET_LABELS: Record<string, { label: string; description: string; color:
   },
   support_admin: {
     label: 'Support Admin',
-    description: 'View-only access to users, jobs, disputes, and bug reports',
+    description: 'Support case management plus view access to users, jobs, disputes, and bug reports',
     color: 'bg-amber-50 text-amber-700 border-amber-200',
   },
   cleaning_admin: {

@@ -20,6 +20,7 @@ import {
   Bell,
   Bot,
   MessageSquareWarning,
+  LifeBuoy,
   Trash2,
   ClipboardList,
   Percent,
@@ -61,6 +62,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: 'Operations',
     links: [
       { href: '/admin/disputes', label: 'Dispute Center', icon: MessageSquareWarning, permission: 'view:disputes' },
+      { href: '/admin/support-cases', label: 'Support Cases', icon: LifeBuoy, permission: 'view:support_cases' },
       { href: '/admin/bug-reports', label: 'Bug Reports', icon: Bug, permission: 'view:bug_reports' },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, permission: 'view:notifications' },
       { href: '/admin/ai-analytics', label: 'AI Analytics', icon: Bot, permission: 'view:ai_analytics' },

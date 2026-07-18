@@ -1448,7 +1448,7 @@ export default function JobDetailPage() {
             </div>
             <div className="shrink-0 flex items-center">
               <button
-                onClick={() => router.push('/support')}
+                onClick={() => router.push(`/dashboard/support?jobId=${job._id}`)}
                 className="px-4 py-2 bg-(--upwork-navy) text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
               >
                 Help & Support
