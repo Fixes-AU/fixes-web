@@ -45,7 +45,7 @@ interface Transaction {
   capturedAt: string | null
   releasedAt: string | null
   escrowReleaseAt: string | null
-  paymentChannel: 'marketplace' | 'cleaning_agency'
+  paymentChannel: 'marketplace' | 'cleaning_agency' | 'direct_contract_agency'
   createdAt: string
 }
 
@@ -137,6 +137,7 @@ const STATUS_STYLES: Record<string, string> = {
 const CHANNEL_STYLES: Record<string, string> = {
   marketplace: 'bg-violet-100 text-violet-700',
   cleaning_agency: 'bg-teal-100 text-teal-700',
+  direct_contract_agency: 'bg-blue-100 text-blue-700',
 }
 
 const PAYOUT_STATUS_STYLES: Record<string, string> = {
@@ -162,6 +163,16 @@ const LIMIT = 25
 
 function fmt(n: number) {
   return `$${n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function channelBadge(channel: Transaction['paymentChannel']) {
+  if (channel === 'direct_contract_agency') {
+    return <><Building2 className="w-2.5 h-2.5 inline mr-0.5" />Direct Contract</>
+  }
+  if (channel === 'cleaning_agency') {
+    return <><Building2 className="w-2.5 h-2.5 inline mr-0.5" />Cleaning Agency</>
+  }
+  return <><ShoppingBag className="w-2.5 h-2.5 inline mr-0.5" />Marketplace</>
 }
 
 function fmtDate(iso: string | null) {
@@ -583,6 +594,7 @@ export default function AdminTransactionsPage() {
             <option value="all">All Channels</option>
             <option value="marketplace">Marketplace</option>
             <option value="cleaning_agency">Cleaning Agency</option>
+            <option value="direct_contract_agency">Direct Contract Agency</option>
           </select>
 
           <div className="flex items-center gap-1.5">
@@ -692,11 +704,7 @@ export default function AdminTransactionsPage() {
                             )}
                             <div className="mt-0.5 flex items-center gap-1">
                               <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${CHANNEL_STYLES[tx.paymentChannel] ?? 'bg-gray-100 text-gray-500'}`}>
-                                {tx.paymentChannel === 'cleaning_agency' ? (
-                                  <><Building2 className="w-2.5 h-2.5 inline mr-0.5" />Agency</>
-                                ) : (
-                                  <><ShoppingBag className="w-2.5 h-2.5 inline mr-0.5" />Marketplace</>
-                                )}
+                                {channelBadge(tx.paymentChannel)}
                               </span>
                               {!tx.liveMode && (
                                 <>

@@ -139,7 +139,15 @@ function StatusTimeline({ currentStatus }: { currentStatus: JobStatus }) {
 }
 
 
-function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: string }) {
+function ChatWidget({
+  jobId,
+  currentUserId,
+  conversationType = 'client_tradie',
+}: {
+  jobId: string
+  currentUserId: string
+  conversationType?: string
+}) {
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -149,7 +157,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
   useEffect(() => {
     async function loadMessages() {
       try {
-        const res = await api.getPaginated<Message>(`/api/messages/${jobId}?limit=100`)
+        const res = await api.getPaginated<Message>(`/api/messages/${jobId}?limit=100&conversationType=${conversationType}`)
         setMessages(res.data)
       } catch {
       } finally {
@@ -157,13 +165,13 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
       }
     }
     loadMessages()
-  }, [jobId])
+  }, [jobId, conversationType])
 
   useEffect(() => {
     if (messages.length > 0) {
-      api.patch(`/api/messages/${jobId}/read`).catch(() => { })
+      api.patch(`/api/messages/${jobId}/read?conversationType=${conversationType}`).catch(() => { })
     }
-  }, [jobId, messages.length])
+  }, [jobId, messages.length, conversationType])
 
   useEffect(() => {
     const socket = connectSocket()
@@ -172,10 +180,12 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
     joinJobRoom(jobId)
 
     const handleNewMessage = (payload: MessageNewPayload) => {
-      if (payload.jobId === jobId) {
+      if (payload.jobId === jobId && (payload.conversationType || 'client_tradie') === conversationType) {
         const incoming: Message = {
           _id: payload._id,
           jobId: payload.jobId,
+          conversationId: payload.conversationId,
+          conversationType: payload.conversationType,
           senderId: payload.senderId,
           receiverId: null,
           content: payload.content,
@@ -187,7 +197,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
           updatedAt: payload.createdAt,
         }
         setMessages((prev) => [...prev, incoming])
-        api.patch(`/api/messages/${jobId}/read`).catch(() => { })
+        api.patch(`/api/messages/${jobId}/read?conversationType=${conversationType}`).catch(() => { })
       }
     }
 
@@ -197,7 +207,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
       socket.off('message:new', handleNewMessage)
       leaveJobRoom(jobId)
     }
-  }, [jobId])
+  }, [jobId, conversationType])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -207,7 +217,7 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
     if (!newMessage.trim() || isSending) return
     setIsSending(true)
     try {
-      await api.post(`/api/messages/${jobId}`, { content: newMessage.trim() })
+      await api.post(`/api/messages/${jobId}`, { content: newMessage.trim(), conversationType })
       setNewMessage('')
     } catch {
     } finally {
@@ -299,7 +309,19 @@ function ChatWidget({ jobId, currentUserId }: { jobId: string; currentUserId: st
 }
 
 
-function ReviewForm({ jobId, onSubmitted }: { jobId: string; onSubmitted: () => void }) {
+function ReviewForm({
+  jobId,
+  title = 'Leave a Review',
+  subtitle = 'How was your experience?',
+  placeholder = 'Share your experience (optional)...',
+  onSubmitted,
+}: {
+  jobId: string
+  title?: string
+  subtitle?: string
+  placeholder?: string
+  onSubmitted: () => void
+}) {
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -329,7 +351,8 @@ function ReviewForm({ jobId, onSubmitted }: { jobId: string; onSubmitted: () => 
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-(--upwork-navy) mb-4">Leave a Review</h3>
+      <h3 className="text-sm font-semibold text-(--upwork-navy) mb-1">{title}</h3>
+      <p className="text-xs text-(--upwork-gray) mb-4">{subtitle}</p>
 
       {error && (
         <div className="flex items-start gap-2 bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg mb-4">
@@ -360,7 +383,7 @@ function ReviewForm({ jobId, onSubmitted }: { jobId: string; onSubmitted: () => 
       <textarea
         value={comment}
         onChange={(e) => setComment(e.target.value)}
-        placeholder="Share your experience (optional)..."
+        placeholder={placeholder}
         rows={3}
         maxLength={500}
         className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-(--upwork-green) resize-none mb-3"
@@ -1268,7 +1291,33 @@ export default function JobDetailPage() {
   const selectedQuoteBreakdown = quoteBreakdown(selectedQuoteOption)
   const assignedTradie =
     typeof job.assignedTradieId === 'object' ? (job.assignedTradieId as User) : null
-  const canChat = assignedTradie && !['cancelled', 'no_tradie_found'].includes(job.status)
+  const isDirectAgencyJob = job.fulfillmentType === 'agency_direct_contract'
+  const agencyName =
+    typeof job.agencyId === 'object' && job.agencyId ? (job.agencyId as { name?: string }).name : null
+  const agencyLabel = job.clientAgencyLabel || agencyName || null
+  const assignedProviderTitle = job.isAgencyManaged
+    ? 'Assigned Cleaner'
+    : isDirectAgencyJob
+      ? 'Agency Assigned Tradie'
+      : 'Assigned Tradie'
+  const reviewTitle = isDirectAgencyJob
+    ? `Review ${agencyLabel || 'Agency'}`
+    : job.isAgencyManaged
+      ? 'Review Cleaner'
+      : 'Leave a Review'
+  const reviewSubtitle = isDirectAgencyJob
+    ? assignedTradie
+      ? `Your review helps rate ${agencyLabel || 'the agency'} and their assigned tradie.`
+      : 'Your review helps rate the agency that handled this job.'
+    : job.isAgencyManaged
+      ? 'How was your experience with your cleaner?'
+      : 'How was your experience with your tradie?'
+  const reviewPlaceholder = isDirectAgencyJob
+    ? 'Share how the agency team handled the job (optional)...'
+    : 'Share your experience (optional)...'
+  const canChat =
+    !!(assignedTradie || (isDirectAgencyJob && agencyLabel)) &&
+    !['cancelled', 'no_tradie_found'].includes(job.status)
   const canReview =
     job.status === 'completed' && !job.clientReview && !reviewSubmitted
 
@@ -1603,12 +1652,19 @@ export default function JobDetailPage() {
 
 
           {canChat && user && (
-            <ChatWidget jobId={job._id} currentUserId={user._id} />
+            <ChatWidget
+              jobId={job._id}
+              currentUserId={user._id}
+              conversationType={isDirectAgencyJob ? 'client_agency' : 'client_tradie'}
+            />
           )}
 
           {canReview && (
             <ReviewForm
               jobId={job._id}
+              title={reviewTitle}
+              subtitle={reviewSubtitle}
+              placeholder={reviewPlaceholder}
               onSubmitted={() => {
                 setReviewSubmitted(true)
                 fetchJob() 
@@ -1687,14 +1743,14 @@ export default function JobDetailPage() {
             </div>
           )}
 
-          {assignedTradie && (
+          {(assignedTradie || (isDirectAgencyJob && agencyLabel)) && (
             <div className="bg-white border border-gray-200 rounded-xl p-5">
               <h3 className="text-sm font-semibold text-(--upwork-navy) mb-3">
-                {job.isAgencyManaged ? 'Assigned Cleaner' : 'Assigned Tradie'}
+                {assignedProviderTitle}
               </h3>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-(--upwork-green) flex items-center justify-center text-white overflow-hidden shrink-0">
-                  {assignedTradie.avatarUrl ? (
+                  {assignedTradie?.avatarUrl ? (
                     <Image
                       src={assignedTradie.avatarUrl}
                       alt={assignedTradie.name}
@@ -1702,19 +1758,26 @@ export default function JobDetailPage() {
                       height={40}
                       className="object-cover w-full h-full"
                     />
-                  ) : (
+                  ) : assignedTradie ? (
                     <UserIcon className="w-5 h-5" />
+                  ) : (
+                    <span className="text-sm font-bold">{agencyLabel?.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
                 <div>
                   <p className="text-sm font-medium text-(--upwork-navy)">
-                    {assignedTradie.name}
+                    {assignedTradie?.name || agencyLabel}
                   </p>
-                  {assignedTradie.phone && (
+                  {assignedTradie?.phone && (
                     <p className="text-xs text-gray-400">{assignedTradie.phone}</p>
                   )}
-                  {assignedTradie.fixId && (
+                  {assignedTradie?.fixId && (
                     <p className="text-xs text-gray-400">{assignedTradie.fixId}</p>
+                  )}
+                  {isDirectAgencyJob && agencyLabel && (
+                    <p className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                      {assignedTradie ? `Via ${agencyLabel}` : 'Worker assignment pending'}
+                    </p>
                   )}
                 </div>
               </div>

@@ -186,6 +186,11 @@ export interface Job {
   isWeekend: boolean        
   quote: string | Quote | null
   assignedTradieId: string | User | null
+  fulfillmentType?: 'individual_tradie' | 'agency_direct_contract' | string
+  agencyId?: string | { _id?: string; name?: string; slug?: string } | null
+  agencyAssignedWorkerId?: string | User | null
+  clientAgencyLabel?: string | null
+  visibleWorkerPrice?: boolean
   payment: string | JobPaymentSummary | null
   clientReview: string | Review | null
   tradieReview: string | Review | null
@@ -387,6 +392,8 @@ export type MessageType = 'text' | 'image' | 'system'
 export interface Message {
   _id: string
   jobId: string
+  conversationId?: string | null
+  conversationType?: 'client_tradie' | 'client_agency' | 'agency_worker' | 'client_worker' | string
   senderId: string | User
   receiverId: string | null
   content: string
@@ -406,6 +413,18 @@ export interface Review {
   jobId: string
   reviewerId: string | User
   revieweeId: string | User
+  revieweeType?: 'client' | 'tradie' | 'agency' | string
+  agencyId?: string | { _id?: string; name?: string; slug?: string; rating?: { average: number; count: number } } | null
+  agencyMemberId?: string | null
+  agencyWorkerId?: string | User | null
+  reviewTarget?: {
+    type: 'client' | 'tradie' | 'agency' | string
+    label: string
+    agencyName?: string | null
+    workerName?: string | null
+    agencyId?: string | null
+    workerId?: string | null
+  }
   direction: ReviewDirection
   rating: number
   comment: string
@@ -448,6 +467,9 @@ export interface RefreshTokenResponse {
 export interface MeResponse {
   user: User
   profile: TradieProfile | null
+  agencyMemberships?: unknown[]
+  activeAgency?: unknown | null
+  effectiveCapabilities?: string[]
 }
 
 
@@ -524,6 +546,8 @@ export interface JobStatusUpdatePayload {
 export interface MessageNewPayload {
   _id: string
   jobId: string
+  conversationId?: string | null
+  conversationType?: string
   senderId: string
   content: string
   type: MessageType

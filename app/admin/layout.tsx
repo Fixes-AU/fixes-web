@@ -27,6 +27,8 @@ import {
   Percent,
   CreditCard,
   Crown,
+  Building2,
+  FileCheck2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
@@ -57,6 +59,8 @@ const sidebarGroups: SidebarGroup[] = [
       { href: '/admin/waitlist-leads', label: 'Waitlist Leads', icon: ClipboardList, permission: 'view:waitlist_leads' },
       { href: '/admin/jobs', label: 'Jobs', icon: Briefcase, permission: 'view:jobs' },
       { href: '/admin/tradies', label: 'Verification', icon: ShieldCheck, permission: 'view:tradies' },
+      { href: '/admin/agency-applications', label: 'Agency Applications', icon: FileCheck2, permission: 'view:agencies' },
+      { href: '/admin/agencies', label: 'Agencies', icon: Building2, permission: 'view:agencies' },
     ],
   },
   {

@@ -124,6 +124,11 @@ export default function DashboardPage() {
                 typeof job.assignedTradieId === 'object' && job.assignedTradieId
                   ? job.assignedTradieId
                   : null
+              const isDirectAgencyJob = job.fulfillmentType === 'agency_direct_contract'
+              const agencyName =
+                typeof job.agencyId === 'object' && job.agencyId ? job.agencyId.name : null
+              const agencyLabel = job.clientAgencyLabel || agencyName || null
+              const providerLabel = assignedTradie?.name || agencyLabel
 
               return (
                 <Link
@@ -146,12 +151,20 @@ export default function DashboardPage() {
                       <span>{CATEGORY_LABELS[job.category as JobCategory] || job.category}</span>
                       <span>•</span>
                       <span>{job.jobCode}</span>
-                      {assignedTradie && (
+                      {providerLabel && (
                         <>
                           <span>•</span>
                           <span className="text-(--upwork-navy)">
-                            {assignedTradie.name}
+                            {providerLabel}
                           </span>
+                          {isDirectAgencyJob && agencyLabel && (
+                            <>
+                              <span>•</span>
+                              <span className="text-blue-600 font-medium">
+                                {assignedTradie ? `Via ${agencyLabel}` : 'Agency accepted'}
+                              </span>
+                            </>
+                          )}
                         </>
                       )}
                     </div>

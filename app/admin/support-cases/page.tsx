@@ -19,7 +19,11 @@ interface SupportCase {
   priority: 'normal' | 'high' | 'urgent'
   status: SupportCaseStatus
   requesterId?: { _id: string; name: string; email: string; role: string; fixId?: string }
-  jobId?: { _id: string; jobCode: string; title: string; status: string; category: string }
+  requesterRole?: 'client' | 'tradie' | 'agency' | 'admin'
+  initiatorType?: 'client' | 'tradie' | 'agency' | 'admin' | null
+  agencyId?: { _id: string; name: string; slug?: string; status?: string } | null
+  agencyMemberId?: { _id: string; role: string; employmentType?: string } | null
+  jobId?: { _id: string; jobCode: string; title: string; status: string; category: string; fulfillmentType?: string; clientAgencyLabel?: string }
   disputeId?: { _id: string; status: string } | string | null
   evidence?: { url: string; publicId: string }[]
   adminNotes?: string
@@ -242,6 +246,7 @@ export default function AdminSupportCasesPage() {
               const open = expandedId === item._id
               const cfg = STATUS_CONFIG[item.status]
               const canEscalate = !!item.jobId && !item.disputeId && item.status !== 'escalated_to_dispute' && item.status !== 'closed'
+              const isAgencyCase = item.requesterRole === 'agency' || item.initiatorType === 'agency' || !!item.agencyId
 
               return (
                 <div key={item._id}>
@@ -254,6 +259,7 @@ export default function AdminSupportCasesPage() {
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.classes}`}>{cfg.label}</span>
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-500">{item.type.replace(/_/g, ' ')}</span>
                         {item.priority !== 'normal' && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-600">{item.priority}</span>}
+                        {isAgencyCase && <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">Agency</span>}
                       </div>
                       <p className="font-semibold text-(--upwork-navy) truncate">{item.subject}</p>
                       <p className="text-xs text-(--upwork-gray)">
@@ -267,14 +273,16 @@ export default function AdminSupportCasesPage() {
                     <div className="px-5 pb-5 pt-2 bg-gray-50 border-t border-gray-100 space-y-4">
                       <div className="grid md:grid-cols-3 gap-3">
                         <div className="bg-white border border-gray-200 rounded-xl p-3">
-                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Customer</p>
+                          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Requester</p>
                           <p className="text-sm font-semibold text-(--upwork-navy)">{item.requesterId?.name || 'Unknown'}</p>
                           <p className="text-xs text-(--upwork-gray)">{item.requesterId?.email}</p>
+                          <p className="text-xs text-(--upwork-gray) mt-1">Role: {(item.requesterRole || item.requesterId?.role || 'unknown').replace(/_/g, ' ')}</p>
                         </div>
                         <div className="bg-white border border-gray-200 rounded-xl p-3">
                           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Job</p>
                           <p className="text-sm font-semibold text-(--upwork-navy)">{item.jobId?.jobCode || 'Not linked'}</p>
                           <p className="text-xs text-(--upwork-gray)">{item.jobId?.title || '-'}</p>
+                          {isAgencyCase && <p className="text-xs text-blue-600 font-semibold mt-1">{item.agencyId?.name || item.jobId?.clientAgencyLabel || 'Direct contract agency'}</p>}
                         </div>
                         <div className="bg-white border border-gray-200 rounded-xl p-3">
                           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">Requested Outcome</p>
@@ -369,7 +377,7 @@ export default function AdminSupportCasesPage() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-xl w-full max-w-2xl p-5 space-y-4">
             <div>
               <h2 className="text-lg font-bold text-(--upwork-navy)">Open Support Case</h2>
-              <p className="text-sm text-(--upwork-gray)">Create a case for a client or tradie from a job ID or job code.</p>
+              <p className="text-sm text-(--upwork-gray)">Create a case for a client, tradie, or agency from a job ID or job code.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
@@ -391,6 +399,7 @@ export default function AdminSupportCasesPage() {
                 >
                   <option value="client">Client</option>
                   <option value="tradie">Tradie</option>
+                  <option value="agency">Agency</option>
                 </select>
               </label>
               <label className="block">

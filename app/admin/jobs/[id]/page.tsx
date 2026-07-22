@@ -31,10 +31,14 @@ interface Payment {
   _id: string
   stripePaymentIntentId: string
   stripeTransferId?: string | null
+  stripeAgencyTransferId?: string | null
   amount: number
   platformFee: number
   tradieEarnings: number
-  status: 'pending' | 'captured' | 'released' | 'refunded'
+  agencyEarnings?: number | null
+  payeeType?: 'tradie' | 'agency'
+  paymentChannel?: 'marketplace' | 'cleaning_agency' | 'direct_contract_agency'
+  status: 'pending' | 'captured' | 'released' | 'refunded' | 'disputed' | 'requires_manual_review'
   capturedAt?: string
   releasedAt?: string
   createdAt: string
@@ -326,8 +330,12 @@ export default function AdminJobDetailPage() {
     switch (action) {
       case 'simulate-accept': return '✅ Tradie acceptance simulated — job is now Accepted'
       case 'simulate-complete': return '✅ Job marked as Completed — Capture is now available'
-      case 'capture': return '✅ Payment captured — tradie wallet credited'
-      case 'repair-wallet': return '✅ Wallet repaired — tradie credited and Stripe transfer initiated'
+      case 'capture': return payment?.payeeType === 'agency'
+        ? '✅ Payment captured — agency transfer initiated'
+        : '✅ Payment captured — tradie wallet credited'
+      case 'repair-wallet': return payment?.payeeType === 'agency'
+        ? '✅ Agency transfer repaired'
+        : '✅ Wallet repaired — tradie credited and Stripe transfer initiated'
       default: return '✅ Done'
     }
   }
@@ -357,6 +365,12 @@ export default function AdminJobDetailPage() {
   const canSimulateComplete = ['accepted', 'on_the_way', 'in_progress'].includes(job.status)
   const canCapture = job.status === 'completed' && payment?.status === 'pending'
   const needsWalletRepair = job.status === 'completed' && payment?.status === 'captured' && !payment?.stripeTransferId
+  const isDirectAgencyContract = job.fulfillmentType === 'agency_direct_contract' || payment?.payeeType === 'agency'
+  const payeeLabel = isDirectAgencyContract ? 'Agency' : 'Tradie'
+  const payeeAccountLabel = isDirectAgencyContract ? 'agency Stripe account' : 'tradie wallet'
+  const payeeAmount = isDirectAgencyContract
+    ? (payment?.agencyEarnings ?? payment?.tradieEarnings)
+    : payment?.tradieEarnings
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -403,7 +417,7 @@ export default function AdminJobDetailPage() {
               <dd className="text-xs font-medium text-gray-800">{job.clientId?.name ?? '—'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-xs text-gray-500">Assigned Tradie</dt>
+              <dt className="text-xs text-gray-500">{isDirectAgencyContract ? 'Assigned Worker' : 'Assigned Tradie'}</dt>
               <dd className="text-xs font-medium text-gray-800">
                 {typeof job.assignedTradieId === 'object' && job.assignedTradieId
                   ? (job.assignedTradieId as UserType).name
@@ -451,8 +465,8 @@ export default function AdminJobDetailPage() {
                 <dd className="text-xs text-gray-600">${payment.platformFee} AUD</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-xs text-gray-500">Tradie Earnings</dt>
-                <dd className="text-xs font-medium text-green-700">${payment.tradieEarnings} AUD</dd>
+                <dt className="text-xs text-gray-500">{payeeLabel} Earnings</dt>
+                <dd className="text-xs font-medium text-green-700">${payeeAmount ?? payment.tradieEarnings} AUD</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-xs text-gray-500">Stripe PI</dt>
@@ -634,7 +648,7 @@ export default function AdminJobDetailPage() {
             </div>
             <ActionButton
               label="Capture Payment"
-              description={`Release $${payment?.tradieEarnings ?? '—'} AUD to tradie wallet`}
+              description={`Release $${payeeAmount ?? '—'} AUD to ${payeeAccountLabel}`}
               icon={DollarSign}
               color={canCapture
                 ? 'bg-green-600 border-green-500 text-white hover:bg-green-700'
@@ -644,7 +658,7 @@ export default function AdminJobDetailPage() {
                 `/api/payments/capture/${jobId}`,
                 'payment:capture',
                 'Capture Payment',
-                `This will capture $${payment?.amount ?? '—'} AUD and credit $${payment?.tradieEarnings ?? '—'} AUD to the tradie\'s wallet. This action involves real money. Enter your password to confirm.`
+                `This will capture $${payment?.amount ?? '—'} AUD and release $${payeeAmount ?? '—'} AUD to the ${payeeAccountLabel}. This action involves real money. Enter your password to confirm.`
               )}
               disabled={!canCapture}
               isLoading={actionLoading === 'capture'}
@@ -655,37 +669,41 @@ export default function AdminJobDetailPage() {
         {payment?.status === 'captured' && !payment?.stripeTransferId && (
           <div className="mt-4 flex items-center gap-2 text-amber-400 text-xs font-medium">
             <AlertCircle className="w-4 h-4" />
-            Payment captured but transfer to tradie is missing — use Repair Wallet below
+            Payment captured but transfer to {isDirectAgencyContract ? 'agency' : 'tradie'} is missing — use repair below
           </div>
         )}
 
         {payment?.status === 'captured' && payment?.stripeTransferId && (
           <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-medium">
             <CheckCircle className="w-4 h-4" />
-            Payment captured & transferred — Tradie earned ${payment.tradieEarnings} AUD
+            Payment captured & transferred — {payeeLabel} earned ${payeeAmount ?? payment.tradieEarnings} AUD
           </div>
         )}
 
         {payment?.status === 'released' && (
           <div className="mt-4 flex items-center gap-2 text-green-400 text-xs font-medium">
             <CheckCircle className="w-4 h-4" />
-            Payment released — Tradie earned ${payment.tradieEarnings} AUD
+            Payment released — {payeeLabel} earned ${payeeAmount ?? payment.tradieEarnings} AUD
           </div>
         )}
 
         {needsWalletRepair && (
           <div className="mt-4">
             <ActionButton
-              label="Repair Wallet"
-              description={`Credit $${payment?.tradieEarnings ?? '—'} AUD to tradie wallet + trigger Stripe transfer`}
+              label={isDirectAgencyContract ? 'Repair Agency Transfer' : 'Repair Wallet'}
+              description={isDirectAgencyContract
+                ? `Release $${payeeAmount ?? '—'} AUD to agency Stripe account`
+                : `Credit $${payment?.tradieEarnings ?? '—'} AUD to tradie wallet + trigger Stripe transfer`}
               icon={DollarSign}
               color="bg-amber-600 border-amber-500 text-white hover:bg-amber-700"
               onClick={() => requestAction(
                 'repair-wallet',
                 `/api/admin/jobs/${jobId}/repair-wallet`,
                 'payment:repair_wallet',
-                'Repair Wallet & Transfer',
-                `This will credit $${payment?.tradieEarnings ?? '—'} AUD to the tradie's wallet and initiate the Stripe transfer. This involves real money. Enter your password to confirm.`
+                isDirectAgencyContract ? 'Repair Agency Transfer' : 'Repair Wallet & Transfer',
+                isDirectAgencyContract
+                  ? `This will release $${payeeAmount ?? '—'} AUD to the agency Stripe account. This involves real money. Enter your password to confirm.`
+                  : `This will credit $${payment?.tradieEarnings ?? '—'} AUD to the tradie's wallet and initiate the Stripe transfer. This involves real money. Enter your password to confirm.`
               )}
               disabled={false}
               isLoading={actionLoading === 'repair-wallet'}

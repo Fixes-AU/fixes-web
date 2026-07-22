@@ -12,9 +12,12 @@ type DisputeStatus = 'open' | 'under_review' | 'resolved_paid' | 'resolved_refun
 
 interface Dispute {
   _id: string
-  jobId: { _id: string; jobCode: string; title: string }
+  jobId: { _id: string; jobCode: string; title: string; fulfillmentType?: string; clientAgencyLabel?: string }
   initiatorId: { _id: string; name: string; email: string }
   againstId: { _id: string; name: string; email: string }
+  agencyId?: { _id: string; name: string; slug?: string; status?: string } | null
+  initiatorType?: 'client' | 'tradie' | 'agency' | 'admin' | null
+  againstType?: 'client' | 'tradie' | 'agency' | null
   status: DisputeStatus
   reason: string
   description: string
@@ -75,6 +78,14 @@ export default function AdminDisputesPage() {
 
   if (selectedDispute) {
     const isResolved = selectedDispute.status.startsWith('resolved')
+    const isAgencyDispute = selectedDispute.jobId?.fulfillmentType === 'agency_direct_contract' || !!selectedDispute.agencyId
+    const payeeLabel = isAgencyDispute ? 'Agency' : 'Tradie'
+    const initiatorLabel = selectedDispute.initiatorType
+      ? selectedDispute.initiatorType.replace(/_/g, ' ')
+      : 'Participant'
+    const againstLabel = selectedDispute.againstType
+      ? selectedDispute.againstType.replace(/_/g, ' ')
+      : 'Participant'
 
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-12">
@@ -89,6 +100,11 @@ export default function AdminDisputesPage() {
                 Dispute for Job {selectedDispute.jobId.jobCode}
               </h1>
               <p className="text-sm text-(--upwork-gray)">{selectedDispute.reason}</p>
+              {isAgencyDispute && (
+                <p className="text-xs text-blue-600 font-semibold mt-1">
+                  Direct Contract Agency: {selectedDispute.agencyId?.name || selectedDispute.jobId?.clientAgencyLabel || 'Agency'}
+                </p>
+              )}
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isResolved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               {selectedDispute.status}
@@ -97,11 +113,11 @@ export default function AdminDisputesPage() {
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <span className="text-gray-500 font-semibold block mb-1">Initiator (Client)</span>
+              <span className="text-gray-500 font-semibold block mb-1">Initiator ({initiatorLabel})</span>
               <p className="text-(--upwork-navy)">{selectedDispute.initiatorId?.name} ({selectedDispute.initiatorId?.email})</p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-              <span className="text-gray-500 font-semibold block mb-1">Against (Tradie)</span>
+              <span className="text-gray-500 font-semibold block mb-1">Against ({againstLabel})</span>
               <p className="text-(--upwork-navy)">{selectedDispute.againstId?.name} ({selectedDispute.againstId?.email})</p>
             </div>
           </div>
@@ -113,7 +129,7 @@ export default function AdminDisputesPage() {
 
           {selectedDispute.initiatorEvidence?.length > 0 && (
             <div>
-              <h3 className="font-semibold text-(--upwork-navy) mb-2">Client Evidence</h3>
+              <h3 className="font-semibold text-(--upwork-navy) mb-2">{initiatorLabel} Evidence</h3>
               <div className="flex gap-2 flex-wrap">
                 {selectedDispute.initiatorEvidence.map((ev, i) => (
                   <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer"
@@ -127,7 +143,7 @@ export default function AdminDisputesPage() {
 
           {(selectedDispute as any).againstEvidence?.length > 0 && (
             <div>
-              <h3 className="font-semibold text-(--upwork-navy) mb-2">Tradie Evidence</h3>
+              <h3 className="font-semibold text-(--upwork-navy) mb-2">{againstLabel} Evidence</h3>
               <div className="flex gap-2 flex-wrap">
                 {(selectedDispute as any).againstEvidence.map((ev: any, i: number) => (
                   <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer"
@@ -146,8 +162,8 @@ export default function AdminDisputesPage() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { value: 'refund_client', label: 'Refund Client (Cancel Stripe)' },
-                  { value: 'payout_tradie', label: 'Payout Tradie (Capture All)' },
-                  { value: 'split', label: 'Split Funds (Partial Capture)' },
+                  { value: 'payout_tradie', label: `Payout ${payeeLabel} (Capture All)` },
+                  { value: 'split', label: `Split Funds (Pay ${payeeLabel})` },
                 ].map(opt => (
                   <button
                     key={opt.value}
@@ -163,7 +179,7 @@ export default function AdminDisputesPage() {
                 <div>
                   <label className="block text-sm font-semibold text-(--upwork-navy) mb-2">Tradie Split Amount ($)</label>
                   <input type="number" value={splitAmount} onChange={e => setSplitAmount(Number(e.target.value))} className="w-full border border-gray-200 rounded-lg p-2" placeholder="e.g. 150" />
-                  <p className="text-xs text-gray-400 mt-1">Stripe will only capture this amount, the rest will be refunded to the client.</p>
+                  <p className="text-xs text-gray-400 mt-1">Stripe will only capture this amount, pay the eligible {payeeLabel.toLowerCase()} amount after platform fee, and refund the rest to the client.</p>
                 </div>
               )}
 
@@ -201,7 +217,7 @@ export default function AdminDisputesPage() {
           open={showResolveDialog}
           onOpenChange={setShowResolveDialog}
           title="Finalize Dispute Resolution"
-          description={`This will ${resolveAction === 'refund_client' ? 'refund the client' : resolveAction === 'payout_tradie' ? 'pay out the tradie' : 'split funds between parties'}. This action involves real money and cannot be undone. Enter your password to confirm.`}
+          description={`This will ${resolveAction === 'refund_client' ? 'refund the client' : resolveAction === 'payout_tradie' ? `pay out the ${payeeLabel.toLowerCase()}` : 'split funds between parties'}. This action involves real money and cannot be undone. Enter your password to confirm.`}
           action="dispute:resolve"
           variant="destructive"
           confirmLabel="Finalize Resolution"
@@ -244,6 +260,7 @@ export default function AdminDisputesPage() {
                 <tr key={d._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <span className="font-semibold text-(--upwork-navy)">{d.jobId?.jobCode}</span>
+                    {d.agencyId && <span className="block text-xs text-blue-600 font-semibold">{d.agencyId.name}</span>}
                   </td>
                   <td className="px-6 py-4 text-sm text-(--upwork-gray)">{d.reason}</td>
                   <td className="px-6 py-4">
