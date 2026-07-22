@@ -97,6 +97,8 @@ interface ScopeChangeData {
 
 export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeChangeData }) {
   const sc = scopeChange
+  const isPendingAdmin = sc.status === 'pending_admin_review'
+  const isPendingClient = sc.status === 'pending_client'
   const selectedOption = sc.newQuoteOptions?.[0]
   const originalTotal = Math.round((Number(sc.originalPrice) || 0) * 1.1 * 100) / 100
   const newSubtotal = Number(selectedOption?.suggestedFixedPrice ?? sc.newPrice) || 0
@@ -117,15 +119,20 @@ export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeC
           <div>
             <p className="text-sm font-semibold text-orange-800 mb-1">Scope Change Requested</p>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              sc.status === 'pending' ? 'bg-amber-100 text-amber-700'
+              isPendingAdmin ? 'bg-blue-100 text-blue-700'
+                : isPendingClient ? 'bg-amber-100 text-amber-700'
                 : sc.status === 'accepted' ? 'bg-green-100 text-green-700'
                 : 'bg-red-100 text-red-700'
             }`}>
-              {sc.status === 'pending' ? 'Pending' : sc.status === 'accepted' ? 'Accepted' : 'Declined'}
+              {isPendingAdmin ? 'Fixes Review' : isPendingClient ? 'Client Review' : sc.status === 'accepted' ? 'Accepted' : 'Closed'}
             </span>
           </div>
 
-          <p className="text-sm text-orange-700">{sc.description}</p>
+          <p className="text-sm text-orange-700">
+            {isPendingAdmin
+              ? 'The tradie submitted a variation. Fixes Authorised team is reviewing it before sending an updated quote to the homeowner.'
+              : sc.description}
+          </p>
 
           {typeof sc.estimatedExtraCost === 'number' && (
             <div className="rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm flex justify-between gap-3">
@@ -145,22 +152,24 @@ export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeC
             </div>
           )}
 
-          <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
-            <div className="flex justify-between px-3 py-2 bg-white">
-              <span className="text-gray-500">Original Price</span>
-              <span className="font-medium text-gray-900">${originalTotal.toFixed(2)} incl. GST</span>
+          {!isPendingAdmin && (
+            <div className="rounded-lg border border-orange-200 overflow-hidden text-sm">
+              <div className="flex justify-between px-3 py-2 bg-white">
+                <span className="text-gray-500">Original Price</span>
+                <span className="font-medium text-gray-900">${originalTotal.toFixed(2)} incl. GST</span>
+              </div>
+              <div className="flex justify-between px-3 py-2 bg-orange-100/50 border-t border-orange-100">
+                <span className="text-orange-700">New Price</span>
+                <span className="font-bold text-orange-800">${newTotal.toFixed(2)} incl. GST</span>
+              </div>
+              <div className="flex justify-between px-3 py-2 bg-white border-t border-orange-100">
+                <span className="text-gray-500">Difference</span>
+                <span className={`font-semibold ${isIncrease ? 'text-red-600' : 'text-green-600'}`}>
+                  {isIncrease ? '+' : '-'}${Math.abs(priceDiff).toFixed(2)}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between px-3 py-2 bg-orange-100/50 border-t border-orange-100">
-              <span className="text-orange-700">New Price</span>
-              <span className="font-bold text-orange-800">${newTotal.toFixed(2)} incl. GST</span>
-            </div>
-            <div className="flex justify-between px-3 py-2 bg-white border-t border-orange-100">
-              <span className="text-gray-500">Difference</span>
-              <span className={`font-semibold ${isIncrease ? 'text-red-600' : 'text-green-600'}`}>
-                {isIncrease ? '+' : '-'}${Math.abs(priceDiff).toFixed(2)}
-              </span>
-            </div>
-          </div>
+          )}
 
           {sc.proofPhotos?.length > 0 && (
             <div>
@@ -176,7 +185,7 @@ export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeC
             </div>
           )}
 
-          {sc.status === 'pending' && (
+          {isPendingClient && (
             <p className="text-xs text-orange-500 italic flex items-center gap-1">
               <Clock className="w-3 h-3" />
               Waiting for the homeowner&apos;s decision

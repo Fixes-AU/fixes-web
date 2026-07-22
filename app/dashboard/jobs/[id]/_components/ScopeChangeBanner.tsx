@@ -213,6 +213,32 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
     )
   }
 
+  if (scopeChange.status === 'pending_admin_review') {
+    return (
+      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800">
+        <Clock className="w-5 h-5 shrink-0 mt-0.5" />
+        <div>
+          <h3 className="font-semibold text-sm">Variation Under Fixes Review</h3>
+          <p className="text-sm mt-1">
+            Your tradie submitted a variation. Fixes Authorised team is reviewing the notes, photos, and pricing before sending an updated quote for your approval.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (scopeChange.status !== 'pending_client') {
+    return (
+      <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-start gap-3 text-gray-700">
+        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+        <div>
+          <h3 className="font-semibold text-sm">Variation Review Updated</h3>
+          <p className="text-sm mt-1">This variation is no longer awaiting client approval.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="mb-6 border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-white">
       <div className="bg-gray-50 border-b border-gray-200 p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 flex-col sm:flex-row">
@@ -222,10 +248,10 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
             Scope Change Request
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Your tradie found additional factors affecting this job and has submitted notes and photos for an updated quote.
+            Fixes has reviewed the variation and prepared an updated quote for your approval.
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Fixes Authorised team will manually review each variation. If a price change applies, the updated quote is sent for approval before any extra payment is charged or balance is adjusted.
+            If a price change applies, the updated quote is sent for approval before any extra payment is charged or balance is adjusted.
           </p>
         </div>
       </div>

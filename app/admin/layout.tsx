@@ -23,6 +23,7 @@ import {
   LifeBuoy,
   Trash2,
   ClipboardList,
+  ClipboardCheck,
   Percent,
   CreditCard,
   Crown,
@@ -62,6 +63,7 @@ const sidebarGroups: SidebarGroup[] = [
     label: 'Operations',
     links: [
       { href: '/admin/disputes', label: 'Dispute Center', icon: MessageSquareWarning, permission: 'view:disputes' },
+      { href: '/admin/variations', label: 'Variations', icon: ClipboardCheck, permission: 'view:scope_changes' },
       { href: '/admin/support-cases', label: 'Support Cases', icon: LifeBuoy, permission: 'view:support_cases' },
       { href: '/admin/bug-reports', label: 'Bug Reports', icon: Bug, permission: 'view:bug_reports' },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, permission: 'view:notifications' },

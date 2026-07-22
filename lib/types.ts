@@ -227,7 +227,14 @@ export interface Job {
 }
 
 
-export type ScopeChangeStatus = 'pending_client' | 'accepted' | 'declined' | 'proof_submitted'
+export type ScopeChangeStatus =
+  | 'pending_admin_review'
+  | 'pending_client'
+  | 'accepted'
+  | 'declined'
+  | 'admin_requested_changes'
+  | 'admin_rejected'
+  | 'proof_submitted'
 
 export interface ScopeChange {
   _id: string
@@ -244,6 +251,10 @@ export interface ScopeChange {
   totalIncGst?: number
   newQuoteOptions: QuoteOption[]
   selectedNewTier: SkillLevel | null
+  adminReviewedBy?: string | User | null
+  adminReviewedAt?: string | null
+  clientSentAt?: string | null
+  adminNotes?: string | null
   proofPhotos: JobImage[]
   proofDescription: string | null
   createdAt: string
