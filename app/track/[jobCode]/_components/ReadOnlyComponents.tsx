@@ -83,6 +83,7 @@ interface ScopeChangeData {
   status: string
   description: string
   photos: { url: string; publicId: string }[]
+  estimatedExtraCost?: number | null
   originalPrice: number
   newPrice: number
   priceDifference: number
@@ -125,6 +126,13 @@ export function ReadOnlyScopeChangeBanner({ scopeChange }: { scopeChange: ScopeC
           </div>
 
           <p className="text-sm text-orange-700">{sc.description}</p>
+
+          {typeof sc.estimatedExtraCost === 'number' && (
+            <div className="rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm flex justify-between gap-3">
+              <span className="text-gray-500">Tradie rough estimate</span>
+              <span className="font-semibold text-orange-800">${sc.estimatedExtraCost.toFixed(2)} AUD</span>
+            </div>
+          )}
 
           {sc.photos?.length > 0 && (
             <div className="flex flex-wrap gap-2">

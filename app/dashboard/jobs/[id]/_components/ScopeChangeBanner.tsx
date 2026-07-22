@@ -222,7 +222,10 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
             Scope Change Request
           </h2>
           <p className="text-sm text-gray-600 mt-1">
-            Your tradie found additional factors affecting this job and has submitted an updated scope for your approval.
+            Your tradie found additional factors affecting this job and has submitted notes and photos for an updated quote.
+          </p>
+          <p className="text-xs text-gray-500 mt-2">
+            Fixes Authorised team will manually review each variation. If a price change applies, the updated quote is sent for approval before any extra payment is charged or balance is adjusted.
           </p>
         </div>
       </div>
@@ -234,6 +237,13 @@ export default function ScopeChangeBanner({ job }: ScopeChangeBannerProps) {
             {scopeChange.description}
           </div>
         </div>
+
+        {typeof scopeChange.estimatedExtraCost === 'number' && (
+          <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+            <span className="text-amber-800 font-medium">Tradie rough estimate</span>
+            <span className="text-amber-900 font-bold">{formatMoney(scopeChange.estimatedExtraCost)} AUD</span>
+          </div>
+        )}
 
         {scopeChange.photos && scopeChange.photos.length > 0 && (
           <div className="mb-6">

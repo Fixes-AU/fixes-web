@@ -236,6 +236,7 @@ export interface ScopeChange {
   status: ScopeChangeStatus
   description: string
   photos: JobImage[]
+  estimatedExtraCost?: number | null
   originalPrice: number
   newPrice: number
   priceDifference: number
