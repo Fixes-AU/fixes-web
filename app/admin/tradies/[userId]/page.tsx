@@ -7,9 +7,10 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, ShieldCheck, ShieldX, FileText, ExternalLink,
   Loader2, CheckCircle2, XCircle, AlertCircle, Clock,
+  Briefcase, X, ChevronDown, AlertTriangle,
 } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
-import { CATEGORY_LABELS } from '@/lib/constants'
+import { CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
 import type { TradieCategory } from '@/lib/types'
 import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
@@ -43,6 +44,13 @@ export default function AdminTradieDocumentsPage() {
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
   const [pendingDocAction, setPendingDocAction] = useState<{ docType: string; action: 'verify' | 'reject' } | null>(null)
 
+  // Category editing state
+  const [editingCategories, setEditingCategories] = useState(false)
+  const [draftCategories, setDraftCategories] = useState<string[]>([])
+  const [categorySaving, setCategorySaving] = useState(false)
+  const [pendingCategoryAction, setPendingCategoryAction] = useState(false)
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3000)
   }
@@ -52,8 +60,11 @@ export default function AdminTradieDocumentsPage() {
     try {
       const res = await api.get<TradieDocsResponse>(`/api/admin/tradies/${userId}/documents`)
       setData(res.data)
+      if (!editingCategories) {
+        setDraftCategories(res.data.categories)
+      }
     } catch { /* silent */ } finally { setIsLoading(false) }
-  }, [userId])
+  }, [userId, editingCategories])
 
   useEffect(() => { fetchDocs() }, [fetchDocs])
 
@@ -87,6 +98,52 @@ export default function AdminTradieDocumentsPage() {
       showToast(err instanceof ApiError ? err.message : `Failed to ${action}`, 'error')
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const startCategoryEdit = () => {
+    if (data) setDraftCategories([...data.categories])
+    setEditingCategories(true)
+    setShowCategoryDropdown(false)
+  }
+
+  const cancelCategoryEdit = () => {
+    if (data) setDraftCategories([...data.categories])
+    setEditingCategories(false)
+    setShowCategoryDropdown(false)
+  }
+
+  const removeDraftCategory = (cat: string) => {
+    setDraftCategories(prev => prev.filter(c => c !== cat))
+  }
+
+  const addDraftCategory = (cat: string) => {
+    setDraftCategories(prev => [...prev, cat])
+    setShowCategoryDropdown(false)
+  }
+
+  const categoriesChanged = data
+    ? draftCategories.length !== data.categories.length ||
+      !draftCategories.every(c => data.categories.includes(c))
+    : false
+
+  const executeCategoryUpdate = async (token: string) => {
+    setCategorySaving(true)
+    try {
+      const res = await api.raw<{ categories: string[]; isFullyVerified: boolean; wasFullyVerified: boolean }>(
+        `/api/admin/tradies/${userId}/categories`, {
+          method: 'PATCH',
+          body: { categories: draftCategories },
+          headers: { 'X-Admin-Action-Token': token },
+        }
+      )
+      showToast('Categories updated ✓', 'success')
+      setEditingCategories(false)
+      fetchDocs()
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'Failed to update categories', 'error')
+    } finally {
+      setCategorySaving(false)
     }
   }
 
@@ -176,6 +233,90 @@ export default function AdminTradieDocumentsPage() {
             <div className="h-full bg-[#2563EB] rounded-full transition-all" style={{ width: `${pct}%` }} />
           </div>
         </div>
+      </div>
+
+      {/* ── Manage Categories ─────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-[#2563EB]" />
+            <h2 className="text-sm font-semibold text-gray-900">Trade Categories</h2>
+          </div>
+          {!editingCategories ? (
+            <button onClick={startCategoryEdit}
+              className="text-xs px-3 py-1.5 rounded-lg font-medium bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE] transition-colors">
+              Edit Categories
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={cancelCategoryEdit}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+                Cancel
+              </button>
+              <button onClick={() => setPendingCategoryAction(true)}
+                disabled={!categoriesChanged || draftCategories.length === 0 || categorySaving}
+                className="text-xs px-3 py-1.5 rounded-lg font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-40">
+                {categorySaving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Changes'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(editingCategories ? draftCategories : categories).map((cat) => (
+            <span key={cat} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-medium ${
+              editingCategories
+                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                : 'bg-emerald-50 text-emerald-600'
+            }`}>
+              {CATEGORY_LABELS[cat as TradieCategory] || cat}
+              {editingCategories && draftCategories.length > 1 && (
+                <button onClick={() => removeDraftCategory(cat)}
+                  className="hover:bg-blue-200 rounded-full p-0.5 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </span>
+          ))}
+
+          {editingCategories && (
+            <div className="relative">
+              <button
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-dashed border-gray-300 transition-colors">
+                + Add Category
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              {showCategoryDropdown && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
+                  {VALID_CATEGORIES.filter(c => !draftCategories.includes(c)).length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-gray-400">All categories already added</p>
+                  ) : (
+                    VALID_CATEGORIES.filter(c => !draftCategories.includes(c)).map(cat => (
+                      <button key={cat} onClick={() => addDraftCategory(cat)}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                        {CATEGORY_LABELS[cat as TradieCategory] || cat}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {editingCategories && draftCategories.length === 0 && (
+          <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <AlertTriangle className="w-3 h-3" />At least one category is required
+          </p>
+        )}
+
+        {editingCategories && categoriesChanged && draftCategories.length > 0 && (
+          <p className="text-xs text-amber-600 mt-3 flex items-center gap-1.5 bg-amber-50 px-3 py-2 rounded-lg">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            Changing categories will recalculate required documents and may affect verification status.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -286,6 +427,18 @@ export default function AdminTradieDocumentsPage() {
         confirmLabel={pendingDocAction?.action === 'verify' ? 'Verify Document' : 'Reject Document'}
         onConfirm={executeDocAction}
         onSuccess={() => setPendingDocAction(null)}
+      />
+
+      <AdminActionConfirmDialog
+        open={pendingCategoryAction}
+        onOpenChange={(open) => { if (!open) setPendingCategoryAction(false) }}
+        title="Update Trade Categories"
+        description={`This will change the tradie's categories to: ${draftCategories.map(c => CATEGORY_LABELS[c as TradieCategory] || c).join(', ')}. This may affect their required documents and verification status. Enter your password to confirm.`}
+        action="tradie:update_categories"
+        variant="default"
+        confirmLabel="Update Categories"
+        onConfirm={executeCategoryUpdate}
+        onSuccess={() => setPendingCategoryAction(false)}
       />
     </div>
   )
