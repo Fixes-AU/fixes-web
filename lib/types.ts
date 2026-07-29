@@ -476,7 +476,7 @@ export interface MeResponse {
 export interface AdminStats {
   users: { total: number; clients: number; tradies: number }
   jobs: { total: number; completed: number; cancelled: number; active: number }
-  tradies: { pendingVerification: number; fullyVerified: number }
+  tradies: { pendingVerification: number; fullyVerified: number; online: number }
   revenue: {
     totalRevenue: number
     platformFee: number
