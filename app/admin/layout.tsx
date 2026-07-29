@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -29,9 +29,12 @@ import {
   Crown,
   Building2,
   FileCheck2,
+  Radio,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
+import { api } from '@/lib/api'
+import { connectSocket, getSocket } from '@/lib/socket'
 
 interface SidebarLink {
   href: string
@@ -163,6 +166,87 @@ function AdminBellMenu() {
   )
 }
 
+const ONLINE_COUNT_REFRESH_INTERVAL_MS = 30_000
+
+function AdminOnlineTradiesBadge() {
+  const [online, setOnline] = useState<number | null>(null)
+  const [isStale, setIsStale] = useState(false)
+  const latestRequestRef = useRef(0)
+
+  const loadOnlineCount = useCallback(async () => {
+    const requestId = ++latestRequestRef.current
+
+    try {
+      const res = await api.get<{ online: number }>('/api/admin/tradies/online-count')
+      if (requestId !== latestRequestRef.current) return
+
+      setOnline(res.data.online)
+      setIsStale(false)
+    } catch {
+      if (requestId === latestRequestRef.current) setIsStale(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadOnlineCount()
+    const interval = setInterval(loadOnlineCount, ONLINE_COUNT_REFRESH_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [loadOnlineCount])
+
+  useEffect(() => {
+    const socket = getSocket() ?? connectSocket()
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null
+
+    const handleStatusChanged = () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout)
+      refreshTimeout = setTimeout(loadOnlineCount, 250)
+    }
+
+    socket.on('admin:tradie_status_changed', handleStatusChanged)
+
+    return () => {
+      if (refreshTimeout) clearTimeout(refreshTimeout)
+      socket.off('admin:tradie_status_changed', handleStatusChanged)
+    }
+  }, [loadOnlineCount])
+
+  const hasOnlineTradies = online !== null && online > 0
+  const label = online === null
+    ? 'Online tradie count unavailable'
+    : `${online} ${online === 1 ? 'tradie' : 'tradies'} available for jobs`
+  const statusLabel = isStale ? `${label}. Showing the last known count.` : label
+
+  return (
+    <div
+      className={`hidden min-[400px]:inline-flex h-8 min-w-[52px] items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors ${
+        isStale
+          ? 'border-amber-200 bg-amber-50 text-amber-700'
+          : hasOnlineTradies
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-gray-200 bg-gray-50 text-gray-500'
+      }`}
+      role="status"
+      aria-live="polite"
+      aria-label={statusLabel}
+      title={statusLabel}
+    >
+      <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+        {hasOnlineTradies && !isStale && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60 motion-safe:animate-ping" />
+        )}
+        <span
+          className={`relative inline-flex h-2 w-2 rounded-full ${
+            isStale ? 'bg-amber-500' : hasOnlineTradies ? 'bg-emerald-500' : 'bg-gray-400'
+          }`}
+        />
+      </span>
+      <Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      <span className="hidden xl:inline">Online tradies</span>
+      <span>{online ?? '—'}</span>
+    </div>
+  )
+}
+
 function SidebarNav({ links, closeMobile }: { links: SidebarGroup[]; closeMobile?: () => void }) {
   const pathname = usePathname()
   const isActive = (href: string) =>
@@ -281,6 +365,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
               <ArrowLeft className="w-3 h-3" />
               Main Site
             </Link>
+            <AdminOnlineTradiesBadge />
             <AdminBellMenu />
             <div className="hidden sm:block text-right">
               <p className="text-xs font-medium text-gray-700 leading-tight">{user.name}</p>
