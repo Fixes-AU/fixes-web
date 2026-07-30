@@ -1,7 +1,7 @@
 // fixes-web/app/layout.tsx
 
 import type { Metadata } from 'next'
-import { Nunito_Sans } from 'next/font/google'
+import { Manrope, Nunito_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import './globals.css'
@@ -11,6 +11,12 @@ const nunitoSans = Nunito_Sans({
   variable: '--font-nunito-sans',
   weight: ['300', '400', '500', '600', '700', '800']
 });
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-home-manrope',
+  weight: ['400', '500', '600', '700'],
+})
 
 export const metadata: Metadata = {
   title: 'Fixes | Hire Trusted Tradies Instantly',
@@ -40,7 +46,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${nunitoSans.variable} font-sans antialiased`}>
+      <body className={`${nunitoSans.variable} ${manrope.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

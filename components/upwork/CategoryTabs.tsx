@@ -1,86 +1,55 @@
-"use client"
-
 import Link from "next/link"
-import { useState } from "react"
-import { 
-  Hammer, 
-  Zap, 
-  Droplets, 
-  Wrench, 
+import {
+  Anvil,
   Car,
+  Droplets,
   Flame,
-  TreeDeciduous,
-  Home,
-  HardHat,
+  Hammer,
+  House,
   Paintbrush,
-  ChevronRight
+  TreeDeciduous,
+  Wrench,
+  Zap,
 } from "lucide-react"
 
 const categories = [
-  { id: "building", slug: "carpenter", label: "Building & Construction", icon: Hammer },
-  { id: "electrical", slug: "electrician", label: "Electrical", icon: Zap },
-  { id: "plumbing", slug: "plumber", label: "Plumbing & Gas", icon: Droplets },
-  { id: "mechanical", slug: "hvac", label: "Mechanical & Fitting", icon: Wrench },
-  { id: "automotive", slug: "other", label: "Automotive", icon: Car },
-  { id: "hvac", slug: "hvac", label: "HVAC & Refrigeration", icon: Flame },
-  { id: "landscaping", slug: "labourer", label: "Landscaping & Civil", icon: TreeDeciduous },
-  { id: "finishing", slug: "plasterer", label: "Finishing Trades", icon: Home },
-  { id: "metal", slug: "other", label: "Metal & Welding", icon: HardHat },
-  { id: "painting", slug: "painter", label: "Painting & Decorating", icon: Paintbrush },
-  { id: "roofing", slug: "roofing", label: "Roofing", icon: Home },
-]
+  { slug: "carpenter", label: "Building & Construction", icon: Hammer },
+  { slug: "electrician", label: "Electrical", icon: Zap },
+  { slug: "plumber", label: "Plumbing & Gas", icon: Droplets },
+  { slug: "hvac", label: "Mechanical & Fitting", icon: Wrench },
+  { slug: "other", label: "Automative", icon: Car },
+  { slug: "hvac", label: "HVAC & Refrigeration", icon: Flame },
+  { slug: "labourer", label: "Landscaping & Civil", icon: TreeDeciduous },
+  { slug: "plasterer", label: "Finishing Trades", icon: House },
+  { slug: "other", label: "Metal & Welding", icon: Anvil },
+  { slug: "painter", label: "Painting & Decorating", icon: Paintbrush },
+] as const
 
 export function CategoryTabs() {
-  const [activeCategory, setActiveCategory] = useState("building")
-
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6">
-        <h2 className="text-3xl lg:text-4xl font-bold text-(--upwork-navy) text-center mb-12">
-          Find tradies for every type of work
+    <section className="bg-white py-15 font-manrope lg:py-20">
+      <div className="mx-auto max-w-320 px-5 sm:px-8 lg:px-0">
+        <h2 className="max-w-200 text-[32px] font-semibold leading-11 tracking-[-0.04em] text-black lg:text-[40px] lg:leading-13.75">
+          Find The Right Service For Every Home Project
         </h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {categories.map((category) => {
-            const Icon = category.icon
-            const isActive = activeCategory === category.id
-            
-            return (
-              <Link
-                key={category.id}
-                href={`/categories/${category.slug}`}
-                onClick={() => setActiveCategory(category.id)}
-                className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
-                  isActive
-                    ? "border-(--upwork-green) bg-(--upwork-green)/5"
-                    : "border-gray-200 hover:border-(--upwork-green)/50 bg-white"
-                }`}
-              >
-                <div className={`p-3 rounded-lg ${
-                  isActive
-                    ? "bg-(--upwork-green) text-white"
-                    : "bg-(--upwork-light-gray) text-(--upwork-gray)"
-                }`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <span className={`text-sm font-medium text-center ${
-                  isActive ? "text-(--upwork-green)" : "text-(--upwork-navy)"
-                }`}>
-                  {category.label}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
-
-        <div className="flex justify-center mt-8">
-          <Link
-            href="/categories"
-            className="flex items-center gap-2 text-(--upwork-green) font-medium hover:underline"
-          >
-            View all trade categories
-            <ChevronRight className="w-4 h-4" />
-          </Link>
+        <div className="mt-10 grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:mt-12 lg:grid-cols-5 lg:gap-5">
+          {categories.map(({ slug, label, icon: Icon }, index) => (
+            <Link
+              key={`${slug}-${label}`}
+              href={`/categories/${slug}`}
+              className={`group flex min-h-36 flex-col items-start justify-between rounded-2xl border bg-white p-4 shadow-[0_5px_20px_rgba(3,28,25,0.06)] transition hover:-translate-y-1 hover:border-[#72CF10] hover:shadow-[0_12px_30px_rgba(3,28,25,0.10)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08544B] sm:min-h-40 sm:p-5 lg:min-h-44 ${
+                index === 0 ? "border-[#72CF10]" : "border-black/5"
+              }`}
+            >
+              <span className="flex size-11 items-center justify-center rounded-full bg-[#F4F7F5] text-[#0E8C7D] transition group-hover:bg-[#E9F5EF]">
+                <Icon className="size-5" strokeWidth={1.8} />
+              </span>
+              <span className="mt-5 max-w-36 text-[13px] font-medium leading-5 text-[#031C19] sm:text-sm">
+                {label}
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

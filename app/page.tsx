@@ -4,8 +4,8 @@ import {
   Header,
   HeroSection,
   CategoryTabs,
-  SkillsSearch,
   HowItWorks,
+  CTASection,
   PricingPlans,
   Testimonials,
   TrustedBy,
@@ -15,15 +15,16 @@ import {
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen overflow-x-clip bg-white font-manrope">
       <Header />
       <HeroSection />
       <CategoryTabs />
       <HowItWorks />
+      <BrandManifesto />
+      <CTASection />
       <PricingPlans />
       <Testimonials />
       <TrustedBy />
-      <BrandManifesto />
       <Footer />
     </main>
   )

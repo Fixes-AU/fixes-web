@@ -1,127 +1,96 @@
-import { Check, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import Link from "next/link"
+import { Check, ChevronRight } from "lucide-react"
 
-const homeOwnerFeatures = [
-  "Post jobs for free — no upfront cost",
+const includedFeatures = [
+  "Post jobs for free no upfront cost",
   "Get matched with nearby, top-rated tradies",
   "View tradie profiles, ratings and reviews",
   "Message and book directly in the app",
-  "Secure payment — only released when job is approved",
-]
-
-const businessFeatures = [
-  "Unlimited job postings across multiple sites",
-  "Priority matching with vetted, experienced tradies",
-  "Team access — manage hiring with roles and permissions",
-  "Centralised billing — track all job spend in one place",
-  "Dedicated account support for your business",
+  "Secure payment only released when job is approved",
 ]
 
 export function PricingPlans() {
   return (
-    <section className="py-16 lg:py-24 bg-[#f5f7f2]">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6">
-        <h2 className="text-3xl lg:text-4xl font-bold text-(--upwork-navy) text-center mb-2">
-          Choose how you want to hire
-        </h2>
-        <p className="text-gray-500 text-center mb-12">
-          Flexible options designed to fit your hiring needs
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-6 max-w-200 mx-auto">
-          <div className="bg-white rounded-2xl p-8 border border-[#dde8d4] flex flex-col relative shadow-sm">
-            <h3 className="text-2xl font-semibold text-(--upwork-navy) mb-1">
-              Home Owner
-            </h3>
-            <p className="text-[15px] text-gray-500 mb-6">
-              For one-off home repairs and projects
-            </p>
-            
-            <p className="text-(--upwork-navy) text-[15px] leading-relaxed mb-6 font-medium pb-6 border-b border-gray-100">
-              Book a tradie for any job around the home — no subscription, no lock-in. Just post, hire, and pay when the work is done.
-            </p>
-
-            <div className="mb-6">
-              <p className="text-2xl font-semibold text-[#3B6D11] mb-1">
-                Free to join
-              </p>
-              <p className="text-sm text-gray-500">
-                Only pay for the job you book
-              </p>
-            </div>
-
-            <p className="text-[15px] font-semibold text-(--upwork-navy) mb-4">
-              Includes:
-            </p>
-            <ul className="space-y-4 mb-8 flex-1">
-              {homeOwnerFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <Check className="w-4.5 h-4.5 text-[#3B6D11] shrink-0 mt-0.5" />
-                  <span className="text-[14px] text-gray-600 leading-snug">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Button
-              variant="outline"
-              asChild
-              className="w-full bg-transparent border-2 border-[#3B6D11] text-[#3B6D11] hover:bg-[#3B6D11]/5 hover:text-[#3B6D11] rounded-full py-6 text-[15px] font-semibold transition-colors mt-auto"
-            >
-              <Link href="/register">Get started for free</Link>
-            </Button>
-          </div>
-
-          <div className="bg-white rounded-2xl p-8 border-2 border-[#3B6D11] flex flex-col relative shadow-sm">
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-5 py-1 bg-[#3B6D11] text-[#EAF3DE] text-sm font-semibold rounded-full shadow-sm">
-              Popular
-            </span>
-
-            <h3 className="text-2xl font-semibold text-(--upwork-navy) mb-1 mt-1">
-              Business
-            </h3>
-            <p className="text-[15px] text-gray-500 mb-6">
-              For ongoing work, teams and job sites
-            </p>
-            
-            <p className="text-(--upwork-navy) text-[15px] leading-relaxed mb-6 font-medium pb-6 border-b border-gray-100">
-              Hire multiple tradies across your work sites with premium tools, priority matching and centralised billing — all in one place.
-            </p>
-
-            <div className="mb-6 flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-(--upwork-navy)">$299</span>
-              <span className="text-sm text-gray-500">/ month + job costs</span>
-            </div>
-
-            <p className="text-[15px] font-semibold text-(--upwork-navy) mb-4">
-              Everything in Home Owner, plus:
-            </p>
-            <ul className="space-y-4 mb-8 flex-1">
-              {businessFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <Check className="w-4.5 h-4.5 text-[#3B6D11] shrink-0 mt-0.5" />
-                  <span className="text-[14px] text-gray-600 leading-snug">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Button
-              asChild
-              className="w-full bg-[#3B6D11] border-none text-white hover:bg-[#3B6D11]/90 rounded-full py-6 text-[15px] font-semibold transition-colors mt-auto"
-            >
-              <Link href="/register?plan=business">Get started today</Link>
-            </Button>
-          </div>
+    <section className="relative overflow-hidden bg-white py-15 font-manrope lg:py-20">
+      <Image
+        src="/home-page-assets/redesign/pricing-backdrop.png"
+        alt=""
+        width={1926}
+        height={816}
+        loading="eager"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 w-full object-cover opacity-70"
+      />
+      <div className="relative mx-auto max-w-320 px-5 sm:px-8 lg:px-0">
+        <div className="text-center">
+          <h2 className="text-[32px] font-semibold leading-11 tracking-[-0.04em] text-black lg:text-[40px] lg:leading-13.75">
+            Choose how you want to hire
+          </h2>
+          <p className="mt-3 text-sm text-[#616161] lg:text-base">Flexible options designed to fit your hiring needs</p>
         </div>
 
-        {/* Compare Features Link */}
-        <div className="flex justify-center mt-8">
-          <Link href="/pricing" className="flex items-center gap-1 text-[#3B6D11] text-[15px] font-medium hover:underline transition-all">
+        <div className="no-scrollbar -mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-6 sm:-mx-8 sm:px-8 lg:mx-auto lg:grid lg:max-w-195 lg:grid-cols-2 lg:gap-5 lg:overflow-visible lg:px-0">
+          <article className="flex w-[calc(100vw-56px)] max-w-95 shrink-0 snap-start flex-col rounded-2xl border border-[#08544B] bg-white p-6 shadow-sm lg:w-auto lg:max-w-none">
+            <h3 className="text-xl font-semibold text-[#031C19]">Basic</h3>
+            <p className="mt-3 min-h-17 text-sm leading-5 text-[#616161]">
+              Book a tradie for any job around the home no subscription, no lock-in. Just post, hire, and pay when the work is done.
+            </p>
+            <div className="mt-5 border-b border-black/8 pb-5">
+              <p className="text-3xl font-semibold text-[#031C19]">Free</p>
+            </div>
+            <Link
+              href="/register"
+              className="mt-5 flex h-11 items-center justify-center rounded-full border border-[#031C19] text-sm font-semibold text-[#031C19] transition hover:bg-[#031C19] hover:text-white"
+            >
+              Get Started
+            </Link>
+            <p className="mt-6 text-sm font-semibold text-[#031C19]">What&apos;s Included</p>
+            <FeatureList />
+          </article>
+
+          <article className="relative flex w-[calc(100vw-56px)] max-w-95 shrink-0 snap-start flex-col rounded-2xl border border-[#DCDCE6] bg-white p-6 shadow-sm lg:w-auto lg:max-w-none">
+            <span className="absolute right-5 top-5 rounded-full bg-[#E8F4EB] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#08544B]">popular</span>
+            <h3 className="text-xl font-semibold text-[#031C19]">Business</h3>
+            <p className="mt-3 min-h-17 text-sm leading-5 text-[#616161]">
+              Hire multiple tradies across your work sites with premium tools, priority matching and centralised billing all in one place.
+            </p>
+            <div className="mt-5 flex items-end gap-1 border-b border-black/8 pb-5">
+              <p className="text-3xl font-semibold text-[#031C19]">$299</p>
+              <span className="pb-1 text-xs text-[#616161]">/month + job costs</span>
+            </div>
+            <Link
+              href="/register?plan=business"
+              className="mt-5 flex h-11 items-center justify-center rounded-full bg-[#0E8C7D] text-sm font-semibold text-white transition hover:bg-[#08544B]"
+            >
+              Get Started
+            </Link>
+            <p className="mt-6 text-sm font-semibold text-[#031C19]">What&apos;s Included</p>
+            <FeatureList />
+            <p className="mt-4 text-center text-[10px] font-semibold text-[#0E8C7D]">This Feature Will be coming Soon</p>
+          </article>
+        </div>
+
+        <div className="mt-1 text-center">
+          <Link href="/pricing" className="inline-flex items-center gap-1 text-xs font-semibold text-[#0E8C7D] hover:underline sm:text-sm">
             Compare features across plans
-            <ChevronRight className="w-4 h-4 mt-0.5" />
+            <ChevronRight className="size-4" />
           </Link>
         </div>
       </div>
     </section>
+  )
+}
+
+function FeatureList() {
+  return (
+    <ul className="mt-4 space-y-3">
+      {includedFeatures.map((feature) => (
+        <li key={feature} className="flex items-start gap-2 text-xs leading-5 text-[#031C19] sm:text-sm">
+          <Check className="mt-0.5 size-4 shrink-0 text-[#08544B]" strokeWidth={2.4} />
+          {feature}
+        </li>
+      ))}
+    </ul>
   )
 }

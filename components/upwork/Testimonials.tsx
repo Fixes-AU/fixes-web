@@ -1,135 +1,59 @@
-"use client"
+import Image from "next/image"
+import { Hammer, Star } from "lucide-react"
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight, Quote } from "lucide-react"
-
-const testimonials = [
-  {
-    quote: "I needed an emergency plumber and didn't want to get ripped off. The AI quoting tool gave me an instant, fair price, and the tradie was at my door in 30 minutes. Paying securely through escrow gave me total peace of mind.",
-    name: "Sarah Jenkins",
-    title: "Home Owner",
-    company: "Sydney, NSW",
-    avatar: "SJ",
-  },
-  {
-    quote: "Fixes isn't just a job board for me—it's how I run my entire business. The automated dispatch means jobs just pop up on my phone when I'm nearby. I've doubled my weekly revenue without spending a dime on marketing.",
-    name: "Mike Davies",
-    title: "Licensed Electrician",
-    company: "Davies Electrical",
-    avatar: "MD",
-  },
-  {
-    quote: "Managing 15 cleaners across multiple commercial sites used to be a nightmare. With Fixes' agency tools, I can dispatch tasks, track my team's live location, and handle centralized billing all from one dashboard. It's a game-changer.",
-    name: "Jessica Lin",
-    title: "Operations Manager",
-    company: "Sparkle Commercial Cleaning",
-    avatar: "JL",
-  },
-  {
-    quote: "The safety features are incredible. Knowing that every tradie on Fixes has gone through premium background checks builds instant trust. I hired a carpenter for a custom deck, and the quality of work was absolutely top-notch.",
-    name: "Tom Richards",
-    title: "Home Owner",
-    company: "Brisbane, QLD",
-    avatar: "TR",
-  },
-  {
-    quote: "Before Fixes, I spent hours chasing up unpaid invoices every Friday. Now, the escrow system ensures the funds are locked in before I even start the job. Once the client approves, the money is in my wallet instantly. I love it.",
-    name: "Ali Hassan",
-    title: "Master Plumber",
-    company: "Hassan Plumbing & Gas",
-    avatar: "AH",
-  },
-  {
-    quote: "In this industry, you need to be lean and targeted. The recurring schedule feature automates our ongoing contracts, and the real-time AI analytics show me exactly which sites are most profitable. We couldn't scale this fast without Fixes.",
-    name: "Elena Rossi",
-    title: "Founder",
-    company: "Rossi Facilities Management",
-    avatar: "ER",
-  },
-]
+const testimonial = {
+  category: "Building & Construction",
+  quote: "I needed an emergency plumber and didn't want to get ripped off. The AI quoting tool gave me an instant, fair price, and the tradie was at my door in 30 minutes. Paying securely through escrow gave me total peace of mind.",
+  name: "Tina Johansson",
+  title: "Client, USA",
+}
 
 export function Testimonials() {
-  const [currentIndex, setCurrentIndex] = useState(0)
-
-  const nextTestimonial = () => {
-    setCurrentIndex((prev) => (prev + 1) % testimonials.length)
-  }
-
-  const prevTestimonial = () => {
-    setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
-  }
-
   return (
-    <section className="py-16 lg:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6">
-        <h2 className="text-3xl lg:text-4xl font-bold text-(--upwork-navy) text-center mb-12">
-          Proven results on Fixes
+    <section className="relative overflow-hidden bg-white py-15 font-manrope lg:py-20">
+      <div className="pointer-events-none absolute -right-[18%] top-10 h-96 w-[70%] rotate-[-8deg] rounded-[50%] bg-[#08544B]/[0.78]" aria-hidden="true" />
+      <div className="pointer-events-none absolute -left-[22%] bottom-0 h-96 w-[65%] rotate-[-9deg] rounded-[50%] bg-[#08544B]/[0.78]" aria-hidden="true" />
+
+      <div className="relative mx-auto max-w-320 px-5 sm:px-8 lg:px-0">
+        <h2 className="text-[32px] font-semibold leading-11 tracking-[-0.04em] text-black lg:text-[40px] lg:leading-13.75">
+          Proven Results On Fixes
         </h2>
 
-        <div className="hidden lg:grid lg:grid-cols-3 gap-6">
-          {testimonials.slice(0, 6).map((testimonial, index) => (
-            <TestimonialCard key={index} testimonial={testimonial} />
-          ))}
-        </div>
-
-        <div className="lg:hidden">
-          <div className="relative">
-            <TestimonialCard testimonial={testimonials[currentIndex]} />
-            
-            <div className="flex justify-center items-center gap-4 mt-6">
-              <button
-                onClick={prevTestimonial}
-                className="p-2 rounded-full border border-gray-300 hover:border-(--upwork-green) hover:text-(--upwork-green) transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              <div className="flex gap-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentIndex
-                        ? "bg-(--upwork-green)"
-                        : "bg-gray-300"
-                    }`}
-                  />
+        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <article
+              key={index}
+              className={`${index > 3 ? "hidden md:flex" : "flex"} min-h-84 flex-col rounded-2xl border border-black/6 bg-white p-6 shadow-[0_8px_24px_rgba(3,28,25,0.05)]`}
+            >
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-[#08544B]">
+                <Hammer className="size-4" />
+                {testimonial.category}
+              </div>
+              <blockquote className="mt-5 flex-1 text-sm leading-6 text-[#031C19]">
+                “{testimonial.quote}”
+              </blockquote>
+              <div className="mt-4 flex gap-0.5" aria-label="Five star rating">
+                {Array.from({ length: 5 }).map((_, starIndex) => (
+                  <Star key={starIndex} className="size-3.5 fill-[#FFC800] text-[#FFC800]" />
                 ))}
               </div>
-
-              <button
-                onClick={nextTestimonial}
-                className="p-2 rounded-full border border-gray-300 hover:border-(--upwork-green) hover:text-(--upwork-green) transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+              <div className="mt-5 flex items-center gap-3">
+                <Image
+                  src="/home-page-assets/redesign/testimonial-avatar.jpg"
+                  alt="Tina Johansson"
+                  width={48}
+                  height={48}
+                  className="size-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-[#031C19]">{testimonial.name}</p>
+                  <p className="mt-0.5 text-xs text-[#616161]">{testimonial.title}</p>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
-  )
-}
-
-function TestimonialCard({ testimonial }: { testimonial: typeof testimonials[0] }) {
-  return (
-    <div className="bg-(--upwork-light-gray) rounded-2xl p-6 h-full flex flex-col">
-      <Quote className="w-8 h-8 text-(--upwork-green) mb-4" />
-      <p className="text-(--upwork-navy) text-sm leading-relaxed mb-6 flex-1">
-        &ldquo;{testimonial.quote}&rdquo;
-      </p>
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-(--upwork-green) flex items-center justify-center text-white font-semibold">
-          {testimonial.avatar}
-        </div>
-        <div>
-          <p className="font-semibold text-(--upwork-navy)">{testimonial.name}</p>
-          <p className="text-sm text-(--upwork-gray)">
-            {testimonial.title}, {testimonial.company}
-          </p>
-        </div>
-      </div>
-    </div>
   )
 }
