@@ -171,6 +171,30 @@ export const SERVICE_DATA: ServiceMeta[] = [
     ],
   },
   {
+    slug: 'roofing',
+    category: 'roofing',
+    label: 'Roofing',
+    tagline: 'Roof repairs, restoration & replacement',
+    description:
+      'Book verified roofers for leak diagnosis, tile and metal roof repairs, gutters and drainage, skylights, restoration, storm damage, and full roof replacement. Provider licensing is checked against the work scope and Australian jurisdiction.',
+    accent: '#0F766E',
+    popularTasks: [
+      { label: 'Fix a roof leak', preFilledTitle: 'Inspect and repair a roof leak' },
+      { label: 'Replace roof tiles', preFilledTitle: 'Replace damaged roof tiles' },
+      { label: 'Repair metal roof', preFilledTitle: 'Repair a metal or Colorbond roof' },
+      { label: 'Repair gutters', preFilledTitle: 'Repair gutters and downpipes' },
+      { label: 'Roof restoration', preFilledTitle: 'Restore and repoint my roof' },
+      { label: 'Install skylight', preFilledTitle: 'Install or repair a skylight' },
+      { label: 'Storm damage', preFilledTitle: 'Repair storm damage to my roof' },
+      { label: 'Replace full roof', preFilledTitle: 'Replace my full roof' },
+    ],
+    howItWorks: [
+      { title: 'Describe the roofing work', desc: 'Choose the roof service, material, affected area, access, and upload clear photos where safe.' },
+      { title: 'Get a scoped estimate', desc: 'Small repairs receive transparent estimates; major or high-access work is flagged for an on-site confirmed quote.' },
+      { title: 'Qualified roofer matched', desc: 'We match the job state and scope with a verified roofer or qualified multi-trade agency.' },
+    ],
+  },
+  {
     slug: 'emergency',
     category: 'emergency_make_safe',
     label: 'Emergency Make Safe',

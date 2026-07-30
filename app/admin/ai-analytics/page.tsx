@@ -70,6 +70,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   painting:            '#EC4899',
   flooring:            '#10B981',
   carpentry:           '#EF4444',
+  roofing:             '#0F766E',
   emergency_make_safe: '#DC2626',
   general_labourer:    '#6B7280',
   handyman:            '#8B5CF6',

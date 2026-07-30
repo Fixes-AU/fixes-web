@@ -10,19 +10,21 @@ import {
   Briefcase, X, ChevronDown, AlertTriangle,
 } from 'lucide-react'
 import { api, ApiError } from '@/lib/api'
-import { CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
-import type { TradieCategory } from '@/lib/types'
+import { AUSTRALIAN_STATES, ROOFING_CAPABILITIES, TRADIE_CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
+import type { RoofingCapability, TradieCategory } from '@/lib/types'
 import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface TradieDoc {
   type: string; label: string; url: string | null; publicId: string | null
   isVerified: boolean; verifiedAt: string | null; uploadedAt: string | null
+  requirementLevel?: 'required' | 'conditional' | 'supporting'
 }
 
 interface TradieUser { _id: string; name: string; email: string; fixId: string }
 
 interface TradieDocsResponse {
-  tradie: TradieUser; categories: string[]; isFullyVerified: boolean; abn: string | null; documents: TradieDoc[]
+  tradie: TradieUser; categories: string[]; roofingCapabilities: RoofingCapability[]
+  roofingJurisdictions: string[]; isFullyVerified: boolean; abn: string | null; documents: TradieDoc[]
 }
 
 const formatAbn = (abn?: string | null) => {
@@ -50,6 +52,8 @@ export default function AdminTradieDocumentsPage() {
   const [categorySaving, setCategorySaving] = useState(false)
   const [pendingCategoryAction, setPendingCategoryAction] = useState(false)
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [draftRoofingCapabilities, setDraftRoofingCapabilities] = useState<RoofingCapability[]>([])
+  const [draftRoofingJurisdictions, setDraftRoofingJurisdictions] = useState<string[]>([])
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 3000)
@@ -62,6 +66,8 @@ export default function AdminTradieDocumentsPage() {
       setData(res.data)
       if (!editingCategories) {
         setDraftCategories(res.data.categories)
+        setDraftRoofingCapabilities(res.data.roofingCapabilities || [])
+        setDraftRoofingJurisdictions(res.data.roofingJurisdictions || [])
       }
     } catch { /* silent */ } finally { setIsLoading(false) }
   }, [userId, editingCategories])
@@ -102,13 +108,21 @@ export default function AdminTradieDocumentsPage() {
   }
 
   const startCategoryEdit = () => {
-    if (data) setDraftCategories([...data.categories])
+    if (data) {
+      setDraftCategories([...data.categories])
+      setDraftRoofingCapabilities([...(data.roofingCapabilities || [])])
+      setDraftRoofingJurisdictions([...(data.roofingJurisdictions || [])])
+    }
     setEditingCategories(true)
     setShowCategoryDropdown(false)
   }
 
   const cancelCategoryEdit = () => {
-    if (data) setDraftCategories([...data.categories])
+    if (data) {
+      setDraftCategories([...data.categories])
+      setDraftRoofingCapabilities([...(data.roofingCapabilities || [])])
+      setDraftRoofingJurisdictions([...(data.roofingJurisdictions || [])])
+    }
     setEditingCategories(false)
     setShowCategoryDropdown(false)
   }
@@ -124,7 +138,11 @@ export default function AdminTradieDocumentsPage() {
 
   const categoriesChanged = data
     ? draftCategories.length !== data.categories.length ||
-      !draftCategories.every(c => data.categories.includes(c))
+      !draftCategories.every(c => data.categories.includes(c)) ||
+      draftRoofingCapabilities.length !== (data.roofingCapabilities || []).length ||
+      !draftRoofingCapabilities.every(value => data.roofingCapabilities?.includes(value)) ||
+      draftRoofingJurisdictions.length !== (data.roofingJurisdictions || []).length ||
+      !draftRoofingJurisdictions.every(value => data.roofingJurisdictions?.includes(value))
     : false
 
   const executeCategoryUpdate = async (token: string) => {
@@ -133,7 +151,11 @@ export default function AdminTradieDocumentsPage() {
       const res = await api.raw<{ categories: string[]; isFullyVerified: boolean; wasFullyVerified: boolean }>(
         `/api/admin/tradies/${userId}/categories`, {
           method: 'PATCH',
-          body: { categories: draftCategories },
+          body: {
+            categories: draftCategories,
+            roofingCapabilities: draftCategories.includes('roofing') ? draftRoofingCapabilities : [],
+            roofingJurisdictions: draftCategories.includes('roofing') ? draftRoofingJurisdictions : [],
+          },
           headers: { 'X-Admin-Action-Token': token },
         }
       )
@@ -165,7 +187,9 @@ export default function AdminTradieDocumentsPage() {
   const uploaded = documents.filter((d) => d.url)
   const verified = documents.filter((d) => d.isVerified)
   const pending = documents.filter((d) => d.url && !d.isVerified)
-  const pct = documents.length > 0 ? (verified.length / documents.length) * 100 : 0
+  const requiredDocuments = documents.filter((d) => d.requirementLevel !== 'supporting')
+  const verifiedRequired = requiredDocuments.filter((d) => d.isVerified)
+  const pct = requiredDocuments.length > 0 ? (verifiedRequired.length / requiredDocuments.length) * 100 : 0
 
   return (
     <div>
@@ -220,14 +244,14 @@ export default function AdminTradieDocumentsPage() {
         <div className="flex flex-wrap gap-1.5 mt-4">
           {categories.map((cat) => (
             <span key={cat} className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
-              {CATEGORY_LABELS[cat as TradieCategory] || cat}
+              {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
             </span>
           ))}
         </div>
 
         <div className="mt-4">
           <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-            <span>Verification progress</span><span>{verified.length}/{documents.length}</span>
+            <span>Required verification progress</span><span>{verifiedRequired.length}/{requiredDocuments.length}</span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-[#2563EB] rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -254,13 +278,48 @@ export default function AdminTradieDocumentsPage() {
                 Cancel
               </button>
               <button onClick={() => setPendingCategoryAction(true)}
-                disabled={!categoriesChanged || draftCategories.length === 0 || categorySaving}
+                disabled={!categoriesChanged || draftCategories.length === 0 || categorySaving ||
+                  (draftCategories.includes('roofing') && (!draftRoofingCapabilities.length || !draftRoofingJurisdictions.length))}
                 className="text-xs px-3 py-1.5 rounded-lg font-medium bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-40">
                 {categorySaving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save Changes'}
               </button>
             </div>
           )}
         </div>
+
+        {editingCategories && draftCategories.includes('roofing') && (
+          <div className="mt-5 grid gap-5 lg:grid-cols-2 border-t border-gray-100 pt-5">
+            <div>
+              <p className="text-xs font-semibold text-gray-800 mb-2">Roofing capabilities</p>
+              <div className="space-y-2">
+                {ROOFING_CAPABILITIES.map(option => (
+                  <label key={option.value} className="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5" checked={draftRoofingCapabilities.includes(option.value)}
+                      onChange={() => setDraftRoofingCapabilities(prev => prev.includes(option.value)
+                        ? prev.filter(value => value !== option.value) : [...prev, option.value])} />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-800 mb-2">Licensed service states / territories</p>
+              <div className="grid grid-cols-2 gap-2">
+                {AUSTRALIAN_STATES.map(option => (
+                  <label key={option.value} className="flex items-start gap-2 text-xs text-gray-600 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5" checked={draftRoofingJurisdictions.includes(option.value)}
+                      onChange={() => setDraftRoofingJurisdictions(prev => prev.includes(option.value)
+                        ? prev.filter(value => value !== option.value) : [...prev, option.value])} />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {(!draftRoofingCapabilities.length || !draftRoofingJurisdictions.length) && (
+              <p className="lg:col-span-2 text-xs text-red-500">Select at least one Roofing capability and one licensed state or territory.</p>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2">
           {(editingCategories ? draftCategories : categories).map((cat) => (
@@ -269,7 +328,7 @@ export default function AdminTradieDocumentsPage() {
                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                 : 'bg-emerald-50 text-emerald-600'
             }`}>
-              {CATEGORY_LABELS[cat as TradieCategory] || cat}
+              {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
               {editingCategories && draftCategories.length > 1 && (
                 <button onClick={() => removeDraftCategory(cat)}
                   className="hover:bg-blue-200 rounded-full p-0.5 transition-colors">
@@ -295,7 +354,7 @@ export default function AdminTradieDocumentsPage() {
                     VALID_CATEGORIES.filter(c => !draftCategories.includes(c)).map(cat => (
                       <button key={cat} onClick={() => addDraftCategory(cat)}
                         className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                        {CATEGORY_LABELS[cat as TradieCategory] || cat}
+                        {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
                       </button>
                     ))
                   )}
@@ -341,6 +400,7 @@ export default function AdminTradieDocumentsPage() {
                   <div>
                     <p className="text-xs font-semibold text-gray-800">{doc.label}</p>
                     <p className="text-[10px] text-gray-400 font-mono">{doc.type}</p>
+                    {doc.requirementLevel === 'supporting' && <p className="text-[10px] text-blue-500 mt-0.5">Optional supporting evidence</p>}
                   </div>
                 </div>
 
@@ -433,7 +493,7 @@ export default function AdminTradieDocumentsPage() {
         open={pendingCategoryAction}
         onOpenChange={(open) => { if (!open) setPendingCategoryAction(false) }}
         title="Update Trade Categories"
-        description={`This will change the tradie's categories to: ${draftCategories.map(c => CATEGORY_LABELS[c as TradieCategory] || c).join(', ')}. This may affect their required documents and verification status. Enter your password to confirm.`}
+        description={`This will change the tradie's categories to: ${draftCategories.map(c => TRADIE_CATEGORY_LABELS[c as TradieCategory] || c).join(', ')}. This may affect their required documents and verification status. Enter your password to confirm.`}
         action="tradie:update_categories"
         variant="default"
         confirmLabel="Update Categories"

@@ -8,8 +8,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, Loader2, Info } from 'lucide-react'
 import { api, setTokens, ApiError } from '@/lib/api'
-import { VALID_CATEGORIES, CATEGORY_LABELS } from '@/lib/constants'
-import type { RegisterTradieResponse, TradieCategory } from '@/lib/types'
+import { VALID_CATEGORIES, CATEGORY_LABELS, ROOFING_CAPABILITIES, AUSTRALIAN_STATES } from '@/lib/constants'
+import type { RegisterTradieResponse, TradieCategory, RoofingCapability } from '@/lib/types'
 
 export default function RegisterTradiePage() {
   const router = useRouter()
@@ -20,6 +20,8 @@ export default function RegisterTradiePage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [category, setCategory] = useState<TradieCategory | ''>('')
+  const [roofingCapabilities, setRoofingCapabilities] = useState<RoofingCapability[]>([])
+  const [roofingJurisdictions, setRoofingJurisdictions] = useState<string[]>([])
   const [skillLevel, setSkillLevel] = useState<'junior' | 'senior' | 'specialist' | ''>('')
   const [skills, setSkills] = useState('')
   const [bio, setBio] = useState('')
@@ -46,6 +48,11 @@ export default function RegisterTradiePage() {
       return
     }
 
+    if (category === 'roofing' && (!roofingCapabilities.length || !roofingJurisdictions.length)) {
+      setError('Select at least one roofing service and one Australian service jurisdiction')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -57,6 +64,8 @@ export default function RegisterTradiePage() {
           password,
           phone: phone || undefined,
           category,
+          roofingCapabilities: category === 'roofing' ? roofingCapabilities : [],
+          roofingJurisdictions: category === 'roofing' ? roofingJurisdictions : [],
           skillLevel,
           skills: skills
             ? skills.split(',').map((s) => s.trim()).filter(Boolean)
@@ -193,11 +202,53 @@ export default function RegisterTradiePage() {
                   </option>
                   {VALID_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
-                      {CATEGORY_LABELS[cat]}
+                      {cat === 'roofing' ? 'Roofer' : CATEGORY_LABELS[cat]}
                     </option>
                   ))}
                 </select>
               </div>
+
+              {category === 'roofing' && (
+                <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                  <div>
+                    <p className="text-sm font-medium text-(--upwork-navy) mb-2">Roofing services offered</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {ROOFING_CAPABILITIES.map((option) => (
+                        <label key={option.value} className="flex items-start gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={roofingCapabilities.includes(option.value)}
+                            onChange={() => setRoofingCapabilities((current) => current.includes(option.value)
+                              ? current.filter((value) => value !== option.value)
+                              : [...current, option.value])}
+                            className="mt-0.5 accent-(--upwork-green)"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-(--upwork-navy) mb-2">Australian service jurisdictions</p>
+                    <div className="flex flex-wrap gap-2">
+                      {AUSTRALIAN_STATES.map((state) => (
+                        <label key={state.value} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={roofingJurisdictions.includes(state.value)}
+                            onChange={() => setRoofingJurisdictions((current) => current.includes(state.value)
+                              ? current.filter((value) => value !== state.value)
+                              : [...current, state.value])}
+                            className="accent-(--upwork-green)"
+                          />
+                          {state.value}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">Licence evidence is generated from the services and jurisdictions selected.</p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label

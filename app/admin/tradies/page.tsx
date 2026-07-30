@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { ShieldCheck, Loader2, Clock, CheckCircle, XCircle, ChevronRight } from 'lucide-react'
 import { api } from '@/lib/api'
-import { CATEGORY_LABELS } from '@/lib/constants'
+import { TRADIE_CATEGORY_LABELS } from '@/lib/constants'
 import type { User, TradieCategory } from '@/lib/types'
 
 
@@ -130,7 +130,7 @@ function WaitlistTab() {
               <div className="flex flex-wrap gap-1">
                 {tradie.categories.slice(0, 3).map((cat) => (
                   <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                    {CATEGORY_LABELS[cat as TradieCategory] || cat}
+                    {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
                   </span>
                 ))}
                 {tradie.skillLevel && (
@@ -281,7 +281,7 @@ function DocumentsTab() {
               <div className="flex flex-wrap gap-1 mb-4">
                 {tradie.categories.slice(0, 3).map((cat) => (
                   <span key={cat} className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
-                    {CATEGORY_LABELS[cat as TradieCategory] || cat}
+                    {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
                   </span>
                 ))}
               </div>

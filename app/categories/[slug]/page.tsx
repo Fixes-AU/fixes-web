@@ -8,7 +8,7 @@ import {
   Grid, Hammer, ShieldAlert, HardHat, Sparkles,
   Trash2, CircleEllipsis, ArrowRight, ChevronRight, Wrench, Leaf,
   CheckCircle2, Shield, Clock, Star,
-  ArrowLeft,
+  ArrowLeft, House,
 } from 'lucide-react'
 import { Header, Footer } from '@/components/upwork'
 import { SERVICE_DATA, getServiceBySlug } from '@/lib/service-data'
@@ -21,6 +21,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   painting: Paintbrush,
   flooring: Grid,
   carpentry: Hammer,
+  roofing: House,
   emergency_make_safe: ShieldAlert,
   general_labourer: HardHat,
   handyman: Wrench,

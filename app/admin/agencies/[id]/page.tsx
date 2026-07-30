@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Building2, CheckCircle2, CreditCard, ExternalLink, FileCheck2, Info, Loader2, Save, Users, XCircle } from 'lucide-react'
 import { api } from '@/lib/api'
+import { ROOFING_CAPABILITIES } from '@/lib/constants'
 import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 interface AgencyMember {
@@ -25,6 +26,7 @@ interface Agency {
   phone?: string
   abn?: string
   categories: string[]
+  categoryCapabilities?: { roofing?: { capabilities?: string[]; jurisdictions?: string[] } }
   stripeAccountStatus: string
   isOnline: boolean
   negativeBalance?: number
@@ -195,6 +197,20 @@ export default function AdminAgencyDetailPage() {
           {(agency.categories || []).map(category => <span key={category} className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">{category.replace(/_/g, ' ')}</span>)}
           {(agency.categories || []).length === 0 && <p className="text-sm text-gray-500">No categories configured.</p>}
         </div>
+        {agency.categories?.includes('roofing') && (
+          <div className="mt-4 grid md:grid-cols-2 gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-xs text-gray-600">
+            <div>
+              <p className="font-semibold text-gray-700 mb-1">Roofing services</p>
+              <p>{(agency.categoryCapabilities?.roofing?.capabilities || []).map(value =>
+                ROOFING_CAPABILITIES.find(option => option.value === value)?.label || value
+              ).join(', ') || 'Not configured'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-gray-700 mb-1">Approved jurisdictions</p>
+              <p>{(agency.categoryCapabilities?.roofing?.jurisdictions || []).join(', ') || 'Not configured'}</p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="bg-white border border-gray-200 rounded-xl p-5">

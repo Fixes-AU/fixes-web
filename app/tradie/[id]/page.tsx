@@ -18,7 +18,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { api } from '@/lib/api'
-import { CATEGORY_LABELS } from '@/lib/constants'
+import { TRADIE_CATEGORY_LABELS } from '@/lib/constants'
 import type { TradieProfile, User, TradieCategory, Review, ReviewStats } from '@/lib/types'
 
 interface PublicProfileResponse {
@@ -179,7 +179,7 @@ export default function TradieProfilePage() {
                     key={cat}
                     className="text-xs px-2.5 py-1 rounded-full bg-green-50 text-(--upwork-green) font-medium"
                   >
-                    {CATEGORY_LABELS[cat as TradieCategory] || cat}
+                    {TRADIE_CATEGORY_LABELS[cat as TradieCategory] || cat}
                   </span>
                 ))}
               </div>

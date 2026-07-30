@@ -55,6 +55,7 @@ export default function WaitlistLeadsPage() {
     painting: 'Painting',
     flooring: 'Flooring',
     carpentry: 'Carpentry',
+    roofing: 'Roofing',
     emergency_make_safe: 'Emergency Make Safe',
     general_labourer: 'General Labourer',
     handyman: 'Handyman',

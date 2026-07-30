@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Building2, CheckCircle2, FileCheck2, Info, Loader2, RefreshCw, Search, XCircle } from 'lucide-react'
 import { api } from '@/lib/api'
+import { ROOFING_CAPABILITIES } from '@/lib/constants'
 import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 type ApplicationStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'needs_more_info'
@@ -16,6 +17,7 @@ interface AgencyApplication {
   ownerPhone: string
   abn?: string
   requestedCategories: string[]
+  categoryCapabilities?: { roofing?: { capabilities?: string[]; jurisdictions?: string[] } }
   serviceAreas?: { label?: string; suburb?: string; postcode?: string; state?: string }[]
   documents?: { type: string; label?: string; url?: string; notes?: string }[]
   reviewNotes?: string
@@ -216,6 +218,18 @@ export default function AdminAgencyApplicationsPage() {
                         </span>
                       ))}
                     </div>
+                    {item.requestedCategories?.includes('roofing') && (
+                      <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/60 p-3 text-xs text-gray-600">
+                        <p><span className="font-semibold">Roofing services:</span>{' '}
+                          {(item.categoryCapabilities?.roofing?.capabilities || []).map(value =>
+                            ROOFING_CAPABILITIES.find(option => option.value === value)?.label || value
+                          ).join(', ') || 'Not supplied'}
+                        </p>
+                        <p className="mt-1"><span className="font-semibold">Jurisdictions:</span>{' '}
+                          {(item.categoryCapabilities?.roofing?.jurisdictions || []).join(', ') || 'Not supplied'}
+                        </p>
+                      </div>
+                    )}
                     {(item.requestedMoreInfo || item.reviewNotes) && (
                       <p className="text-xs text-gray-500 mt-3 max-w-3xl">{item.requestedMoreInfo || item.reviewNotes}</p>
                     )}

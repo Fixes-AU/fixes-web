@@ -14,6 +14,7 @@ export const VALID_CATEGORIES: TradieCategory[] = [
   'painting',
   'flooring',
   'carpentry',
+  'roofing',
   'emergency_make_safe',
   'general_labourer',
   'handyman',
@@ -32,6 +33,7 @@ export const CATEGORY_LABELS: Record<JobCategory, string> = {
   painting: 'Painter',
   flooring: 'Flooring',
   carpentry: 'Carpenter',
+  roofing: 'Roofing',
   emergency_make_safe: 'Emergency Make Safe',
   general_labourer: 'General Labourer',
   handyman: 'Handyman',
@@ -39,6 +41,11 @@ export const CATEGORY_LABELS: Record<JobCategory, string> = {
   cleaning: 'Cleaning',
   waste_removal: 'Waste Removal',
   other: 'Other',
+}
+
+export const TRADIE_CATEGORY_LABELS: Record<JobCategory, string> = {
+  ...CATEGORY_LABELS,
+  roofing: 'Roofer',
 }
 
 
@@ -102,7 +109,27 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   carpentry_certificate: 'Carpentry Certificate',
   builders_license_cbu: 'Builders License (CBU)',
   police_check: 'Police Check',
+  roofing_trade_qualification: 'Roofing Trade Qualification',
+  roof_tiling_license: 'Roof Tiling Licence / Registration',
+  roof_plumbing_license: 'Roof Plumbing Licence / Registration',
+  roof_wall_cladding_license: 'Roof and Wall Cladding Licence',
+  building_contractor_license: 'Building Contractor Licence / Registration',
+  painting_registration: 'Painting Contractor Registration',
+  working_at_heights: 'Working Safely at Heights',
+  high_risk_work_license: 'High Risk Work Licence',
 }
+
+export const ROOFING_CAPABILITIES = [
+  { value: 'inspection_leak_repair', label: 'Roof inspection & leak repair' },
+  { value: 'roof_tiling', label: 'Tile roofing' },
+  { value: 'metal_roofing', label: 'Metal / Colorbond roofing' },
+  { value: 'roof_plumbing_drainage', label: 'Gutters, downpipes & roof drainage' },
+  { value: 'skylights', label: 'Skylights' },
+  { value: 'restoration_painting', label: 'Roof restoration, coating & painting' },
+  { value: 'cleaning_maintenance', label: 'Roof cleaning & maintenance' },
+  { value: 'storm_damage_repair', label: 'Storm damage repair' },
+  { value: 'full_replacement', label: 'Full roof replacement / installation' },
+] as const
 
 export const CLEANING_TYPE_LABELS: Record<string, string> = {
   standard_clean: 'Standard Clean',

@@ -27,6 +27,7 @@ const categories = [
   { id: "finishing", slug: "plasterer", label: "Finishing Trades", icon: Home },
   { id: "metal", slug: "other", label: "Metal & Welding", icon: HardHat },
   { id: "painting", slug: "painter", label: "Painting & Decorating", icon: Paintbrush },
+  { id: "roofing", slug: "roofing", label: "Roofing", icon: Home },
 ]
 
 export function CategoryTabs() {

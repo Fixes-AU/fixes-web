@@ -11,7 +11,12 @@ interface Membership {
   _id: string
   role: string
   permissions: string[]
-  agencyId?: { _id: string; name: string; categories: string[] }
+  agencyId?: {
+    _id: string
+    name: string
+    categories: string[]
+    categoryCapabilities?: { roofing?: { capabilities?: string[]; jurisdictions?: string[] } }
+  }
 }
 
 interface Requirement {
@@ -65,8 +70,12 @@ export default function AgencyDocumentsPage() {
       setMembership(active)
       if (active?.agencyId?._id) {
         const categories = active.agencyId.categories || []
+        const roofing = active.agencyId.categoryCapabilities?.roofing
+        const requirementParams = new URLSearchParams({ categories: categories.join(',') })
+        if (roofing?.capabilities?.length) requirementParams.set('roofingCapabilities', roofing.capabilities.join(','))
+        if (roofing?.jurisdictions?.length) requirementParams.set('roofingJurisdictions', roofing.jurisdictions.join(','))
         const [reqRes, docRes] = await Promise.all([
-          api.get<{ requirements: Requirement[] }>(`/api/agency/document-requirements?categories=${categories.join(',')}`, true),
+          api.get<{ requirements: Requirement[] }>(`/api/agency/document-requirements?${requirementParams.toString()}`, true),
           api.get<{ documents: AgencyDocument[] }>(`/api/agency/${active.agencyId._id}/documents`),
         ])
         setRequirements(reqRes.data.requirements || [])

@@ -21,7 +21,7 @@ interface PlatformConfig {
 
 const CATEGORY_ORDER: JobCategory[] = [
   'electrical', 'plumbing', 'hvac', 'plastering', 'painting',
-  'flooring', 'carpentry', 'emergency_make_safe', 'general_labourer',
+  'flooring', 'carpentry', 'roofing', 'emergency_make_safe', 'general_labourer',
   'handyman', 'gardening_landscaping',
   'cleaning', 'waste_removal', 'other',
 ]

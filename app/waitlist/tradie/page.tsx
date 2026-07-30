@@ -5,9 +5,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api'
+import { AGENCY_CATEGORIES, CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
 
 export default function TradieWaitlistPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', suburb: '', postcode: '' })
+  const [formData, setFormData] = useState({ name: '', email: '', suburb: '', postcode: '', tradeCategory: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -100,6 +101,25 @@ export default function TradieWaitlistPage() {
                     placeholder="John Doe"
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[#001e00] placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-all"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="tradeCategory" className="block text-sm font-bold text-[#001e00] mb-1.5">
+                    Primary Trade
+                  </label>
+                  <select
+                    id="tradeCategory"
+                    required
+                    value={formData.tradeCategory}
+                    onChange={(e) => setFormData({ ...formData, tradeCategory: e.target.value })}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[#001e00] focus:bg-white focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-all"
+                  >
+                    <option value="" disabled>Select your primary trade...</option>
+                    {VALID_CATEGORIES.filter(category => !AGENCY_CATEGORIES.includes(category)).map(category => (
+                      <option key={category} value={category}>{CATEGORY_LABELS[category]}</option>
+                    ))}
+                    <option value="other">Other Trade</option>
+                  </select>
                 </div>
 
                 <div>

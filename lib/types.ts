@@ -50,6 +50,7 @@ export type TradieCategory =
   | 'painting'
   | 'flooring'
   | 'carpentry'
+  | 'roofing'
   | 'emergency_make_safe'
   | 'general_labourer'
   | 'handyman'
@@ -70,6 +71,25 @@ export type DocumentType =
   | 'carpentry_certificate'
   | 'builders_license_cbu'
   | 'police_check'
+  | 'roofing_trade_qualification'
+  | 'roof_tiling_license'
+  | 'roof_plumbing_license'
+  | 'roof_wall_cladding_license'
+  | 'building_contractor_license'
+  | 'painting_registration'
+  | 'working_at_heights'
+  | 'high_risk_work_license'
+
+export type RoofingCapability =
+  | 'inspection_leak_repair'
+  | 'roof_tiling'
+  | 'metal_roofing'
+  | 'roof_plumbing_drainage'
+  | 'skylights'
+  | 'restoration_painting'
+  | 'cleaning_maintenance'
+  | 'storm_damage_repair'
+  | 'full_replacement'
 
 export interface TradieDocument {
   type: DocumentType
@@ -80,6 +100,13 @@ export interface TradieDocument {
   uploadedAt: string | null
   verifiedAt: string | null
   verifiedBy: string | null
+  requirementLevel?: 'required' | 'conditional' | 'supporting'
+  jurisdictions?: string[]
+  verifiedJurisdictions?: string[]
+  capabilities?: RoofingCapability[]
+  licenseClass?: string
+  licenseNumber?: string
+  expiresAt?: string | null
 }
 
 export interface TradieProfile {
@@ -87,6 +114,8 @@ export interface TradieProfile {
   userId: string | User
   skills: string[]
   categories: TradieCategory[]
+  roofingCapabilities?: RoofingCapability[]
+  roofingJurisdictions?: string[]
   bio: string
   rating: {
     average: number
@@ -507,6 +536,8 @@ export interface PendingTradieItem {
 export interface TradieDocumentsResponse {
   tradie: User
   categories: TradieCategory[]
+  roofingCapabilities?: RoofingCapability[]
+  roofingJurisdictions?: string[]
   isFullyVerified: boolean
   abn: string | null
   documents: TradieDocument[]

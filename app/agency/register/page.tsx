@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Building2, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
 import { api } from '@/lib/api'
+import { AUSTRALIAN_STATES, ROOFING_CAPABILITIES } from '@/lib/constants'
 
 const CATEGORY_OPTIONS = [
   { value: 'electrical', label: 'Electrical' },
@@ -12,6 +13,7 @@ const CATEGORY_OPTIONS = [
   { value: 'painting', label: 'Painting' },
   { value: 'flooring', label: 'Flooring' },
   { value: 'carpentry', label: 'Carpentry' },
+  { value: 'roofing', label: 'Roofing' },
   { value: 'emergency_make_safe', label: 'Emergency Make Safe' },
   { value: 'general_labourer', label: 'General Labourer' },
   { value: 'handyman', label: 'Handyman' },
@@ -38,6 +40,8 @@ export default function AgencyRegistrationPage() {
     documentNotes: '',
   })
   const [categories, setCategories] = useState<string[]>([])
+  const [roofingCapabilities, setRoofingCapabilities] = useState<string[]>([])
+  const [roofingJurisdictions, setRoofingJurisdictions] = useState<string[]>([])
 
   const toggleCategory = (value: string) => {
     setCategories(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value])
@@ -47,6 +51,11 @@ export default function AgencyRegistrationPage() {
     event.preventDefault()
     setSubmitting(true)
     setError('')
+    if (categories.includes('roofing') && (!roofingCapabilities.length || !roofingJurisdictions.length)) {
+      setError('Select at least one Roofing service and one Australian service jurisdiction.')
+      setSubmitting(false)
+      return
+    }
     try {
       await api.post('/api/agency-applications', {
         companyName: form.companyName,
@@ -62,6 +71,12 @@ export default function AgencyRegistrationPage() {
           country: 'AU',
         },
         requestedCategories: categories,
+        categoryCapabilities: {
+          roofing: {
+            capabilities: categories.includes('roofing') ? roofingCapabilities : [],
+            jurisdictions: categories.includes('roofing') ? roofingJurisdictions : [],
+          },
+        },
         serviceAreas: form.serviceAreas
           .split(',')
           .map(item => item.trim())
@@ -163,6 +178,47 @@ export default function AgencyRegistrationPage() {
               ))}
             </div>
           </div>
+
+          {categories.includes('roofing') && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Roofing services offered</p>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {ROOFING_CAPABILITIES.map(option => (
+                    <label key={option.value} className="flex items-start gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={roofingCapabilities.includes(option.value)}
+                        onChange={() => setRoofingCapabilities(current => current.includes(option.value)
+                          ? current.filter(value => value !== option.value)
+                          : [...current, option.value])}
+                        className="mt-0.5 accent-emerald-600"
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Licensed service jurisdictions</p>
+                <div className="flex flex-wrap gap-2">
+                  {AUSTRALIAN_STATES.map(state => (
+                    <label key={state.value} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={roofingJurisdictions.includes(state.value)}
+                        onChange={() => setRoofingJurisdictions(current => current.includes(state.value)
+                          ? current.filter(value => value !== state.value)
+                          : [...current, state.value])}
+                        className="accent-emerald-600"
+                      />
+                      {state.value}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <label className="block space-y-1">
             <span className="text-xs font-semibold text-gray-500">Document notes</span>
