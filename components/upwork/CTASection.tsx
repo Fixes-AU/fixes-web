@@ -19,6 +19,18 @@ export function CTASection() {
     <section className="bg-[#050D00] font-manrope lg:bg-white lg:py-20">
       <div className="mx-auto max-w-320">
         <div className="relative h-[813px] overflow-hidden bg-[#050D00] lg:h-[552px] lg:rounded-[24px]">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-2 h-[395px] w-[calc(100%-24px)] -translate-x-1/2 object-contain lg:left-auto lg:right-0 lg:top-1/2 lg:h-[520px] lg:w-[640px] lg:-translate-y-1/2 lg:translate-x-0"
+          >
+            <source src="/home-page-assets/redesign/ai-quote-animation.mp4" type="video/mp4" />
+          </video>
+
           <div
             className="pointer-events-none absolute bottom-[5px] left-[5px] h-[421px] w-[calc(100%-10px)] rounded-[13px] border border-[#C3C3C3]/30 opacity-10 blur-[0.2px] lg:inset-y-[8px] lg:left-[8px] lg:h-auto lg:w-[632px] lg:rounded-[24px]"
             style={{
