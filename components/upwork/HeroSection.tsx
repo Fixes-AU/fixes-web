@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowRight, ChevronRight, MapPin, Search, Star, UsersRound } from "lucide-react"
@@ -18,9 +19,49 @@ const trustMetrics = [
   { icon: Star, label: "4M+ user reviews" },
 ]
 
+type NetworkInformation = EventTarget & {
+  effectiveType?: string
+  saveData?: boolean
+}
+
+type NavigatorWithConnection = Navigator & {
+  connection?: NetworkInformation
+}
+
+const slowConnectionTypes = new Set(["slow-2g", "2g", "3g"])
+
 export function HeroSection() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
+
+  useEffect(() => {
+    const mobileViewport = window.matchMedia("(max-width: 1023px)")
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const connection = (navigator as NavigatorWithConnection).connection
+
+    const updateMediaPreference = () => {
+      const hasConstrainedConnection = Boolean(
+        connection?.saveData ||
+        (connection?.effectiveType && slowConnectionTypes.has(connection.effectiveType)),
+      )
+
+      setShouldLoadVideo(
+        !mobileViewport.matches && !reducedMotion.matches && !hasConstrainedConnection,
+      )
+    }
+
+    updateMediaPreference()
+    mobileViewport.addEventListener("change", updateMediaPreference)
+    reducedMotion.addEventListener("change", updateMediaPreference)
+    connection?.addEventListener("change", updateMediaPreference)
+
+    return () => {
+      mobileViewport.removeEventListener("change", updateMediaPreference)
+      reducedMotion.removeEventListener("change", updateMediaPreference)
+      connection?.removeEventListener("change", updateMediaPreference)
+    }
+  }, [])
 
   const handleSearch = () => {
     const query = searchQuery.trim()
@@ -46,17 +87,28 @@ export function HeroSection() {
 
       <div className="mx-auto mt-6 max-w-320 lg:px-0">
         <div className="relative h-174 overflow-hidden bg-[#031C19] sm:mx-8 sm:rounded-3xl lg:mx-0 lg:h-auto lg:min-h-168.75">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
+          <Image
+            src="/home-page-assets/fixes-hero-poster.webp"
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 1280px) 1280px, 100vw"
             className="absolute inset-0 size-full object-cover object-[58%_center] lg:object-center"
             aria-hidden="true"
-          >
-            <source src="/home-page-assets/fixes-hero.mp4" type="video/mp4" />
-          </video>
+          />
+          {shouldLoadVideo && (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 size-full object-cover object-center"
+              aria-hidden="true"
+            >
+              <source src="/home-page-assets/fixes-hero.mp4" type="video/mp4" />
+            </video>
+          )}
           <div className="absolute inset-0 bg-linear-to-r from-black/78 via-black/48 to-black/10 lg:from-black/72 lg:via-black/35" />
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-black/60 to-transparent lg:hidden" />
 
