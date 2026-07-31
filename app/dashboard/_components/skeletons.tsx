@@ -1,5 +1,7 @@
 // fixes-web/app/dashboard/_components/skeletons.tsx
 
+import Image from 'next/image'
+import Link from 'next/link'
 import { MapPin, Star, ShieldCheck, MessageSquare, Plus, DollarSign, Clock, Calendar, Briefcase, Settings } from 'lucide-react'
 
 export function SkeletonDashboardLayout() {
@@ -32,7 +34,9 @@ export function SkeletonDashboardLayout() {
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 shrink-0 animate-pulse">
           <div className="flex items-center gap-4">
             <div className="lg:hidden w-6 h-6 bg-gray-200 rounded-md"></div>
-            <div className="w-32 h-6 bg-gray-200 rounded-full"></div>
+            <Link href="/" aria-label="Fixes home" className="flex items-center">
+              <Image src="/logo.svg" alt="Fixes" width={100} height={32} className="h-7 w-auto" priority />
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
