@@ -4,6 +4,7 @@ import { useState } from "react"
 import type { FormEvent } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { createFragmentHref } from "@/lib/fragmentState"
 
 export function CTASection() {
   const router = useRouter()
@@ -12,7 +13,7 @@ export function CTASection() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const query = description.trim()
-    router.push(query ? `/post-job?q=${encodeURIComponent(query)}` : "/post-job")
+    router.push(createFragmentHref("/post-job", { q: query }))
   }
 
   return (

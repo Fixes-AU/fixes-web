@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/upwork/Header"
 import { Footer } from "@/components/upwork/Footer"
+import { createFragmentHref } from "@/lib/fragmentState"
 
 const features = [
   {
@@ -101,7 +102,7 @@ export default function PricingPage() {
                 <p className="text-(--upwork-navy) font-semibold text-lg mb-6">$299 <span className="text-sm text-gray-500 font-normal">/ mo</span></p>
 
                 <Button asChild className="w-full bg-[#3B6D11] border-none text-white hover:bg-[#3B6D11]/90 rounded-full">
-                  <Link href="/register?plan=business">Get started</Link>
+                  <Link href={createFragmentHref("/register", { plan: "business" })}>Get started</Link>
                 </Button>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import { Header, Footer } from "@/components/upwork"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { createFragmentHref } from "@/lib/fragmentState"
  
 export default function EnterprisePage() {
   return (
@@ -43,7 +44,7 @@ export default function EnterprisePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/register?plan=business">
+            <Link href={createFragmentHref("/register", { plan: "business" })}>
               <Button className="bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white rounded-full px-8 py-6 text-lg font-semibold w-full sm:w-auto">
                 Create business account
               </Button>

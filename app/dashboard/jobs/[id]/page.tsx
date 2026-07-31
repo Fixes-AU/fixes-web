@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
 import { uploadFile } from '@/lib/uploadService'
+import { createFragmentHref } from '@/lib/fragmentState'
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS, CATEGORY_LABELS, TIER_LABELS, AGENCY_CATEGORIES } from '@/lib/constants'
 import { SkeletonJobDetail, SkeletonChatMessages } from '../../_components/skeletons'
 import CleaningTaskList from '../../_components/CleaningTaskList'
@@ -1546,7 +1547,7 @@ export default function JobDetailPage() {
                 Reject
               </button>
               <button
-                onClick={() => router.push(`/post-job?jobId=${job._id}`)}
+                onClick={() => router.push(createFragmentHref('/post-job', { jobId: job._id }))}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white text-sm font-medium transition-colors"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />

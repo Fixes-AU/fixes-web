@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { TRADIE_CATEGORY_LABELS } from '@/lib/constants'
+import { createFragmentHref } from '@/lib/fragmentState'
 import type { TradieProfile, User, TradieCategory, Review, ReviewStats } from '@/lib/types'
 import { SkeletonTradieProfile } from '../../_components/skeletons'
 
@@ -194,7 +195,7 @@ export default function DashboardTradieProfilePage() {
 
         <div className="mt-5 pt-5 border-t border-gray-100">
           <Link
-            href={`/post-job?category=${profile.categories[0] || ''}`}
+            href={createFragmentHref('/post-job', { category: profile.categories[0] })}
             className="inline-flex items-center gap-2 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white text-sm font-medium py-2.5 px-6 rounded-xl transition-colors"
           >
             Post a Job in This Category

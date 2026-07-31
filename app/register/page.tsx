@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { ApiError } from '@/lib/api'
+import { parseFragmentState } from '@/lib/fragmentState'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -34,12 +35,14 @@ export default function RegisterPage() {
   const [showBusinessDialog, setShowBusinessDialog] = useState(false)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('plan') === 'business') {
-        setShowBusinessDialog(true)
-      }
+    const syncPlan = () => {
+      const params = parseFragmentState(window.location.hash)
+      setShowBusinessDialog(params.get('plan') === 'business')
     }
+
+    syncPlan()
+    window.addEventListener('hashchange', syncPlan)
+    return () => window.removeEventListener('hashchange', syncPlan)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {

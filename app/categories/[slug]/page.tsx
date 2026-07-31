@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Header, Footer } from '@/components/upwork'
 import { SERVICE_DATA, getServiceBySlug } from '@/lib/service-data'
+import { createFragmentHref } from '@/lib/fragmentState'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   electrical: Zap,
@@ -115,7 +116,7 @@ export default async function CategoryDetailPage({
               </p>
 
               <Link
-                href={`/post-job?category=${service.category}`}
+                href={createFragmentHref('/post-job', { category: service.category })}
                 className="inline-flex items-center gap-2 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-semibold py-3.5 px-8 rounded-xl transition-colors text-lg"
               >
                 Post a {service.label} Job
@@ -161,7 +162,10 @@ export default async function CategoryDetailPage({
             {service.popularTasks.map((task) => (
               <Link
                 key={task.label}
-                href={`/post-job?category=${service.category}&q=${encodeURIComponent(task.preFilledTitle)}`}
+                href={createFragmentHref('/post-job', {
+                  category: service.category,
+                  q: task.preFilledTitle,
+                })}
                 className="flex items-center justify-between gap-3 border border-gray-200 rounded-xl px-5 py-4 hover:border-(--upwork-green) hover:bg-green-50/30 transition-all group"
               >
                 <span className="text-sm font-medium text-(--upwork-navy) group-hover:text-(--upwork-green) transition-colors">
@@ -196,7 +200,7 @@ export default async function CategoryDetailPage({
 
           <div className="text-center mt-12">
             <Link
-              href={`/post-job?category=${service.category}`}
+              href={createFragmentHref('/post-job', { category: service.category })}
               className="inline-flex items-center gap-2 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-semibold py-3.5 px-8 rounded-xl transition-colors"
             >
               Get Your Personalised Quote
@@ -220,7 +224,7 @@ export default async function CategoryDetailPage({
               generate a personalised, fair quote — no hidden fees, no call-out charges.
             </p>
             <Link
-              href={`/post-job?category=${service.category}`}
+              href={createFragmentHref('/post-job', { category: service.category })}
               className="inline-flex items-center gap-2 bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-semibold py-3 px-7 rounded-xl transition-colors"
             >
               Get a Quote Now

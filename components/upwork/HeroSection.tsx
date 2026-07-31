@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowRight, ChevronRight, MapPin, Search, Star, UsersRound } from "lucide-react"
+import { createFragmentHref } from "@/lib/fragmentState"
 
 const categoryTags = [
   { label: "Electrician", value: "electrical" },
@@ -65,7 +66,7 @@ export function HeroSection() {
 
   const handleSearch = () => {
     const query = searchQuery.trim()
-    router.push(query ? `/post-job?q=${encodeURIComponent(query)}` : "/post-job")
+    router.push(createFragmentHref("/post-job", { q: query }))
   }
 
   return (
@@ -76,7 +77,7 @@ export function HeroSection() {
             Stop doing everything. Hire the top 1% of talent on Business Plus.
           </p>
           <Link
-            href="/register?plan=business"
+            href={createFragmentHref("/register", { plan: "business" })}
             className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#031C19] hover:underline sm:text-sm"
           >
             Get started
@@ -165,7 +166,7 @@ export function HeroSection() {
                   <button
                     key={tag.value}
                     type="button"
-                    onClick={() => router.push(`/post-job?category=${tag.value}`)}
+                    onClick={() => router.push(createFragmentHref("/post-job", { category: tag.value }))}
                     className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/45 bg-black/25 px-3 py-2 text-[10px] font-medium text-white transition hover:bg-white/12 sm:text-xs"
                   >
                     {tag.label}
