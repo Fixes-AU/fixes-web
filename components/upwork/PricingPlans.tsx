@@ -20,7 +20,7 @@ export function PricingPlans() {
         height={816}
         loading="eager"
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 w-full object-cover opacity-70"
+        className="pointer-events-none absolute inset-x-0 bottom-16 h-3/5 w-full -scale-y-100 object-cover opacity-70"
       />
       <div className="relative mx-auto max-w-320 px-5 sm:px-8 lg:px-0">
         <div className="text-center">
@@ -49,25 +49,29 @@ export function PricingPlans() {
             <FeatureList />
           </article>
 
-          <article className="relative flex w-[calc(100vw-56px)] max-w-95 shrink-0 snap-start flex-col rounded-2xl border border-[#DCDCE6] bg-white p-6 shadow-sm lg:w-auto lg:max-w-none">
-            <span className="absolute right-5 top-5 rounded-full bg-[#E8F4EB] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#08544B]">popular</span>
-            <h3 className="text-xl font-semibold text-[#031C19]">Business</h3>
-            <p className="mt-3 min-h-17 text-sm leading-5 text-[#616161]">
-              Hire multiple tradies across your work sites with premium tools, priority matching and centralised billing all in one place.
-            </p>
-            <div className="mt-5 flex items-end gap-1 border-b border-black/8 pb-5">
-              <p className="text-3xl font-semibold text-[#031C19]">$299</p>
-              <span className="pb-1 text-xs text-[#616161]">/month + job costs</span>
+          <article
+            aria-disabled="true"
+            className="relative flex w-[calc(100vw-56px)] max-w-95 shrink-0 snap-start flex-col rounded-2xl border border-[#DCDCE6] bg-white shadow-sm lg:w-auto lg:max-w-none"
+          >
+            <div className="pointer-events-none flex h-full select-none flex-col overflow-hidden rounded-[15px] p-6 blur-[3px]">
+              <span className="absolute right-5 top-5 rounded-full bg-[#E8F4EB] px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#08544B]">popular</span>
+              <h3 className="text-xl font-semibold text-[#031C19]">Business</h3>
+              <p className="mt-3 min-h-17 text-sm leading-5 text-[#616161]">
+                Hire multiple tradies across your work sites with premium tools, priority matching and centralised billing all in one place.
+              </p>
+              <div className="mt-5 flex items-end gap-1 border-b border-black/8 pb-5">
+                <p className="text-3xl font-semibold text-[#031C19]">$299</p>
+                <span className="pb-1 text-xs text-[#616161]">/month + job costs</span>
+              </div>
+              <div className="mt-5 flex h-11 items-center justify-center rounded-full bg-[#0E8C7D] text-sm font-semibold text-white">
+                Get Started
+              </div>
+              <p className="mt-6 text-sm font-semibold text-[#031C19]">What&apos;s Included</p>
+              <FeatureList />
             </div>
-            <Link
-              href="/register?plan=business"
-              className="mt-5 flex h-11 items-center justify-center rounded-full bg-[#0E8C7D] text-sm font-semibold text-white transition hover:bg-[#08544B]"
-            >
-              Get Started
-            </Link>
-            <p className="mt-6 text-sm font-semibold text-[#031C19]">What&apos;s Included</p>
-            <FeatureList />
-            <p className="mt-4 text-center text-[10px] font-semibold text-[#0E8C7D]">This Feature Will be coming Soon</p>
+            <p className="absolute -bottom-7 inset-x-0 text-center text-[10px] font-semibold text-[#0E8C7D]">
+              This Feature Will Be Coming Soon
+            </p>
           </article>
         </div>
 

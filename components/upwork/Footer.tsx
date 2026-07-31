@@ -9,19 +9,6 @@ import { FixerQRLogo, FixesQRLogo } from "./QRWordmarks"
 
 type FooterLink = { label: string; href: string | null }
 
-function RedditIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M7.2 10.2A7.6 5.1 0 0 1 12 8.7a7.6 5.1 0 0 1 4.8 1.5" />
-      <path d="M18.4 11.2a2 2 0 1 1 .4 3.9C18 17.8 15.4 19.6 12 19.6s-6-1.8-6.8-4.5a2 2 0 1 1 .4-3.9" />
-      <circle cx="9.2" cy="14.1" r=".8" fill="currentColor" stroke="none" />
-      <circle cx="14.8" cy="14.1" r=".8" fill="currentColor" stroke="none" />
-      <path d="M9.4 16.5c1.5.9 3.7.9 5.2 0M12.7 8.8l1-4.4 3.6.8" />
-      <circle cx="18.3" cy="5.4" r="1.2" />
-    </svg>
-  )
-}
-
 const footerLinks: Record<string, FooterLink[]> = {
   "For Clients / Homeowners": [
     { label: "Articles", href: "/articles" },
@@ -68,7 +55,6 @@ const socialLinks = [
   { label: "X", icon: Twitter, href: process.env.NEXT_PUBLIC_TWITTER_URL || null },
   { label: "YouTube", icon: Youtube, href: process.env.NEXT_PUBLIC_YOUTUBE_URL || null },
   { label: "Instagram", icon: Instagram, href: process.env.NEXT_PUBLIC_INSTAGRAM_URL || null },
-  { label: "Reddit", icon: RedditIcon, href: null },
 ]
 
 const bottomLinks = [
