@@ -122,23 +122,24 @@ export function HeroSection() {
                 From repairs and maintenance to renovations and cleaning, connect with verified local professionals, compare quotes, and hire with confidence.
               </p>
 
-              <div className="mt-7 flex h-11 w-full max-w-155 items-center rounded-full border border-white/30 bg-black/45 p-1 backdrop-blur-sm sm:w-128">
+              <div className="lg:mt-10 lg:h-[240.97px] lg:w-[604px] lg:rounded-[20px] lg:bg-black/30 lg:px-[34px] lg:py-5 lg:backdrop-blur-[15px]">
+              <div className="mt-7 flex h-11 w-full max-w-155 items-center rounded-full border border-white/30 bg-black/45 p-1 backdrop-blur-sm sm:w-128 lg:mt-0 lg:h-12 lg:w-full lg:max-w-none lg:border-0 lg:bg-white/20 lg:p-0 lg:backdrop-blur-none">
                 <button
                   type="button"
-                  className="flex h-full flex-1 items-center justify-center rounded-full border border-white bg-white/12 text-xs font-medium text-white sm:text-sm"
+                  className="flex h-full flex-1 items-center justify-center rounded-full border border-white bg-white/12 text-xs font-medium text-white sm:text-sm lg:border-2 lg:text-[14.1px] lg:tracking-[0.48px]"
                 >
                   I want to hire
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/i-want-to-work")}
-                  className="flex h-full flex-1 items-center justify-center rounded-full text-xs font-medium text-white transition hover:bg-white/10 sm:text-sm"
+                  className="flex h-full flex-1 items-center justify-center rounded-full text-xs font-medium text-white transition hover:bg-white/10 sm:text-sm lg:text-[14.1px] lg:tracking-[0.48px]"
                 >
                   I want to work
                 </button>
               </div>
 
-              <div className="relative mt-4 w-full max-w-155 sm:w-128">
+              <div className="relative mt-4 w-full max-w-155 sm:w-128 lg:mt-[33px] lg:w-full lg:max-w-none">
                 <label htmlFor="home-hero-search" className="sr-only">Describe what you need to hire for</label>
                 <input
                   id="home-hero-search"
@@ -149,33 +150,34 @@ export function HeroSection() {
                     if (event.key === "Enter") handleSearch()
                   }}
                   placeholder="Describe what you need to hire for…"
-                  className="h-12 w-full rounded-full border-0 bg-white py-3 pl-5 pr-14 text-xs text-[#031C19] shadow-lg outline-none placeholder:text-[#616161] focus:ring-2 focus:ring-[#AFFF43] sm:text-sm"
+                  className="h-12 w-full rounded-full border-0 bg-white py-3 pl-5 pr-14 text-xs text-[#031C19] shadow-lg outline-none placeholder:text-[#616161] focus:ring-2 focus:ring-[#AFFF43] sm:text-sm lg:h-[52px] lg:border-2 lg:border-[#181818] lg:py-1.5 lg:pr-[60px] lg:text-[14.1px]"
                 />
                 <button
                   type="button"
                   onClick={handleSearch}
                   aria-label="Search for a tradie"
-                  className="absolute right-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#031C19] text-[#AFFF43] transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="absolute right-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#031C19] text-[#AFFF43] transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:size-10"
                 >
-                  <Search className="size-4" />
+                  <Search className="size-4 lg:size-6" />
                 </button>
               </div>
 
-              <div className="mt-4 flex max-w-161 gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <div className="mt-4 flex max-w-161 gap-2 overflow-x-auto pb-1 no-scrollbar lg:mt-[33px] lg:max-w-none lg:gap-[15.48px] lg:overflow-visible lg:pb-0">
                 {categoryTags.map((tag) => (
                   <button
                     key={tag.value}
                     type="button"
                     onClick={() => router.push(createFragmentHref("/post-job", { category: tag.value }))}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/45 bg-black/25 px-3 py-2 text-[10px] font-medium text-white transition hover:bg-white/12 sm:text-xs"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/45 bg-black/25 px-3 py-2 text-[10px] font-medium text-white transition hover:bg-white/12 sm:text-xs lg:gap-[1.84px] lg:border-white lg:bg-white/10 lg:px-[18.4px] lg:py-[9.2px] lg:text-[13px] lg:leading-[14px]"
                   >
                     {tag.label}
-                    <ArrowRight className="size-3" />
+                    <ArrowRight className="size-3 lg:size-[16.56px]" />
                   </button>
                 ))}
               </div>
+              </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-medium text-white sm:text-xs">
+              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-medium text-white sm:text-xs lg:mt-10 lg:gap-x-6 lg:text-sm lg:font-normal lg:tracking-[0.25px]">
                 {trustMetrics.map(({ icon: Icon, label }) => (
                   <span key={label} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                     <Icon className="size-3.5" />
