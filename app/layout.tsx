@@ -9,13 +9,11 @@ import './globals.css'
 const nunitoSans = Nunito_Sans({ 
   subsets: ["latin"],
   variable: '--font-nunito-sans',
-  weight: ['300', '400', '500', '600', '700', '800']
 });
 
 const manrope = Manrope({
   subsets: ['latin'],
   variable: '--font-home-manrope',
-  weight: ['400', '500', '600', '700'],
 })
 
 export const metadata: Metadata = {
