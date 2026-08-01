@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 import { Manrope, Nunito_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
+import { CanonicalLink } from '@/components/CanonicalLink'
+import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
 const nunitoSans = Nunito_Sans({ 
@@ -17,6 +19,7 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Fixes | Hire Trusted Tradies Instantly',
   description: 'Access skilled, verified tradies ready to help you build and fix — matched instantly via AI-powered quoting.',
   icons: {
@@ -45,6 +48,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${nunitoSans.variable} ${manrope.variable} font-sans antialiased`}>
+        <CanonicalLink />
         <AuthProvider>
           {children}
         </AuthProvider>
