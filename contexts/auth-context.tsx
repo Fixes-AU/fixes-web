@@ -12,7 +12,6 @@ import {
 } from 'react'
 import type { User, TradieProfile, LoginResponse, MeResponse } from '@/lib/types'
 import { api, setTokens, clearTokens, getAccessToken } from '@/lib/api'
-import { reconnectSocket, disconnectSocket } from '@/lib/socket'
 
 
 interface AuthContextValue {
@@ -86,7 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchMe()
       }
 
+    try {
+      const { reconnectSocket } = await import('@/lib/socket')
       reconnectSocket()
+    } catch {
+      // Authentication should still succeed if realtime updates cannot start.
+    }
 
       return res.data.user
     },
@@ -112,7 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.post('/api/auth/logout', {})
     } catch {
     }
-    disconnectSocket()
+    try {
+      const { disconnectSocket } = await import('@/lib/socket')
+      disconnectSocket()
+    } catch {
+      // Local logout must still complete if the deferred socket chunk is unavailable.
+    }
     clearTokens()
     setUser(null)
     setProfile(null)

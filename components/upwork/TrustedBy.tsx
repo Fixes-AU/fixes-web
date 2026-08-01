@@ -37,7 +37,7 @@ function TrustBadge({ badge, className = "" }: { badge: Badge; className?: strin
   const isTop50 = badge.title[0] === "Top 50"
 
   return (
-    <div className={`${inter.className} ${className} relative h-[190.92px] w-[165.7px] lg:h-[143.73px] lg:w-[124.75px]`}>
+    <div className={`${className} relative h-[190.92px] w-[165.7px] font-manrope lg:h-[143.73px] lg:w-[124.75px]`}>
       <svg className="absolute inset-0 size-full" viewBox="0 0 124.75 143.73" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <clipPath id={`badge-${badge.subtitle.replace(/\s/g, "-")}`}>
@@ -77,6 +77,3 @@ function TrustBadge({ badge, className = "" }: { badge: Badge; className?: strin
     </div>
   )
 }
-import { Inter } from "next/font/google"
-
-const inter = Inter({ subsets: ["latin"], weight: ["700"] })
