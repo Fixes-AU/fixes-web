@@ -34,9 +34,10 @@ const navItems = [
 
 interface HeaderProps {
   deferNavigationPrefetch?: boolean
+  campaign?: boolean
 }
 
-export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
+export function Header({ deferNavigationPrefetch = false, campaign = false }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openMobileDropdown, setOpenMobileDropdown] = useState<string | null>(null)
   const mobileMenuId = useId()
@@ -58,21 +59,21 @@ export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-white font-manrope">
-      <div className="mx-auto flex h-19 max-w-335 items-center justify-between px-5 sm:px-8 lg:px-10">
-        <div className="flex items-center gap-8 xl:gap-10">
+      <div className={`mx-auto flex max-w-335 items-center justify-between ${campaign ? "h-[61.64px] px-5 lg:h-[87px] lg:px-0" : "h-19 px-5 sm:px-8 lg:px-10"}`}>
+        <div className={`flex items-center ${campaign ? "gap-[7px] lg:gap-8 xl:gap-10" : "gap-8 xl:gap-10"}`}>
           <button
             type="button"
-            className="-ml-2 inline-flex size-10 items-center justify-center rounded-full text-[#031C19] transition hover:bg-black/5 lg:hidden"
+            className={`${campaign ? "inline-flex size-6" : "-ml-2 inline-flex size-10"} items-center justify-center rounded-full text-[#031C19] transition hover:bg-black/5 lg:hidden`}
             aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
             aria-expanded={mobileMenuOpen}
             aria-controls={mobileMenuId}
             onClick={() => setMobileMenuOpen((open) => !open)}
           >
-            {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            {mobileMenuOpen ? <X className={campaign ? "size-6" : "size-5"} /> : <Menu className={campaign ? "size-6" : "size-5"} />}
           </button>
 
           <Link href="/" prefetch={navigationPrefetch} className="flex shrink-0 items-center" aria-label="Fixes home">
-            <Image src="/logo.svg" alt="Fixes" width={92} height={32} className="h-7 w-auto sm:h-8" style={{ width: "auto" }} priority />
+            <Image src="/logo.svg" alt="Fixes" width={92} height={32} className={`${campaign ? "h-[24.32px] lg:h-[31px]" : "h-7 sm:h-8"} w-auto`} style={{ width: "auto" }} priority />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary navigation">
@@ -80,7 +81,7 @@ export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
               <div key={item.label} className="group relative">
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none"
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-2 font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none ${campaign ? "text-base" : "text-[14px]"}`}
                 >
                   {item.label}
                   <ChevronDown className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
@@ -103,7 +104,7 @@ export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
             <Link
               href="/enterprise"
               prefetch={navigationPrefetch}
-              className="rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none"
+              className={`rounded-full px-3 py-2 font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none ${campaign ? "text-base" : "text-[14px]"}`}
             >
               Enterprise
             </Link>
@@ -114,21 +115,21 @@ export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
           <Link
             href="/i-want-to-work"
             prefetch={navigationPrefetch}
-            className="hidden rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none md:inline-flex"
+            className={`hidden rounded-full px-3 py-2 font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none md:inline-flex ${campaign ? "text-base" : "text-[14px]"}`}
           >
             Become a Fixer
           </Link>
           <Link
             href="/login"
             prefetch={navigationPrefetch}
-            className="hidden rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none sm:inline-flex"
+            className={`hidden rounded-full px-3 py-2 font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none sm:inline-flex ${campaign ? "text-base" : "text-[14px]"}`}
           >
             Login
           </Link>
           <Link
             href="/register"
             prefetch={navigationPrefetch}
-            className="inline-flex h-10 items-center rounded-full bg-[#08544B] px-5 text-[13px] font-semibold text-white transition hover:bg-[#063F39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08544B] sm:px-6 sm:text-sm"
+            className={`inline-flex items-center rounded-full bg-[#08544B] font-semibold text-white transition hover:bg-[#063F39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08544B] ${campaign ? "h-[30.64px] px-[13.64px] text-[10.91px] lg:h-11 lg:px-6 lg:text-base" : "h-10 px-5 text-[13px] sm:px-6 sm:text-sm"}`}
           >
             Sign Up
           </Link>
