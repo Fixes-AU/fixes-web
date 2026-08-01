@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
-  title: 'Cookie Settings | Fixes',
+  title: 'Cookie Settings & Privacy Controls | Fixes',
   description: 'Manage your cookie preferences for the Fixes platform.',
 }
 

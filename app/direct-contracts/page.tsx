@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
-  title: 'Direct Contracts | Fixes',
+  title: 'Direct Trade Contracts for Businesses | Fixes',
   description: 'Information about establishing direct, recurring contracts with trusted tradies and cleaners on Fixes.',
 }
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
-  title: 'Council Regulations | Fixes',
+  title: 'Council Permits & Trade Regulations | Fixes',
   description: 'Important information regarding local council regulations and permits for home improvement projects.',
 }
 

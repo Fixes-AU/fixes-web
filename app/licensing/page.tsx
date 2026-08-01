@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
-  title: 'Licensing Information | Fixes',
+  title: 'Australian Trade Licensing Requirements | Fixes',
   description: 'Learn about the trade licensing requirements for fixers on the Fixes platform in Australia and New Zealand.',
 }
 

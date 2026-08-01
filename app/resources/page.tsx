@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
-  title: 'Resources | Fixes',
+  title: 'Trade & Home Improvement Resources | Fixes',
   description: 'Helpful resources, guides, and tools for the Fixes community.',
 }
 
