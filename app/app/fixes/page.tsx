@@ -38,6 +38,37 @@ export default async function FixesAppRedirect() {
           For homeowners — post jobs, get AI quotes, and track your tradie live.
         </p>
 
+        <section aria-labelledby="fixes-app-features" className="mb-8 rounded-2xl border border-white/15 bg-white/5 p-5 text-left">
+          <h2 id="fixes-app-features" className="text-lg font-semibold text-white">Home repairs without the guesswork</h2>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            The Fixes app gives homeowners one place to describe a job, review an AI-assisted quote, connect with a suitable
+            tradie, and follow the work through completion. Clear scope and timing details help everyone understand what is
+            expected before the job begins.
+          </p>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-[#CDEDE2]">
+            <li><strong className="text-white">Create a detailed request:</strong> choose a service, explain the problem, add photos, and include access or scheduling information.</li>
+            <li><strong className="text-white">Hire with more context:</strong> review job information and work with verified professionals suited to the requested trade and location.</li>
+            <li><strong className="text-white">Keep progress together:</strong> track status, messages, scope updates, and secure platform payments from one job record.</li>
+          </ul>
+          <p className="mt-4 text-sm leading-6 text-[#CDEDE2]">
+            Download the client app for your device and create an account when you are ready to post. You can prepare job
+            details first and confirm the scope, timing, and payment information before proceeding.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            For the clearest request, include photos, measurements where relevant, parking or access notes, and any immediate
+            safety concerns. These details help the platform and responding tradie understand the work before arrival.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Fixes can support common repairs, scheduled maintenance, cleaning, and home-improvement requests across available
+            service categories. Review the selected trade and job information carefully, and keep children, pets, and unsafe
+            areas clear when a professional is due to attend.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Important messages and approved scope changes stay connected to the job, giving you a clearer record if you need
+            help or want to review what was agreed.
+          </p>
+        </section>
+
         <div className="flex flex-col gap-4">
           <Link
             href={APP_STORE_URL}

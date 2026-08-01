@@ -6,6 +6,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/auth-context'
 import { CanonicalLink } from '@/components/CanonicalLink'
 import { PageTitle } from '@/components/PageTitle'
+import { RouteRobots } from '@/components/RouteRobots'
 import { SITE_URL } from '@/lib/site'
 import './globals.css'
 
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className={`${nunitoSans.variable} ${manrope.variable} font-sans antialiased`}>
         <PageTitle />
         <CanonicalLink />
+        <RouteRobots />
         <AuthProvider>
           {children}
         </AuthProvider>

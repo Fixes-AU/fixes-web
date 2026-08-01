@@ -312,6 +312,36 @@ export default function ClientWaitlistPage() {
               </div>
             </div>
           )}
+
+          <section aria-labelledby="client-waitlist-benefits" className="mt-8 border-t border-gray-200 pt-6">
+            <h2 id="client-waitlist-benefits" className="text-lg font-bold text-[#001e00]">
+              A simpler way to organise home repairs
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              The Fixes client app is being designed for homeowners who want clearer information before work begins. Describe
+              the problem, add useful photos, and receive an AI-assisted quote designed to make the expected scope and price
+              easier to understand.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              When Fixes launches in your area, you will be able to connect with verified local tradies, manage job details,
+              follow progress, and keep payment information in one place. The waitlist questionnaire helps us understand how
+              Australians currently find tradespeople and where the hiring experience needs to improve.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              Joining does not create a paid subscription or commit you to posting a job. We will use your suburb and postcode
+              to let you know when client access becomes available near you.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              Early access will support common household repairs, maintenance, cleaning, and improvement work. Before posting,
+              you will be able to explain access requirements, preferred timing, safety concerns, and any materials already on
+              site. Better preparation helps a matched tradie understand the request and reduces avoidable follow-up questions.
+            </p>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              While you wait, you can explore Fixes service categories and guidance on hiring safely. This makes it easier to
+              identify the right trade, gather useful job details, and understand how quotes, matching, progress updates, and
+              platform payments fit together before your first request.
+            </p>
+          </section>
         </div>
       </div>
 

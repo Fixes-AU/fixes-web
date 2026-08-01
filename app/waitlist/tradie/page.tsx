@@ -191,6 +191,31 @@ export default function TradieWaitlistPage() {
               </p>
             </div>
           )}
+
+          <section aria-labelledby="tradie-waitlist-benefits" className="mt-6 border-t border-gray-200 pt-5">
+            <h2 id="tradie-waitlist-benefits" className="text-lg font-bold text-[#001e00]">
+              Built around real trade work
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Fixer is being built to help qualified Australian tradespeople spend less time chasing leads and payments. Job
+              opportunities are matched using trade category, service area, availability, and verification information, so the
+              work you receive is more relevant to the services you actually provide.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              The app brings dispatch details, schedules, client communication, scope updates, and payout status into one place.
+              AI-assisted quoting gives clients clearer expectations before a job is accepted, while platform records help both
+              sides stay aligned when the scope changes.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Join the waitlist with your primary trade and location. We will contact you when onboarding opens in your area and
+              explain the licences, insurance, identity, and payout documents required for verification.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Accurate service areas and capabilities matter because they shape which jobs can be offered to you. Preparing
+              current documents and a clear profile in advance can make onboarding faster and gives clients better information
+              when they review who will complete their work.
+            </p>
+          </section>
         </div>
       </div>
 

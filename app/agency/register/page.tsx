@@ -124,6 +124,39 @@ export default function AgencyRegistrationPage() {
             Submit your company details for Fixes admin review. Approved agencies can manage jobs,
             assign workers, and receive payouts through their own Stripe Connect account.
           </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h2 className="text-sm font-semibold text-gray-900">One operational workspace</h2>
+              <p className="mt-2 text-xs leading-5 text-gray-600">
+                Coordinate accepted jobs, worker assignments, documents, and service areas from an agency account built for
+                multi-person trade businesses.
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h2 className="text-sm font-semibold text-gray-900">Structured compliance review</h2>
+              <p className="mt-2 text-xs leading-5 text-gray-600">
+                Tell the Fixes team which trades and regions you cover. Licence, insurance, ABN, and category details help
+                reviewers confirm your agency is ready for suitable work.
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h2 className="text-sm font-semibold text-gray-900">Clear job and payout records</h2>
+              <p className="mt-2 text-xs leading-5 text-gray-600">
+                Approved agencies can keep job activity and Stripe Connect payout readiness together, helping authorised team
+                members understand responsibilities and payment status.
+              </p>
+            </div>
+          </div>
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-gray-600">
+            Complete the application with accurate contact information, service locations, trade categories, and document
+            notes. Submission does not automatically activate dispatch: the Fixes authorised team reviews the information and
+            may request supporting evidence before an agency can receive jobs.
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-gray-600">
+            This application is intended for trade businesses that coordinate multiple workers or service teams. Use the
+            document notes to identify the licences, insurance, tax records, and category-specific evidence available so the
+            review team can follow up efficiently.
+          </p>
         </div>
 
         <form onSubmit={submit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-6">

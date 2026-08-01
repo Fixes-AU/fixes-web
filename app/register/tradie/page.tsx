@@ -123,6 +123,26 @@ export default function RegisterTradiePage() {
               Create your account and start receiving job offers.
             </p>
 
+            <section aria-labelledby="tradie-registration-details" className="mb-8 rounded-xl border border-green-100 bg-green-50/60 p-4">
+              <h2 id="tradie-registration-details" className="text-sm font-semibold text-(--upwork-navy)">
+                What to include in your tradie profile
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                Select the trade that best represents your main work and describe the skills clients should know about. Accurate
+                experience, licence jurisdiction, and service information helps Fixes assess eligibility and match you with more
+                relevant job opportunities.
+              </p>
+              <ul className="mt-3 space-y-2 text-sm leading-5 text-gray-600">
+                <li><strong className="text-(--upwork-navy)">Trade details:</strong> choose your category, skill level, and specialist capabilities.</li>
+                <li><strong className="text-(--upwork-navy)">Profile quality:</strong> add practical skills and a short, client-friendly summary of your experience.</li>
+                <li><strong className="text-(--upwork-navy)">Verification:</strong> be ready to provide licences, insurance, and other required documents in the Fixer app.</li>
+              </ul>
+              <p className="mt-3 text-sm leading-6 text-gray-600">
+                Creating an account does not guarantee immediate dispatch. Your approved categories, verification status,
+                availability, and service location determine which opportunities may be suitable once onboarding is complete.
+              </p>
+            </section>
+
             {error && (
               <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-6">
                 {error}

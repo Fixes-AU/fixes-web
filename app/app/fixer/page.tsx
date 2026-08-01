@@ -38,6 +38,36 @@ export default async function FixerAppRedirect() {
           For tradies — get dispatched to jobs, manage schedules, and get paid securely.
         </p>
 
+        <section aria-labelledby="fixer-app-features" className="mb-8 rounded-2xl border border-white/15 bg-white/5 p-5 text-left">
+          <h2 id="fixer-app-features" className="text-lg font-semibold text-white">Your workday in one app</h2>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Fixer helps verified tradespeople manage opportunities from dispatch through payment. Review the job category,
+            location, scope, timing, and quote before accepting work, then keep important updates connected to the job record.
+          </p>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-[#CDEDE2]">
+            <li><strong className="text-white">Relevant dispatches:</strong> receive opportunities based on your approved trades, service area, availability, and verification status.</li>
+            <li><strong className="text-white">Clear job records:</strong> manage schedules, client messages, evidence, variations, and completion steps from the same workflow.</li>
+            <li><strong className="text-white">Transparent earnings:</strong> follow payment and payout status without relying on separate invoices or informal message threads.</li>
+          </ul>
+          <p className="mt-4 text-sm leading-6 text-[#CDEDE2]">
+            Download the app for your device, sign in or create a tradie profile, and complete the required identity, licence,
+            insurance, and payout checks before going online for eligible work.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Keep your categories, service radius, availability, and documents current. Accurate profile information supports
+            better dispatch decisions and helps prevent offers for work outside your approved capabilities or coverage area.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Before accepting a dispatch, review the client description, photos, timing, location, and quoted scope. If the site
+            conditions or requested work differ after arrival, record the change through the job workflow rather than relying
+            on an informal agreement outside the platform.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-[#CDEDE2]">
+            Keeping communication, evidence, and completion steps attached to the job protects a clear history for you, the
+            client, and Fixes support if questions arise later.
+          </p>
+        </section>
+
         <div className="flex flex-col gap-4">
           <Link
             href={APP_STORE_URL}
