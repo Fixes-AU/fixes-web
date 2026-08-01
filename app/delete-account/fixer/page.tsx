@@ -60,7 +60,7 @@ export default function DeleteAccountPage() {
                       </g>
                     </svg>
                     
-                    <h2 className="text-2xl font-bold tracking-tight">Account Deletion</h2>
+                    <h1 className="text-2xl font-bold tracking-tight">Delete Your Fixer Account</h1>
                     <p className="text-sm text-gray-500 mt-1">Submit a request to permanently delete your data</p>
                 </div>
 

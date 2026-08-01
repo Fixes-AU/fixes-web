@@ -126,6 +126,7 @@ function CleanerRegisterForm() {
           {isValidating ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 className="w-8 h-8 text-teal-600 animate-spin mb-3" />
+              <h1 className="text-xl font-bold text-gray-800 mb-1">Cleaner registration</h1>
               <p className="text-sm text-gray-500">Verifying your invitation…</p>
             </div>
           ) : inviteError ? (
@@ -292,8 +293,10 @@ export default function RegisterCleanerPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex flex-col items-center justify-center">
           <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+          <h1 className="mt-3 text-xl font-bold text-gray-800">Cleaner registration</h1>
+          <p className="mt-1 text-sm text-gray-500">Preparing your invitation</p>
         </div>
       }
     >
