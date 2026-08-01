@@ -32,6 +32,12 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   other: CircleEllipsis,
 }
 
+const CATEGORY_TITLE_OVERRIDES: Readonly<Record<string, string>> = {
+  emergency: 'Emergency Make Safe Services | Fixes',
+  'gardening-landscaping': 'Hire Gardening & Landscaping Experts | Fixes',
+  hvac: 'Hire HVAC & Refrigeration Tradies | Fixes',
+}
+
 export async function generateStaticParams() {
   return SERVICE_DATA.map((service) => ({ slug: service.slug }))
 }
@@ -47,7 +53,7 @@ export async function generateMetadata({
     return { title: 'Category Not Found | Fixes' }
   }
   return {
-    title: `${service.label} | Fixes — Hire Trusted ${service.label}s`,
+    title: CATEGORY_TITLE_OVERRIDES[service.slug] ?? `${service.label} | Fixes — Hire Trusted ${service.label}s`,
     description: service.description,
   }
 }

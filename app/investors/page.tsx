@@ -24,7 +24,7 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'Investor Relations | Fixes — Australia\'s AI-Powered Tradie Marketplace',
+  title: 'Fixes Investor Relations | Reports & Governance',
   description:
     'Investor relations for Fixes Pty Ltd. Access financial reports, company governance, latest news, and resources for current and prospective investors.',
 }
