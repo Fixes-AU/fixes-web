@@ -32,10 +32,15 @@ const navItems = [
   },
 ] as const
 
-export function Header() {
+interface HeaderProps {
+  deferNavigationPrefetch?: boolean
+}
+
+export function Header({ deferNavigationPrefetch = false }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openMobileDropdown, setOpenMobileDropdown] = useState<string | null>(null)
   const mobileMenuId = useId()
+  const navigationPrefetch = deferNavigationPrefetch ? false : undefined
 
   useEffect(() => {
     if (!mobileMenuOpen) setOpenMobileDropdown(null)
@@ -66,7 +71,7 @@ export function Header() {
             {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
 
-          <Link href="/" className="flex shrink-0 items-center" aria-label="Fixes home">
+          <Link href="/" prefetch={navigationPrefetch} className="flex shrink-0 items-center" aria-label="Fixes home">
             <Image src="/logo.svg" alt="Fixes" width={92} height={32} className="h-7 w-auto sm:h-8" style={{ width: "auto" }} priority />
           </Link>
 
@@ -85,6 +90,7 @@ export function Header() {
                     <Link
                       key={subItem.title}
                       href={subItem.href}
+                      prefetch={navigationPrefetch}
                       className="block rounded-xl px-4 py-3 transition hover:bg-[#F4F9EF] focus-visible:bg-[#F4F9EF] focus-visible:outline-none"
                     >
                       <span className="block text-sm font-semibold text-[#031C19]">{subItem.title}</span>
@@ -96,6 +102,7 @@ export function Header() {
             ))}
             <Link
               href="/enterprise"
+              prefetch={navigationPrefetch}
               className="rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none"
             >
               Enterprise
@@ -106,18 +113,21 @@ export function Header() {
         <div className="flex items-center gap-2 sm:gap-4">
           <Link
             href="/i-want-to-work"
+            prefetch={navigationPrefetch}
             className="hidden rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none md:inline-flex"
           >
             Become a Fixer
           </Link>
           <Link
             href="/login"
+            prefetch={navigationPrefetch}
             className="hidden rounded-full px-3 py-2 text-[14px] font-medium text-[#031C19] transition hover:bg-[#F5F5F5] focus-visible:bg-[#F5F5F5] focus-visible:outline-none sm:inline-flex"
           >
             Login
           </Link>
           <Link
             href="/register"
+            prefetch={navigationPrefetch}
             className="inline-flex h-10 items-center rounded-full bg-[#08544B] px-5 text-[13px] font-semibold text-white transition hover:bg-[#063F39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08544B] sm:px-6 sm:text-sm"
           >
             Sign Up
@@ -147,6 +157,7 @@ export function Header() {
                         <Link
                           key={subItem.title}
                           href={subItem.href}
+                          prefetch={navigationPrefetch}
                           onClick={closeMobileMenu}
                           className="block rounded-xl px-3 py-2.5 text-sm text-[#616161] hover:bg-[#F5F5F5] hover:text-[#031C19]"
                         >
@@ -158,13 +169,13 @@ export function Header() {
                 </div>
               )
             })}
-            <Link href="/enterprise" onClick={closeMobileMenu} className="border-b border-black/8 py-4 text-base font-semibold text-[#031C19]">
+            <Link href="/enterprise" prefetch={navigationPrefetch} onClick={closeMobileMenu} className="border-b border-black/8 py-4 text-base font-semibold text-[#031C19]">
               Enterprise
             </Link>
-            <Link href="/i-want-to-work" onClick={closeMobileMenu} className="border-b border-black/8 py-4 text-base font-semibold text-[#031C19]">
+            <Link href="/i-want-to-work" prefetch={navigationPrefetch} onClick={closeMobileMenu} className="border-b border-black/8 py-4 text-base font-semibold text-[#031C19]">
               Become a Fixer
             </Link>
-            <Link href="/login" onClick={closeMobileMenu} className="py-4 text-base font-semibold text-[#031C19] sm:hidden">
+            <Link href="/login" prefetch={navigationPrefetch} onClick={closeMobileMenu} className="py-4 text-base font-semibold text-[#031C19] sm:hidden">
               Login
             </Link>
           </nav>
