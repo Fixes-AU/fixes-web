@@ -25,7 +25,7 @@ const featuredPost = {
   category: 'Product',
   date: 'June 10, 2026',
   readTime: '6 min read',
-  image: '/about-page-assets/community-impact.jpg',
+  image: '/about-page-assets/community-impact.webp',
 }
 
 const posts = [

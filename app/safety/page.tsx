@@ -54,7 +54,7 @@ export default function SafetyPage() {
             <div className="relative flex items-center justify-center">
               <div className="w-50 h-50 sm:w-60 sm:h-60 lg:w-70 lg:h-70 bg-white/10 rounded-full" />
               <Image
-                src="/about-page-assets/Remove background project - June 11, 2026 at 21.27.34.png"
+                src="/about-page-assets/safety-shield.png"
                 alt="Safety shield icon"
                 width={300}
                 height={300}

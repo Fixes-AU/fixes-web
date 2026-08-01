@@ -222,7 +222,7 @@ export default function TradieWaitlistPage() {
       <div className="hidden md:block flex-1 relative bg-[#001e00]">
         <div className="absolute inset-0">
           <img
-            src="/waitlist-tradie.png"
+            src="/waitlist-tradie.webp"
             alt="Professional Australian Tradie"
             className="w-full h-full object-cover opacity-90"
           />

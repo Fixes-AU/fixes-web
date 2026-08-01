@@ -348,7 +348,7 @@ export default function ClientWaitlistPage() {
       <div className="hidden md:block flex-1 relative bg-[#001e00]">
         <div className="absolute inset-0">
           <img
-            src="/waitlist-client.png"
+            src="/waitlist-client.webp"
             alt="Modern Australian Home Renovation"
             className="w-full h-full object-cover opacity-90"
           />

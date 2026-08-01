@@ -19,7 +19,7 @@ const hiringSteps: Step[] = [
     shortTitle: "Post your job",
     title: "Post your job",
     description: "Add details, timing and photos so tradies know exactly what's needed.",
-    image: "/home-page-assets/redesign/hiring-post-job.png",
+    image: "/home-page-assets/redesign/hiring-post-job.webp",
     imageAlt: "Fixes tradie checking a new job on his phone",
   },
   {
@@ -27,7 +27,7 @@ const hiringSteps: Step[] = [
     shortTitle: "Connected Tradie",
     title: "Get connected to a top-rated tradie",
     description: "Add details, timing and photos so tradies know exactly what's needed.",
-    image: "/home-page-assets/redesign/hiring-connected-tradie.png",
+    image: "/home-page-assets/redesign/hiring-connected-tradie.webp",
     imageAlt: "Team of Fixes professionals ready to help",
   },
   {
@@ -35,7 +35,7 @@ const hiringSteps: Step[] = [
     shortTitle: "Job Done",
     title: "Get your job done",
     description: "Your tradie gets to work and you pay only when the job is complete.",
-    image: "/home-page-assets/redesign/hiring-job-done.png",
+    image: "/home-page-assets/redesign/hiring-job-done.webp",
     imageAlt: "Fixes tradie greeting a customer after completing a job",
   },
 ]
@@ -46,7 +46,7 @@ const workingSteps: Step[] = [
     shortTitle: "Go online",
     title: "Go online",
     description: "Create your profile and go online to let customers know you're available.",
-    image: "/home-page-assets/redesign/work-go-online.png",
+    image: "/home-page-assets/redesign/work-go-online.webp",
     imageAlt: "Fixes tradie setting his availability from his phone",
   },
   {
@@ -54,7 +54,7 @@ const workingSteps: Step[] = [
     shortTitle: "Receive nearby jobs",
     title: "Receive nearby jobs",
     description: "Get notified of local jobs that match your trade and skills instantly.",
-    image: "/home-page-assets/redesign/work-nearby-jobs.png",
+    image: "/home-page-assets/redesign/work-nearby-jobs.webp",
     imageAlt: "Fixes tradie receiving a nearby job notification",
   },
   {
@@ -62,7 +62,7 @@ const workingSteps: Step[] = [
     shortTitle: "Get paid as you deliver",
     title: "Get paid as you deliver",
     description: "Complete the work and receive payment securely once the job is done.",
-    image: "/home-page-assets/redesign/work-get-paid.png",
+    image: "/home-page-assets/redesign/work-get-paid.webp",
     imageAlt: "Fixes tradie greeting a satisfied customer",
   },
 ]

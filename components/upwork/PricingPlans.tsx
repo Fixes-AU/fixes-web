@@ -14,7 +14,7 @@ export function PricingPlans() {
   return (
     <section className="relative overflow-hidden bg-white py-15 font-manrope lg:py-20">
       <Image
-        src="/home-page-assets/redesign/pricing-backdrop.png"
+        src="/home-page-assets/redesign/pricing-backdrop.webp"
         alt=""
         width={1926}
         height={816}

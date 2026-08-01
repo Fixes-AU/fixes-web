@@ -13,7 +13,7 @@ export function BrandManifesto() {
       <div className="mx-auto grid max-w-320 items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-0 lg:px-0">
         <div className="order-2 overflow-hidden rounded-[24px] lg:order-1 lg:h-154.25 lg:rounded-[29px]">
           <Image
-            src="/home-page-assets/redesign/purpose-tradie-customer.png"
+            src="/home-page-assets/redesign/purpose-tradie-customer.webp"
             alt="A Fixes professional greeting a homeowner"
             width={1275}
             height={1234}

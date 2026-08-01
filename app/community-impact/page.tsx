@@ -25,7 +25,7 @@ export default function CommunityImpactPage() {
 
       <section className="relative w-full overflow-hidden" style={{ aspectRatio: '1920 / 600' }}>
         <Image
-          src="/about-page-assets/community-impact.jpg"
+          src="/about-page-assets/community-impact.webp"
           alt="Fixes community impact"
           fill
           className="object-cover object-center"

@@ -25,7 +25,7 @@ export default function AboutUsPage() {
       <section className="relative w-full overflow-hidden" style={{ aspectRatio: '1920 / 768' }}>
         <div className="absolute inset-0 z-0">
           <Image
-            src="/about-page-assets/Gemini_Generated_Image_ho4zv7ho4zv7ho4z-2@2x.png"
+            src="/about-page-assets/Gemini_Generated_Image_ho4zv7ho4zv7ho4z-2@2x.webp"
             alt=""
             fill
             className="object-cover object-center"
@@ -42,7 +42,7 @@ export default function AboutUsPage() {
 
         <div className="absolute bottom-0 right-0 lg:right-[8%] z-10 flex items-end justify-end">
           <Image
-            src="/about-page-assets/Gemini_Generated_Image_9809t59809t59809-2@2x.png"
+            src="/about-page-assets/Gemini_Generated_Image_9809t59809t59809-2@2x.webp"
             alt="The Fixes founding team"
             width={1200}
             height={600}
@@ -90,7 +90,7 @@ export default function AboutUsPage() {
 
       <section className="relative w-full overflow-hidden" style={{ aspectRatio: '1920 / 686' }}>
         <Image
-          src="/about-page-assets/cgo-background@2x.png"
+          src="/about-page-assets/cgo-background@2x.webp"
           alt="Medee — Chief Growth Officer at Fixes"
           fill
           className="object-cover object-center"
@@ -138,7 +138,7 @@ export default function AboutUsPage() {
             <div className="relative flex items-center justify-center">
               <div className="w-50 h-50 sm:w-65 sm:h-65 lg:w-[320px] lg:h-80 bg-gray-100" />
               <Image
-                src="/about-page-assets/Remove background project - June 11, 2026 at 21.27.34.png"
+                src="/about-page-assets/safety-shield.png"
                 alt="Safety shield icon"
                 width={300}
                 height={300}
@@ -153,7 +153,7 @@ export default function AboutUsPage() {
         <div className="max-w-275 mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div className="rounded-xl overflow-hidden">
             <Image
-              src="/about-page-assets/community-impact.jpg"
+              src="/about-page-assets/community-impact.webp"
               alt="Fixes community impact across Australia"
               width={600}
               height={400}
@@ -186,7 +186,7 @@ export default function AboutUsPage() {
         <div className="max-w-275 mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div className="md:order-2 rounded-xl overflow-hidden flex items-center justify-center">
             <Image
-              src="/about-page-assets/fixes-platform-tools.png"
+              src="/about-page-assets/fixes-platform-tools.webp"
               alt="Fixes platform tools and tradie ecosystem"
               width={500}
               height={333}
@@ -262,7 +262,7 @@ export default function AboutUsPage() {
           </div>
           <div className="flex justify-center">
             <Image
-              src="/about-page-assets/australia-map-in-blue-vector-28893627.png"
+              src="/about-page-assets/australia-map-in-blue-vector-28893627.webp"
               alt="Map of Australia — Fixes operates nationwide"
               width={500}
               height={440}
