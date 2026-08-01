@@ -2,6 +2,23 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
+  "browserslist": {
+    "production": [
+      "Chrome >= 111",
+      "ChromeAndroid >= 111",
+      "Edge >= 111",
+      "Firefox >= 111",
+      "FirefoxAndroid >= 111",
+      "Safari >= 16.4",
+      "iOS >= 16.4"
+    ],
+    "development": [
+      "last 1 Chrome version",
+      "last 1 Edge version",
+      "last 1 Firefox version",
+      "last 1 Safari version"
+    ]
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

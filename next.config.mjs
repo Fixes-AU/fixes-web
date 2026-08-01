@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    resolveAlias: {
+      // Replace Next's broad shim set with the one fallback our targets still need.
+      "../build/polyfills/polyfill-module": "./lib/modern-browser-polyfills.js",
+    },
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
