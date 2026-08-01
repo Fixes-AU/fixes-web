@@ -76,7 +76,7 @@ export function CTASection() {
                   alt=""
                   width={611}
                   height={548}
-                  className="relative z-10 h-[17px] w-[19px] -scale-x-100 object-contain lg:h-[19px] lg:w-[21px]"
+                  className="relative z-10 h-[17px] w-[19px] object-contain lg:h-[19px] lg:w-[21px]"
                 />
               </span>
             </button>
