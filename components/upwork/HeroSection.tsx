@@ -29,7 +29,14 @@ type NavigatorWithConnection = Navigator & {
   connection?: NetworkInformation
 }
 
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+  cancelIdleCallback?: (handle: number) => void
+}
+
 const slowConnectionTypes = new Set(["slow-2g", "2g", "3g"])
+const videoIdleTimeoutMs = 2_000
+const videoFallbackDelayMs = 1_500
 
 export function HeroSection() {
   const router = useRouter()
@@ -40,24 +47,94 @@ export function HeroSection() {
     const mobileViewport = window.matchMedia("(max-width: 1023px)")
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
     const connection = (navigator as NavigatorWithConnection).connection
+    const idleWindow = window as WindowWithIdleCallback
+    let idleCallbackHandle: number | null = null
+    let fallbackTimeoutHandle: number | null = null
+    let videoRequested = false
 
-    const updateMediaPreference = () => {
+    const canLoadVideo = () => {
       const hasConstrainedConnection = Boolean(
         connection?.saveData ||
         (connection?.effectiveType && slowConnectionTypes.has(connection.effectiveType)),
       )
 
-      setShouldLoadVideo(
-        !mobileViewport.matches && !reducedMotion.matches && !hasConstrainedConnection,
-      )
+      return !mobileViewport.matches && !reducedMotion.matches && !hasConstrainedConnection
     }
 
-    updateMediaPreference()
+    const removeInteractionListeners = () => {
+      window.removeEventListener("pointerdown", requestVideo)
+      window.removeEventListener("keydown", requestVideo)
+      window.removeEventListener("wheel", requestVideo)
+    }
+
+    const clearScheduledLoad = () => {
+      window.removeEventListener("load", scheduleIdleLoad)
+      removeInteractionListeners()
+
+      if (idleCallbackHandle !== null) {
+        idleWindow.cancelIdleCallback?.(idleCallbackHandle)
+        idleCallbackHandle = null
+      }
+
+      if (fallbackTimeoutHandle !== null) {
+        window.clearTimeout(fallbackTimeoutHandle)
+        fallbackTimeoutHandle = null
+      }
+    }
+
+    function requestVideo() {
+      if (videoRequested || !canLoadVideo()) return
+
+      videoRequested = true
+      clearScheduledLoad()
+      setShouldLoadVideo(true)
+    }
+
+    function scheduleIdleLoad() {
+      if (videoRequested || !canLoadVideo()) return
+
+      if (idleWindow.requestIdleCallback) {
+        idleCallbackHandle = idleWindow.requestIdleCallback(requestVideo, {
+          timeout: videoIdleTimeoutMs,
+        })
+      } else {
+        fallbackTimeoutHandle = window.setTimeout(requestVideo, videoFallbackDelayMs)
+      }
+    }
+
+    const scheduleEligibleVideo = () => {
+      if (!canLoadVideo()) {
+        videoRequested = false
+        clearScheduledLoad()
+        setShouldLoadVideo(false)
+        return
+      }
+
+      if (videoRequested) return
+
+      window.addEventListener("pointerdown", requestVideo, { once: true, passive: true })
+      window.addEventListener("keydown", requestVideo, { once: true })
+      window.addEventListener("wheel", requestVideo, { once: true, passive: true })
+
+      if (document.readyState === "complete") {
+        scheduleIdleLoad()
+      } else {
+        window.addEventListener("load", scheduleIdleLoad, { once: true })
+      }
+    }
+
+    const updateMediaPreference = () => {
+      clearScheduledLoad()
+      scheduleEligibleVideo()
+    }
+
+    scheduleEligibleVideo()
     mobileViewport.addEventListener("change", updateMediaPreference)
     reducedMotion.addEventListener("change", updateMediaPreference)
     connection?.addEventListener("change", updateMediaPreference)
 
     return () => {
+      clearScheduledLoad()
       mobileViewport.removeEventListener("change", updateMediaPreference)
       reducedMotion.removeEventListener("change", updateMediaPreference)
       connection?.removeEventListener("change", updateMediaPreference)
