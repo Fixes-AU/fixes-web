@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Hammer, Star } from "lucide-react"
+import { Hammer } from "lucide-react"
 
 const testimonial = {
   category: "Building & Construction",
@@ -36,45 +36,37 @@ export function Testimonials() {
               key={index}
               className={`${index > 3 ? "hidden md:flex" : "flex"} h-[336.25px] flex-col justify-center rounded-[14.17px] border border-[#E6E6E6] bg-white px-[31.88px] py-[21.25px] lg:h-[399.02px] lg:rounded-[16.82px] lg:px-[37.84px] lg:py-[25.23px]`}
             >
-              <div className="flex h-full flex-col gap-[12.75px] lg:gap-[15.14px]">
-                <div className="flex flex-col gap-[14.17px] pb-[8.5px] lg:gap-[16.82px] lg:pb-[10.09px]">
-                  <div className="flex items-center gap-[7.09px] text-[14.17px] font-medium leading-[21px] text-black lg:gap-[8.41px] lg:text-[16.82px] lg:leading-[25px]">
-                    <Hammer className="size-[24.09px] shrink-0 text-[#0E8B7D] stroke-[1.5] lg:size-[28.59px] lg:stroke-[1.8]" />
-                    {testimonial.category}
-                  </div>
+              <div className="flex items-center gap-[7.09px] text-[14.17px] font-medium leading-[21px] text-black lg:gap-[8.41px] lg:text-[16.82px] lg:leading-[25px]">
+                <Hammer className="size-[24.09px] shrink-0 text-[#0E8B7D] stroke-[1.5] lg:size-[28.59px] lg:stroke-[1.8]" />
+                {testimonial.category}
+              </div>
 
-                  <blockquote className="text-[14.17px] leading-6 text-[#031C19] lg:text-[16.82px] lg:leading-[29px]">
-                    “{testimonial.quote}”
-                  </blockquote>
-                </div>
+              <blockquote className="mt-[14.17px] pb-[8.5px] text-[14.17px] leading-6 text-[#031C19] lg:mt-[16.82px] lg:pb-[10.09px] lg:text-[16.82px] lg:leading-[29px]">
+                “{testimonial.quote}”
+              </blockquote>
 
-                <div className="flex h-[13.42px] items-start lg:h-[15.92px]" aria-label="Three out of five star rating">
-                  {Array.from({ length: 5 }).map((_, starIndex) => (
-                    <span
-                      key={starIndex}
-                      className={`flex h-[13.42px] w-[16.57px] items-center justify-center lg:h-[15.92px] lg:w-[19.67px] ${starIndex > 2 ? "opacity-30" : ""}`}
-                    >
-                      <Star className="size-[13.42px] fill-[#DEAF03] text-[#DEAF03] lg:size-[15.92px]" />
-                    </span>
-                  ))}
-                </div>
+              <div
+                className="h-[13.42px] text-[13.42px] leading-none tracking-[3.15px] text-[#DEAF03] lg:h-[15.92px] lg:text-[15.92px] lg:tracking-[3.75px]"
+                aria-label="Three out of five star rating"
+              >
+                ★★★☆☆
+              </div>
 
-                <div className="flex flex-1 items-start border-t border-[rgba(9,34,16,0.1)] pt-[13.46px] lg:pt-[15.98px]">
-                  <Image
-                    src="/home-page-assets/redesign/testimonial-avatar.jpg"
-                    alt="Tina Johansson"
-                    width={59}
-                    height={59}
-                    className="size-[49.6px] shrink-0 rounded-full object-cover lg:size-[58.87px]"
-                  />
-                  <div className="pl-[9.92px] lg:pl-[11.77px]">
-                    <p className="text-[17px] font-normal leading-[26px] text-[#031C19] lg:text-[20.18px] lg:leading-[30px]">
-                      {testimonial.name}
-                    </p>
-                    <p className="text-[10px] font-medium uppercase leading-5 text-[#666] lg:text-[11.77px] lg:leading-6">
-                      {testimonial.title}
-                    </p>
-                  </div>
+              <div className="mt-[12.75px] flex flex-1 items-start border-t border-[rgba(9,34,16,0.1)] pt-[13.46px] lg:mt-[15.14px] lg:pt-[15.98px]">
+                <Image
+                  src="/home-page-assets/redesign/testimonial-avatar.jpg"
+                  alt="Tina Johansson"
+                  width={59}
+                  height={59}
+                  className="size-[49.6px] shrink-0 rounded-full object-cover lg:size-[58.87px]"
+                />
+                <div className="pl-[9.92px] lg:pl-[11.77px]">
+                  <p className="text-[17px] font-normal leading-[26px] text-[#031C19] lg:text-[20.18px] lg:leading-[30px]">
+                    {testimonial.name}
+                  </p>
+                  <p className="text-[10px] font-medium uppercase leading-5 text-[#666] lg:text-[11.77px] lg:leading-6">
+                    {testimonial.title}
+                  </p>
                 </div>
               </div>
             </article>
