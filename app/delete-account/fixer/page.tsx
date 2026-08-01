@@ -38,7 +38,6 @@ export default function DeleteAccountPage() {
 
     return (
         <div className="bg-[#f9faf9] min-h-screen flex items-center justify-center p-4 text-[#001e00] font-sans">
-            <title>Delete Account - Fixes</title>
             <div className="w-full max-w-md">
                 {/* Logo Area */}
                 <div className="text-center mb-8 flex flex-col items-center">
