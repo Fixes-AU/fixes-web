@@ -18,6 +18,7 @@ interface WaitlistTradie {
   waitlistStatus: 'pending' | 'approved' | 'rejected'
   waitlistNotes?: string | null
   waitlistReviewedAt?: string | null
+  isFullyVerified?: boolean
   createdAt: string
 }
 
@@ -139,6 +140,13 @@ function WaitlistTab() {
                   </span>
                 )}
               </div>
+
+              {tradie.isFullyVerified && (
+                <div className="flex items-center gap-1.5 text-emerald-600">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-medium">Docs Verified</span>
+                </div>
+              )}
 
               <div className="flex gap-2 mt-auto">
                 <button
