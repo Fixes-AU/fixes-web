@@ -1,8 +1,14 @@
+import type { Metadata } from "next"
 import { Header, Footer } from "@/components/upwork"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { createFragmentHref } from "@/lib/fragmentState"
- 
+
+export const metadata: Metadata = {
+  title: "Enterprise | Fixes",
+  description: "Manage multi-site maintenance, dispatch tradies at scale, and centralise billing for property managers, facility management companies, and large trade agencies.",
+}
+
 export default function EnterprisePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f7f2]">

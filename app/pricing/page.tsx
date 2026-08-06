@@ -1,9 +1,15 @@
+import type { Metadata } from "next"
 import { Check, Minus } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Header } from "@/components/upwork/Header"
 import { Footer } from "@/components/upwork/Footer"
 import { createFragmentHref } from "@/lib/fragmentState"
+
+export const metadata: Metadata = {
+  title: "Pricing & Plans | Fixes",
+  description: "Compare Fixes plans — Free, Plus, and Business Plus. Post jobs, get AI-powered quotes, and access priority tradies with transparent pricing and no hidden fees.",
+}
 
 const features = [
   {

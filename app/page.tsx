@@ -1,5 +1,6 @@
 // fixes-web/app/page.tsx
 
+import type { Metadata } from "next"
 import dynamic from "next/dynamic"
 import { Header } from "@/components/upwork/Header"
 import { HeroSection } from "@/components/upwork/HeroSection"
@@ -8,6 +9,11 @@ import { BrandManifesto } from "@/components/upwork/BrandManifesto"
 import { PricingPlans } from "@/components/upwork/PricingPlans"
 import { Testimonials } from "@/components/upwork/Testimonials"
 import { TrustedBy } from "@/components/upwork/TrustedBy"
+
+export const metadata: Metadata = {
+  title: "Fixes | Hire Trusted Tradies Instantly",
+  description: "Find verified local electricians, plumbers, carpenters, and cleaners in minutes. Get AI-powered quotes, compare professionals, and pay securely — only when the job is done.",
+}
 
 const HowItWorks = dynamic(
   () => import("@/components/upwork/HowItWorks").then((mod) => ({ default: mod.HowItWorks })),
