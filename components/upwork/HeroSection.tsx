@@ -168,7 +168,8 @@ export function HeroSection() {
           <Image
             src="/home-page-assets/fixes-hero-poster.webp"
             alt=""
-            fill
+            width={1280}
+            height={720}
             priority
             sizes="(min-width: 1280px) 1280px, 100vw"
             className="absolute inset-0 size-full object-cover object-[58%_center] lg:object-center"

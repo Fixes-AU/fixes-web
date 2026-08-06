@@ -19,9 +19,10 @@ export function Testimonials() {
         <Image
           src="/home-page-assets/redesign/testimonial-swoosh.svg"
           alt=""
-          fill
+          width={1602}
+          height={1026}
           sizes="111.25vw"
-          className="object-cover lg:object-fill"
+          className="absolute inset-0 size-full object-cover lg:object-fill"
         />
       </div>
 

@@ -11,6 +11,8 @@ type Step = {
   description: string
   image: string
   imageAlt: string
+  imageWidth: number
+  imageHeight: number
 }
 
 const hiringSteps: Step[] = [
@@ -21,6 +23,8 @@ const hiringSteps: Step[] = [
     description: "Add details, timing and photos so tradies know exactly what's needed.",
     image: "/home-page-assets/redesign/hiring-post-job.webp",
     imageAlt: "Fixes tradie checking a new job on his phone",
+    imageWidth: 1024,
+    imageHeight: 655,
   },
   {
     icon: "connect",
@@ -29,6 +33,8 @@ const hiringSteps: Step[] = [
     description: "Add details, timing and photos so tradies know exactly what's needed.",
     image: "/home-page-assets/redesign/hiring-connected-tradie.webp",
     imageAlt: "Team of Fixes professionals ready to help",
+    imageWidth: 1024,
+    imageHeight: 659,
   },
   {
     icon: "done",
@@ -37,6 +43,8 @@ const hiringSteps: Step[] = [
     description: "Your tradie gets to work and you pay only when the job is complete.",
     image: "/home-page-assets/redesign/hiring-job-done.webp",
     imageAlt: "Fixes tradie greeting a customer after completing a job",
+    imageWidth: 1024,
+    imageHeight: 682,
   },
 ]
 
@@ -48,6 +56,8 @@ const workingSteps: Step[] = [
     description: "Create your profile and go online to let customers know you're available.",
     image: "/home-page-assets/redesign/work-go-online.webp",
     imageAlt: "Fixes tradie setting his availability from his phone",
+    imageWidth: 1024,
+    imageHeight: 657,
   },
   {
     icon: "mail",
@@ -56,6 +66,8 @@ const workingSteps: Step[] = [
     description: "Get notified of local jobs that match your trade and skills instantly.",
     image: "/home-page-assets/redesign/work-nearby-jobs.webp",
     imageAlt: "Fixes tradie receiving a nearby job notification",
+    imageWidth: 1024,
+    imageHeight: 657,
   },
   {
     icon: "payment",
@@ -64,6 +76,8 @@ const workingSteps: Step[] = [
     description: "Complete the work and receive payment securely once the job is done.",
     image: "/home-page-assets/redesign/work-get-paid.webp",
     imageAlt: "Fixes tradie greeting a satisfied customer",
+    imageWidth: 1024,
+    imageHeight: 656,
   },
 ]
 
@@ -126,7 +140,7 @@ export function HowItWorks() {
             >
               <div className="relative">
                 <div className="relative aspect-365/235 overflow-hidden rounded-[17px]">
-                  <Image src={step.image} alt={step.imageAlt} fill sizes="(max-width: 1023px) 82vw, 365px" className="object-cover" />
+                  <Image src={step.image} alt={step.imageAlt} width={step.imageWidth} height={step.imageHeight} sizes="(max-width: 1023px) 82vw, 365px" className="absolute inset-0 size-full object-cover" />
                 </div>
                 <span className="absolute -bottom-7 right-5 flex size-16 items-center justify-center rounded-full border-4 border-[#F6F6F6] bg-[#08544B] text-xl font-semibold text-white lg:size-17.5 lg:text-2xl">
                   {String(index + 1).padStart(2, "0")}
