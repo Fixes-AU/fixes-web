@@ -26,7 +26,7 @@ export default function AboutUsPage() {
         <div className="absolute inset-0 z-0">
           <Image
             src="/about-page-assets/Gemini_Generated_Image_ho4zv7ho4zv7ho4z-2@2x.webp"
-            alt=""
+            alt="Abstract green Fixes brand background"
             fill
             className="object-cover object-center"
             priority
