@@ -1174,7 +1174,7 @@ function StepCleaningQuote({
 
         {quote.taskMinutes && (
           <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-            <h4 className="text-xs font-semibold text-[var(--upwork-navy)] mb-2 uppercase tracking-wide">Time Estimate Breakdown</h4>
+            <h3 className="text-xs font-semibold text-[var(--upwork-navy)] mb-2 uppercase tracking-wide">Time Estimate Breakdown</h3>
             <div className="flex items-center justify-between mb-1.5">
               <div className="relative group flex items-center">
                 <span className="text-xs text-[var(--upwork-gray)] flex items-center gap-1 cursor-help">
@@ -2886,10 +2886,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
           {savedCards.length > 0 && !useNewCard && (
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
-              <h3 className="text-sm font-semibold text-[var(--upwork-navy)] mb-4 flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-[var(--upwork-navy)] mb-4 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-[var(--upwork-green)]" />
                 Saved Payment Methods
-              </h3>
+              </h2>
               <div className="space-y-2">
                 {savedCards.map(card => (
                   <button

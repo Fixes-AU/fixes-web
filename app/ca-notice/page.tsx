@@ -27,6 +27,7 @@ export default function CaNoticePage() {
 
       <section className="py-16 lg:py-24 px-4 lg:px-6 grow">
         <div className="max-w-200 mx-auto">
+          <h2 className="text-2xl font-bold text-(--upwork-navy) mb-8">Our Commitment</h2>
           <div className="bg-[#f6f6f6] rounded-2xl p-8 mb-6 border border-gray-100">
              <p className="text-(--upwork-gray) leading-relaxed">
               While Fixes currently operates exclusively in Australia and New Zealand, we maintain this notice for compliance purposes. We do not sell your personal information. Please refer to our Privacy Policy for comprehensive details on the data we collect and how it is used.

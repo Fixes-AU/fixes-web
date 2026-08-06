@@ -28,6 +28,7 @@ export default function ContactUsPage() {
       <section className="py-16 lg:py-24 px-4 lg:px-6 grow">
         <div className="max-w-200 mx-auto">
           
+          <h2 className="text-2xl font-bold text-(--upwork-navy) mb-8">How to Reach Us</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
             <div className="bg-[#f6f6f6] p-8 rounded-2xl border border-gray-100">
               <h3 className="text-lg font-bold text-(--upwork-navy) mb-3">General Support</h3>

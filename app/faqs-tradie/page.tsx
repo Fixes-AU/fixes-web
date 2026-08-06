@@ -27,7 +27,7 @@ export default function TradieFaqsPage() {
 
       <section className="py-16 lg:py-24 px-4 lg:px-6 grow">
         <div className="max-w-200 mx-auto">
-          
+          <h2 className="text-2xl font-bold text-(--upwork-navy) mb-8">Common Questions</h2>
           <div className="bg-[#f6f6f6] rounded-2xl p-8 lg:p-12 mb-6 border border-gray-100">
             <h3 className="text-xl font-extrabold text-(--upwork-navy) mb-3">Are there any lead fees?</h3>
             <p className="text-(--upwork-gray) text-[0.95rem] leading-relaxed">

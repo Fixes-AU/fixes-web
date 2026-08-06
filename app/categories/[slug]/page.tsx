@@ -132,9 +132,9 @@ export default async function CategoryDetailPage({
 
             <div className="w-full lg:w-80 shrink-0">
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-5">
-                <h3 className="text-sm font-bold text-(--upwork-navy) uppercase tracking-wider">
+                <h2 className="text-sm font-bold text-(--upwork-navy) uppercase tracking-wider">
                   Why Fixes
-                </h3>
+                </h2>
                 {[
                   { icon: Shield, label: 'Licensed & insured tradies', desc: 'Every professional is verified before joining' },
                   { icon: Star, label: 'AI-powered smart pricing', desc: 'Fair, transparent quotes in seconds' },

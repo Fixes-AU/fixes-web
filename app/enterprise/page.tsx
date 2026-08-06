@@ -22,6 +22,7 @@ export default function EnterprisePage() {
             The all-in-one solution for property managers, facility management companies, and large trade agencies.
           </p>
           
+          <h2 className="text-2xl font-bold text-(--upwork-navy) mb-8 text-left">Built for Scale</h2>
           <div className="grid sm:grid-cols-2 gap-8 lg:gap-12 text-left mb-16">
             <div className="flex flex-col gap-2">
               <h3 className="font-bold text-xl text-(--upwork-navy)">Multi-site Management</h3>

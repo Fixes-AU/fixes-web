@@ -27,6 +27,7 @@ export default function HowToFindWorkPage() {
 
       <section className="py-16 lg:py-24 px-4 lg:px-6 grow">
         <div className="max-w-200 mx-auto">
+          <h2 className="text-2xl font-bold text-(--upwork-navy) mb-10">Three Steps to Start Earning</h2>
           <div className="flex gap-6 mb-10">
             <div className="w-12 h-12 rounded-full bg-[#f6f6f6] flex items-center justify-center font-bold text-(--upwork-navy) shrink-0 text-xl">1</div>
             <div>
