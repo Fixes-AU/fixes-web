@@ -3,24 +3,23 @@ type Badge = {
   year?: string
   title: string[]
   subtitle: string
-  bands: [string, string, string]
+  background: string
+}
+
+function buildBadgeBackground(topBand: string, middleBand: string, bottomBand: string) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124.75 143.73" preserveAspectRatio="none"><defs><clipPath id="shield"><path d="M.68.68h123.39v103.77L62.38 143.05.68 104.45V.68Z"/></clipPath></defs><g clip-path="url(#shield)"><rect width="124.75" height="143.73" fill="white"/><path d="M0 104.45 62.38 143.73 124.75 104.45Z" fill="${bottomBand}"/><path d="M0 96.35 62.38 135.65 124.75 96.35Z" fill="${middleBand}"/><path d="M0 88.62 62.38 127.59 124.75 88.62Z" fill="${topBand}"/><path d="M0 80.55 62.38 119.52 124.75 80.55Z" fill="white"/></g><path d="M.68.68h123.39v103.77L62.38 143.05.68 104.45V.68Z" fill="none" stroke="#111" stroke-width="1.36"/><path d="M.68 28.48h123.39" stroke="#111" stroke-width="1.36"/></svg>`
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
 }
 
 const badges: Badge[] = [
-  { eyebrow: "BEST Proptech", year: "2026", title: ["Top 50"], subtitle: "INNOVATORS", bands: ["#5746B2", "#FFC800", "#FF492C"] },
-  { eyebrow: "WINTER 2026", title: ["Leader"], subtitle: "HOME SERVICES", bands: ["#FFFFFF", "#FFC800", "#FF492C"] },
-  { eyebrow: "WINTER 2026", title: ["Best", "ROI"], subtitle: "TRADIE PLATFORM", bands: ["#FFFFFF", "#FFFFFF", "#5746B2"] },
-  { eyebrow: "WINTER 2026", title: ["Best", "Usability"], subtitle: "EASIEST APP", bands: ["#FFFFFF", "#FFFFFF", "#FFC800"] },
-  { eyebrow: "WINTER 2026", title: ["Fastest", "Dispatch"], subtitle: "MID-MARKET", bands: ["#FFFFFF", "#FFFFFF", "#288DFF"] },
-  { eyebrow: "WINTER 2026", title: ["Most", "Accurate"], subtitle: "AI QUOTES", bands: ["#FFFFFF", "#FFFFFF", "#FFC800"] },
-  { eyebrow: "WINTER 2026", title: ["Best", "Agency"], subtitle: "MANAGEMENT", bands: ["#FFFFFF", "#FFFFFF", "#FFC800"] },
+  { eyebrow: "BEST Proptech", year: "2026", title: ["Top 50"], subtitle: "INNOVATORS", background: buildBadgeBackground("#5746B2", "#FFC800", "#FF492C") },
+  { eyebrow: "WINTER 2026", title: ["Leader"], subtitle: "HOME SERVICES", background: buildBadgeBackground("#FFFFFF", "#FFC800", "#FF492C") },
+  { eyebrow: "WINTER 2026", title: ["Best", "ROI"], subtitle: "TRADIE PLATFORM", background: buildBadgeBackground("#FFFFFF", "#FFFFFF", "#5746B2") },
+  { eyebrow: "WINTER 2026", title: ["Best", "Usability"], subtitle: "EASIEST APP", background: buildBadgeBackground("#FFFFFF", "#FFFFFF", "#FFC800") },
+  { eyebrow: "WINTER 2026", title: ["Fastest", "Dispatch"], subtitle: "MID-MARKET", background: buildBadgeBackground("#FFFFFF", "#FFFFFF", "#288DFF") },
+  { eyebrow: "WINTER 2026", title: ["Most", "Accurate"], subtitle: "AI QUOTES", background: buildBadgeBackground("#FFFFFF", "#FFFFFF", "#FFC800") },
+  { eyebrow: "WINTER 2026", title: ["Best", "Agency"], subtitle: "MANAGEMENT", background: buildBadgeBackground("#FFFFFF", "#FFFFFF", "#FFC800") },
 ]
-
-function badgeBackground([topBand, middleBand, bottomBand]: Badge["bands"]) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124.75 143.73" preserveAspectRatio="none"><defs><clipPath id="shield"><path d="M.68.68h123.39v103.77L62.38 143.05.68 104.45V.68Z"/></clipPath></defs><g clip-path="url(#shield)"><rect width="124.75" height="143.73" fill="white"/><path d="M0 104.45 62.38 143.73 124.75 104.45Z" fill="${bottomBand}"/><path d="M0 96.35 62.38 135.65 124.75 96.35Z" fill="${middleBand}"/><path d="M0 88.62 62.38 127.59 124.75 88.62Z" fill="${topBand}"/><path d="M0 80.55 62.38 119.52 124.75 80.55Z" fill="white"/></g><path d="M.68.68h123.39v103.77L62.38 143.05.68 104.45V.68Z" fill="none" stroke="#111" stroke-width="1.36"/><path d="M.68 28.48h123.39" stroke="#111" stroke-width="1.36"/></svg>`
-
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
-}
 
 export function TrustedBy() {
   return (
@@ -45,7 +44,7 @@ function TrustBadge({ badge, className = "" }: { badge: Badge; className?: strin
   return (
     <div
       className={`${className} relative h-[190.92px] w-[165.7px] bg-[length:100%_100%] bg-no-repeat font-manrope lg:h-[143.73px] lg:w-[124.75px]`}
-      style={{ backgroundImage: badgeBackground(badge.bands) }}
+      style={{ backgroundImage: badge.background }}
     >
       <div className="absolute left-[7.53%] top-[5.19%] text-[13.5083px] font-bold leading-[16px] text-black lg:text-[10.1695px] lg:leading-[12px]">
         {badge.eyebrow}
