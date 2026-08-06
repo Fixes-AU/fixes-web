@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Fixes Newsroom | Press Releases & Media',
-  description: 'News, press releases, and media resources for Fixes.',
+  description: 'Fixes press room — latest news, press releases, media kits, and brand assets. Get in touch with our media team for interviews and coverage.',
 }
 
 export default function PressPage() {

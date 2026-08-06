@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Careers at Fixes | Build the Future of Trades',
-  description: 'Join the team building the future of trade services in Australia.',
+  description: 'Join the Fixes team and help build the future of trade services in Australia. See open roles in engineering, design, and operations.',
 }
 
 export default function CareersPage() {

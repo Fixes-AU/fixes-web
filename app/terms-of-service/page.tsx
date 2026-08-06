@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Fixes Terms of Service | Platform User Agreement',
-  description: 'Terms of Service for using the Fixes platform.',
+  description: 'Read the Fixes Terms of Service. Understand your rights and responsibilities when hiring tradies or finding work on our platform.',
 }
 
 export default function TermsOfServicePage() {

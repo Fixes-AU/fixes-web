@@ -12,7 +12,7 @@ import { TrustedBy } from "@/components/upwork/TrustedBy"
 
 export const metadata: Metadata = {
   title: "Fixes | Hire Trusted Tradies Instantly",
-  description: "Find verified local electricians, plumbers, carpenters, and cleaners in minutes. Get AI-powered quotes, compare professionals, and pay securely — only when the job is done.",
+  description: "Find verified local electricians, plumbers, carpenters, and cleaners in minutes. Get AI-powered quotes and pay securely.",
 }
 
 const HowItWorks = dynamic(

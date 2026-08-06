@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Accessibility at Fixes | Inclusive Trade Platform',
-  description: 'Our commitment to digital accessibility for all users.',
+  description: 'Fixes is committed to making our platform accessible to everyone. Learn about our WCAG 2.1 compliance efforts and how to request support.',
 }
 
 export default function AccessibilityPage() {

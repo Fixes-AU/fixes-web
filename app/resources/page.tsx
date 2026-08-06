@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Trade & Home Improvement Resources | Fixes',
-  description: 'Helpful resources, guides, and tools for the Fixes community.',
+  description: 'Guides, checklists, and tools for homeowners and tradies on Fixes. Get the most from the platform with step-by-step resources.',
 }
 
 export default function ResourcesPage() {

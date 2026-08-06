@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'CA Notice at Collection | Fixes',
-  description: 'California Notice at Collection for Fixes platform.',
+  description: 'California Notice at Collection for the Fixes platform. Learn what personal information we collect, why we collect it, and your rights under the CCPA.',
 }
 
 export default function CaNoticePage() {

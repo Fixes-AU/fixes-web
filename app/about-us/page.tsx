@@ -14,7 +14,7 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: 'About Us | Fixes — Hire Trusted Tradies Instantly',
   description:
-    'Learn about Fixes — Australia\'s AI-powered tradie marketplace. Our story, mission, values, and the team building the future of home services across Australia and New Zealand.',
+    'Learn about Fixes — Australia\'s AI-powered tradie marketplace. Discover our story, mission, values, and the team behind the platform.',
 }
 
 export default function AboutUsPage() {

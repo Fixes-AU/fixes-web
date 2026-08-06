@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Fixes Community | Homeowners & Trusted Tradies',
-  description: 'Join the Fixes community of homeowners and skilled tradespeople.',
+  description: 'Join the Fixes community — connect with homeowners and skilled tradies, share tips, and stay updated on platform news and local events.',
 }
 
 export default function CommunityPage() {

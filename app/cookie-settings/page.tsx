@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Cookie Settings & Privacy Controls | Fixes',
-  description: 'Manage your cookie preferences for the Fixes platform.',
+  description: 'Manage your cookie preferences on Fixes. Choose which cookies to allow for analytics, personalisation, and site performance.',
 }
 
 export default function CookieSettingsPage() {

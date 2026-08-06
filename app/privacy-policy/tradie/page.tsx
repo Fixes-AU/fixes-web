@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — Fixes Tradie App',
-  description: 'Privacy Policy for the Fixes Tradie mobile application and platform.',
+  description: 'Privacy Policy for the Fixes Tradie app. Learn how we collect, store, and protect your personal and professional information.',
 }
 
 export default function TradiePrivacyPolicyPage() {

@@ -8,7 +8,7 @@ import { createFragmentHref } from "@/lib/fragmentState"
 
 export const metadata: Metadata = {
   title: "Pricing & Plans | Fixes",
-  description: "Compare Fixes plans — Free, Plus, and Business Plus. Post jobs, get AI-powered quotes, and access priority tradies with transparent pricing and no hidden fees.",
+  description: "Compare Fixes plans — Free, Plus, and Business Plus. Post jobs, get AI-powered quotes, and access priority tradies. No hidden fees.",
 }
 
 const features = [

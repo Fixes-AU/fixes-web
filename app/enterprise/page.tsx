@@ -6,7 +6,7 @@ import { createFragmentHref } from "@/lib/fragmentState"
 
 export const metadata: Metadata = {
   title: "Enterprise | Fixes",
-  description: "Manage multi-site maintenance, dispatch tradies at scale, and centralise billing for property managers, facility management companies, and large trade agencies.",
+  description: "Manage multi-site maintenance, dispatch tradies at scale, and centralise billing — built for property managers and trade agencies.",
 }
 
 export default function EnterprisePage() {

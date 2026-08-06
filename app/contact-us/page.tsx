@@ -3,7 +3,7 @@ import { Header, Footer } from '@/components/upwork'
 
 export const metadata: Metadata = {
   title: 'Contact Fixes | Customer & Tradie Support',
-  description: 'Get in touch with the Fixes team.',
+  description: 'Have a question or need help? Contact the Fixes team by email, phone, or live chat. We typically respond within 24 hours.',
 }
 
 export default function ContactUsPage() {
