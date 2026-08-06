@@ -53,15 +53,15 @@ export default function TradiePrivacyPolicyPage() {
         <a href="https://www.fixesau.com">www.fixesau.com</a> (the "Platform").
       </p>
       <p>
-        This Privacy Policy explains how we collect, use, disclose, store, and protect your personal information
-        when you use our App, Platform, and related services (collectively, the "Services").
-        We are committed to complying with the <strong>Australian Privacy Act 1988</strong> (Cth)
-        and the <strong>Australian Privacy Principles</strong> (APPs), as well as the privacy requirements
+        This Privacy Policy explains how we collect, use, share, store, and protect your personal information
+        when you use our App, Platform, and related services (together, the "Services").
+        We follow the <strong>Australian Privacy Act 1988</strong> (Cth)
+        and the <strong>Australian Privacy Principles</strong> (APPs). We also follow the privacy rules
         of the Apple App Store and Google Play Store.
       </p>
       <p>
-        By creating an account or using our Services, you acknowledge that you have read and understood this Privacy Policy.
-        If you do not agree with this Policy, please do not use our Services.
+        By creating an account or using our Services, you confirm that you have read and understood this Privacy Policy.
+        If you do not agree, please do not use our Services.
       </p>
 
       <div class="highlight-box">
@@ -154,14 +154,14 @@ export default function TradiePrivacyPolicyPage() {
       <h2>3. How We Use Your Information</h2>
       <p>We use your personal information for the following purposes:</p>
       <ol>
-        <li><strong>Service Delivery</strong> — Creating and managing your account, matching you with jobs, facilitating communication between tradies and clients, and processing payments.</li>
-        <li><strong>Location-Based Services</strong> — Using your GPS coordinates to find nearby jobs within your service radius, providing live tracking to clients when you are en route, and detecting arrival at the job site.</li>
-        <li><strong>Payment Processing</strong> — Processing job payments, managing escrow holds, calculating platform commissions, and facilitating payouts to your bank account via Stripe Connect.</li>
-        <li><strong>Verification &amp; Compliance</strong> — Verifying your identity, trade qualifications, and compliance documents (ABN, licences, insurance) to maintain trust and safety on the platform.</li>
-        <li><strong>Communication</strong> — Sending transactional notifications (job dispatches, status updates, completion OTPs), in-app messages, emails, and SMS related to your jobs and account.</li>
-        <li><strong>Safety &amp; Dispute Resolution</strong> — Using job completion photos, chat records, and scope change records to resolve disputes between tradies and clients.</li>
-        <li><strong>Service Improvement</strong> — Using bug reports and general usage patterns to identify and fix issues, and to improve the App and Platform.</li>
-        <li><strong>Legal Compliance</strong> — Meeting our obligations under Australian law, including tax reporting, anti-money laundering requirements, and responding to lawful requests from authorities.</li>
+        <li><strong>Service Delivery</strong> — Creating your account, matching you with jobs, helping you communicate with clients, and processing payments.</li>
+        <li><strong>Location-Based Services</strong> — Finding nearby jobs within your service area, showing clients your live location while you travel to a job, and detecting when you arrive.</li>
+        <li><strong>Payment Processing</strong> — Processing job payments, holding funds in escrow, working out platform fees, and sending payouts to your bank via Stripe Connect.</li>
+        <li><strong>Verification &amp; Compliance</strong> — Checking your identity, trade qualifications, and documents (ABN, licences, insurance) to keep the platform safe and trusted.</li>
+        <li><strong>Communication</strong> — Sending you notifications about job dispatches, status updates, and messages by push notification, in-app message, email, or SMS.</li>
+        <li><strong>Safety &amp; Dispute Resolution</strong> — Using job photos, chat records, and scope change records to resolve disputes fairly.</li>
+        <li><strong>Service Improvement</strong> — Using bug reports and usage patterns to find and fix issues, and to improve the App and Platform.</li>
+        <li><strong>Legal Compliance</strong> — Meeting our legal duties under Australian law, including tax reporting, anti-money laundering rules, and lawful data requests.</li>
       </ol>
 
       <h2>4. How We Share Your Information</h2>
@@ -227,14 +227,13 @@ export default function TradiePrivacyPolicyPage() {
       </table>
 
       <div class="warning-box">
-        <p><strong>Overseas Disclosure:</strong> Some of our service providers are located outside Australia
-        (primarily the United States and India). By using our Services, you consent to the transfer of your
-        personal information to these countries. We take reasonable steps to ensure that overseas recipients
-        handle your information in accordance with the Australian Privacy Principles.</p>
+        <p><strong>Overseas Disclosure:</strong> Some of our service providers are based outside Australia,
+        mainly in the United States and India. By using our Services, you agree to your data being sent to these countries.
+        We take reasonable steps to make sure these providers protect your information under the Australian Privacy Principles.</p>
       </div>
 
       <h3>4.3 Legal Disclosures</h3>
-      <p>We may disclose your personal information if required by law, regulation, legal process, or governmental request, including to:</p>
+      <p>We may share your personal information when the law requires it, including to:</p>
       <ul>
         <li>Comply with a court order, subpoena, or similar legal obligation</li>
         <li>Cooperate with law enforcement or government authorities</li>
@@ -290,7 +289,7 @@ export default function TradiePrivacyPolicyPage() {
       </ul>
 
       <h2>7. Data Retention</h2>
-      <p>We retain your personal information in accordance with the following schedule:</p>
+      <p>We keep your personal information for the time periods shown below:</p>
       <table>
         <tr><th>Data Type</th><th>Retention Period</th><th>Basis</th></tr>
         <tr>
@@ -334,16 +333,16 @@ export default function TradiePrivacyPolicyPage() {
           <td>Service improvement</td>
         </tr>
       </table>
-      <p>After the retention period expires, data is securely deleted or permanently de-identified in accordance with APP 11.2.</p>
+      <p>Once these periods end, we securely delete or permanently remove identifying details from the data, as required by APP 11.2.</p>
 
       <h2>8. Your Rights</h2>
-      <p>Under the Australian Privacy Act 1988 and the APPs, you have the following rights:</p>
+      <p>Under Australian privacy law, you have the right to:</p>
       <ul>
-        <li><strong>Access (APP 12):</strong> You may request access to the personal information we hold about you.</li>
-        <li><strong>Correction (APP 13):</strong> You may request correction of any inaccurate, out-of-date, or incomplete personal information. You can also update your profile, phone number, bio, service radius, and categories directly in the App's Settings screen.</li>
-        <li><strong>Deletion:</strong> You may request deletion of your account and associated data. We will process your request within 30 days, subject to any legal retention obligations (see Section 7).</li>
-        <li><strong>Withdraw Consent:</strong> You may withdraw consent for optional data processing (e.g., push notifications, location tracking) by revoking device permissions or contacting us.</li>
-        <li><strong>Complaint:</strong> If you believe we have breached the APPs, you may lodge a complaint with us (see Section 12) or with the <a href="https://www.oaic.gov.au/privacy/privacy-complaints" target="_blank" rel="noopener">Office of the Australian Information Commissioner (OAIC)</a>.</li>
+        <li><strong>Access (APP 12):</strong> Ask us for a copy of the personal information we hold about you.</li>
+        <li><strong>Correction (APP 13):</strong> Ask us to fix any wrong, outdated, or incomplete information. You can also update your profile, phone number, bio, service radius, and categories in the App's Settings screen.</li>
+        <li><strong>Deletion:</strong> Ask us to delete your account and data. We process requests within 30 days, unless we must keep certain data by law (see Section 7).</li>
+        <li><strong>Withdraw Consent:</strong> Turn off optional features (such as push notifications or location tracking) through your device settings, or contact us.</li>
+        <li><strong>Complaint:</strong> If you think we have broken the privacy rules, you can complain to us (see Section 12) or to the <a href="https://www.oaic.gov.au/privacy/privacy-complaints" target="_blank" rel="noopener">Office of the Australian Information Commissioner (OAIC)</a>.</li>
       </ul>
       <p>To exercise any of these rights, please contact us at <span class="placeholder">contact@fixesau.com</span>.</p>
 
@@ -361,29 +360,27 @@ export default function TradiePrivacyPolicyPage() {
 
       <h2>10. Notifiable Data Breaches</h2>
       <p>
-        In the event of a data breach that is likely to result in serious harm to any individual whose
-        personal information is involved, we will:
+        If a data breach could cause serious harm to anyone affected, we will:
       </p>
       <ol>
-        <li>Notify the <strong>Office of the Australian Information Commissioner (OAIC)</strong> as soon as practicable.</li>
-        <li>Notify affected individuals with details of the breach, the type of information involved, and recommended steps they should take.</li>
-        <li>Take all reasonable steps to contain the breach and mitigate any resulting harm.</li>
+        <li>Notify the <strong>Office of the Australian Information Commissioner (OAIC)</strong> as soon as possible.</li>
+        <li>Tell affected users what happened, what data was involved, and what steps they should take.</li>
+        <li>Take all reasonable steps to contain the breach and reduce any harm.</li>
       </ol>
 
       <h2>11. Changes to This Policy</h2>
       <p>
-        We may update this Privacy Policy from time to time to reflect changes in our practices, technology,
-        legal requirements, or other factors. When we make material changes, we will:
+        We may update this Privacy Policy from time to time. When we make important changes, we will:
       </p>
       <ul>
         <li>Update the "Last Updated" date at the top of this page</li>
         <li>Send an in-app notification or push notification to inform you of the changes</li>
-        <li>Where required by law, seek your consent before applying changes that significantly affect how your personal information is handled</li>
+        <li>Ask for your consent first, if the law requires it, before changing how we handle your data</li>
       </ul>
-      <p>We encourage you to review this Privacy Policy periodically.</p>
+      <p>We encourage you to check this Privacy Policy from time to time.</p>
 
       <h2>12. Contact Us</h2>
-      <p>If you have questions, concerns, or requests regarding this Privacy Policy or your personal information, please contact us:</p>
+      <p>If you have questions or concerns about this Privacy Policy or your personal information, please contact us:</p>
       <ul>
         <li><strong>Entity:</strong> <span class="placeholder">fixesau</span></li>
         <li><strong>ABN:</strong> <span class="placeholder">52697058503</span></li>

@@ -29,19 +29,19 @@ export default function LicensingPage() {
         <div className="max-w-200 mx-auto">
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">Our Strict Verification Process</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            Every tradesperson on the Fixes platform must provide a valid trade licence for regulated trades (such as plumbing, electrical, and gas fitting). Our dedicated compliance team cross-references these licences against state and national registries before a fixer is allowed to accept any jobs.
+            Every tradesperson on the Fixes platform must hold a valid licence for regulated trades like plumbing, electrical, and gas fitting. Our compliance team checks each licence against state and national registries before a fixer can accept jobs.
           </p>
           
           <h3 className="text-xl font-bold text-(--upwork-navy) mb-4 mt-10">Regulated vs. Unregulated Trades</h3>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            In Australia and New Zealand, some trades require mandatory licensing by law, while others do not. 
-            For unregulated trades (like general cleaning or basic gardening), fixers are still required to provide proof of identity, background checks, and public liability insurance.
+            In Australia and New Zealand, some trades need a licence by law, while others do not. 
+            For trades that do not need a licence (like general cleaning or basic gardening), fixers must still provide proof of identity, a background check, and public liability insurance.
           </p>
           
           <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-6 mt-8">
             <h4 className="text-[#15803d] font-bold mb-2">Check Your State Requirements</h4>
             <p className="text-[#15803d] text-sm">
-              Licensing laws vary between states and territories. If you are unsure whether a job requires a licensed professional, please refer to your local state government or consumer affairs website.
+              Licensing laws differ by state and territory. If you are not sure whether a job needs a licensed professional, check your local state government or consumer affairs website.
             </p>
           </div>
         </div>

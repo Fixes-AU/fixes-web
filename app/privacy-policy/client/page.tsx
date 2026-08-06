@@ -53,17 +53,17 @@ export default function ClientPrivacyPolicyPage() {
         <a href="https://www.fixesau.com">www.fixesau.com</a> (the "Platform").
       </p>
       <p>
-        This Privacy Policy explains how we collect, use, disclose, store, and protect your personal information
-        when you use our App, Platform, and related services (collectively, the "Services") as a <strong>Client</strong>
-        (a homeowner or property manager seeking trade services).
-        We are committed to complying with the <strong>Australian Privacy Act 1988</strong> (Cth)
-        and the <strong>Australian Privacy Principles</strong> (APPs), as well as the
-        <strong>New Zealand Privacy Act 2020</strong> and the privacy requirements
+        This Privacy Policy explains how we collect, use, share, store, and protect your personal information.
+        It applies when you use our App, Platform, and related services (together, the "Services") as a <strong>Client</strong>
+        (a homeowner or property manager looking for trade services).
+        We follow the <strong>Australian Privacy Act 1988</strong> (Cth)
+        and the <strong>Australian Privacy Principles</strong> (APPs). We also follow the
+        <strong>New Zealand Privacy Act 2020</strong> and the privacy rules
         of the Apple App Store and Google Play Store.
       </p>
       <p>
-        By creating an account or using our Services, you acknowledge that you have read and understood this Privacy Policy.
-        If you do not agree with this Policy, please do not use our Services.
+        By creating an account or using our Services, you confirm that you have read and understood this Privacy Policy.
+        If you do not agree, please do not use our Services.
       </p>
 
       <div class="highlight-box">
@@ -168,16 +168,16 @@ export default function ClientPrivacyPolicyPage() {
       <h2>3. How We Use Your Information</h2>
       <p>We use your personal information for the following purposes:</p>
       <ol>
-        <li><strong>Service Delivery</strong> — Creating and managing your account, generating AI-powered quotes for your jobs, matching you with verified tradies, and facilitating communication.</li>
-        <li><strong>AI-Powered Quoting</strong> — Your job title, description, photos, location, and diagnostic answers are processed by our AI engine to generate personalised, tiered price quotes (Junior / Senior / Specialist).</li>
-        <li><strong>Job Classification</strong> — Your job description text is analysed using on-device keyword matching and (when confidence is low) a server-side AI classifier to suggest the appropriate trade category.</li>
-        <li><strong>Location Services</strong> — Using your GPS coordinates (when you tap "Use Current Location") to auto-fill your job address, and using the job address to find nearby tradies and calculate routes.</li>
-        <li><strong>Payment Processing</strong> — Processing job payments via Stripe, holding funds in escrow until job completion, processing refunds for cancellations, and handling scope-change top-up payments.</li>
-        <li><strong>Live Tracking</strong> — Displaying the assigned tradie's real-time location on a map when they are en route to your job (tradie location is shared by the tradie app, not yours).</li>
-        <li><strong>Communication</strong> — Sending push notifications (quote ready, tradie assigned, tradie en route, job completed), in-app messages, and emails (verification, password resets).</li>
-        <li><strong>Safety &amp; Dispute Resolution</strong> — Using job photos, chat records, completion photos, and dispute evidence to mediate disputes fairly.</li>
-        <li><strong>Service Improvement</strong> — Using general usage patterns to improve the App and Platform.</li>
-        <li><strong>Legal Compliance</strong> — Meeting our obligations under Australian and New Zealand law, including tax reporting and responding to lawful requests from authorities.</li>
+        <li><strong>Service Delivery</strong> — Creating your account, generating AI-powered quotes, matching you with verified tradies, and helping you communicate with them.</li>
+        <li><strong>AI-Powered Quoting</strong> — Our AI engine uses your job title, description, photos, location, and answers to create tiered price quotes (Junior / Senior / Specialist).</li>
+        <li><strong>Job Classification</strong> — We match your job description to the right trade category using keyword matching on your device. When needed, a server-side AI classifier helps find the best fit.</li>
+        <li><strong>Location Services</strong> — When you tap "Use Current Location", we use your GPS to fill in your job address. We also use the address to find nearby tradies.</li>
+        <li><strong>Payment Processing</strong> — We process payments through Stripe and hold funds in escrow until the job is done. We also handle refunds and top-up payments for scope changes.</li>
+        <li><strong>Live Tracking</strong> — We show the tradie's live location on a map while they travel to your job. This uses the tradie's location, not yours.</li>
+        <li><strong>Communication</strong> — We send push notifications, in-app messages, and emails to keep you updated on quotes, tradie assignments, and job progress.</li>
+        <li><strong>Safety &amp; Dispute Resolution</strong> — We use job photos, chat records, and dispute evidence to resolve disputes fairly.</li>
+        <li><strong>Service Improvement</strong> — We use general usage patterns to improve the App and Platform.</li>
+        <li><strong>Legal Compliance</strong> — We meet our legal duties under Australian and New Zealand law, including tax reporting and lawful data requests.</li>
       </ol>
 
       <h2>4. How We Share Your Information</h2>
@@ -244,14 +244,13 @@ export default function ClientPrivacyPolicyPage() {
       </table>
 
       <div class="warning-box">
-        <p><strong>Overseas Disclosure:</strong> Some of our service providers are located outside Australia
-        (primarily the United States). By using our Services, you consent to the transfer of your
-        personal information to these countries. We take reasonable steps to ensure that overseas recipients
-        handle your information in accordance with the Australian Privacy Principles.</p>
+        <p><strong>Overseas Disclosure:</strong> Some of our service providers are based outside Australia,
+        mainly in the United States. By using our Services, you agree to your data being sent to these countries.
+        We take reasonable steps to make sure these providers protect your information under the Australian Privacy Principles.</p>
       </div>
 
       <h3>4.3 Legal Disclosures</h3>
-      <p>We may disclose your personal information if required by law, regulation, legal process, or governmental request, including to:</p>
+      <p>We may share your personal information when the law requires it, including to:</p>
       <ul>
         <li>Comply with a court order, subpoena, or similar legal obligation</li>
         <li>Cooperate with law enforcement or government authorities</li>
@@ -308,7 +307,7 @@ export default function ClientPrivacyPolicyPage() {
       </ul>
 
       <h2>7. Data Retention</h2>
-      <p>We retain your personal information in accordance with the following schedule:</p>
+      <p>We keep your personal information for the time periods shown below:</p>
       <table>
         <tr><th>Data Type</th><th>Retention Period</th><th>Basis</th></tr>
         <tr><td>Account information</td><td>Duration of account + 2 years after deletion request</td><td>Legal obligations, dispute resolution</td></tr>
@@ -318,16 +317,16 @@ export default function ClientPrivacyPolicyPage() {
         <tr><td>Reviews</td><td>Duration of account + 2 years</td><td>Platform integrity</td></tr>
         <tr><td>Push notification tokens</td><td>Until token becomes invalid or account is deleted</td><td>Service delivery</td></tr>
       </table>
-      <p>After the retention period expires, data is securely deleted or permanently de-identified in accordance with APP 11.2.</p>
+      <p>Once these periods end, we securely delete or permanently remove identifying details from the data, as required by APP 11.2.</p>
 
       <h2>8. Your Rights</h2>
-      <p>Under the Australian Privacy Act 1988, the APPs, and the New Zealand Privacy Act 2020, you have the following rights:</p>
+      <p>Under Australian and New Zealand privacy law, you have the right to:</p>
       <ul>
-        <li><strong>Access (APP 12):</strong> You may request access to the personal information we hold about you.</li>
-        <li><strong>Correction (APP 13):</strong> You may request correction of any inaccurate, out-of-date, or incomplete personal information. You can also update your name and phone number directly in the App's Profile screen.</li>
-        <li><strong>Deletion:</strong> You may request deletion of your account and associated data via the App's Settings &gt; Delete Account screen or by contacting us. We will process your request within 30 days, subject to any legal retention obligations (see Section 7). Account deletion is <strong>permanent and irreversible</strong>.</li>
-        <li><strong>Withdraw Consent:</strong> You may withdraw consent for optional data processing (e.g., push notifications, location) by revoking device permissions or contacting us.</li>
-        <li><strong>Complaint:</strong> If you believe we have breached the APPs, you may lodge a complaint with us (see Section 11) or with the <a href="https://www.oaic.gov.au/privacy/privacy-complaints" target="_blank" rel="noopener">Office of the Australian Information Commissioner (OAIC)</a>. New Zealand residents may also contact the <a href="https://www.privacy.org.nz" target="_blank" rel="noopener">NZ Office of the Privacy Commissioner</a>.</li>
+        <li><strong>Access (APP 12):</strong> Ask us for a copy of the personal information we hold about you.</li>
+        <li><strong>Correction (APP 13):</strong> Ask us to fix any wrong, outdated, or incomplete information. You can also update your name and phone number directly in the App's Profile screen.</li>
+        <li><strong>Deletion:</strong> Ask us to delete your account and data. Use Settings &gt; Delete Account in the App, or contact us. We process requests within 30 days, unless we must keep certain data by law (see Section 7). Account deletion is <strong>permanent and cannot be undone</strong>.</li>
+        <li><strong>Withdraw Consent:</strong> Turn off optional features (such as push notifications or location) through your device settings, or contact us.</li>
+        <li><strong>Complaint:</strong> If you think we have broken the privacy rules, you can complain to us (see Section 11) or to the <a href="https://www.oaic.gov.au/privacy/privacy-complaints" target="_blank" rel="noopener">Office of the Australian Information Commissioner (OAIC)</a>. New Zealand residents can also contact the <a href="https://www.privacy.org.nz" target="_blank" rel="noopener">NZ Privacy Commissioner</a>.</li>
       </ul>
       <p>To exercise any of these rights, please contact us at <span class="placeholder">contact@fixesau.com</span>.</p>
 
@@ -344,23 +343,23 @@ export default function ClientPrivacyPolicyPage() {
       </p>
 
       <h2>10. Notifiable Data Breaches</h2>
-      <p>In the event of a data breach that is likely to result in serious harm to any individual whose personal information is involved, we will:</p>
+      <p>If a data breach could cause serious harm to anyone affected, we will:</p>
       <ol>
-        <li>Notify the <strong>Office of the Australian Information Commissioner (OAIC)</strong> as soon as practicable.</li>
-        <li>Notify affected individuals with details of the breach, the type of information involved, and recommended steps they should take.</li>
-        <li>Take all reasonable steps to contain the breach and mitigate any resulting harm.</li>
+        <li>Notify the <strong>Office of the Australian Information Commissioner (OAIC)</strong> as soon as possible.</li>
+        <li>Tell affected users what happened, what data was involved, and what steps they should take.</li>
+        <li>Take all reasonable steps to contain the breach and reduce any harm.</li>
       </ol>
 
       <h2>11. Changes to This Policy</h2>
-      <p>We may update this Privacy Policy from time to time. When we make material changes, we will:</p>
+      <p>We may update this Privacy Policy from time to time. When we make important changes, we will:</p>
       <ul>
         <li>Update the "Last Updated" date at the top of this page</li>
-        <li>Send an in-app notification or push notification to inform you of the changes</li>
-        <li>Where required by law, seek your consent before applying changes that significantly affect how your personal information is handled</li>
+        <li>Send you a notification in the app or by push notification</li>
+        <li>Ask for your consent first, if the law requires it, before changing how we handle your data</li>
       </ul>
 
       <h2>12. Contact Us</h2>
-      <p>If you have questions, concerns, or requests regarding this Privacy Policy or your personal information, please contact us:</p>
+      <p>If you have questions or concerns about this Privacy Policy or your personal information, please contact us:</p>
       <ul>
         <li><strong>Entity:</strong> <span class="placeholder">fixesau</span></li>
         <li><strong>ABN:</strong> <span class="placeholder">52697058503</span></li>

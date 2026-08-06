@@ -29,8 +29,8 @@ export default function CouncilRegulationsPage() {
         <div className="max-w-200 mx-auto">
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">When is a permit required?</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            While many small repairs and maintenance jobs do not require council approval, larger projects such as structural changes, extensions, decks above a certain height, or major plumbing works often do. 
-            It is the homeowner's responsibility to ensure that any necessary permits or approvals are obtained before work commences.
+            Most small repairs and maintenance jobs do not need council approval. However, bigger projects often do — for example, structural changes, extensions, raised decks, or major plumbing work. 
+            As the homeowner, it is your responsibility to get any required permits or approvals before work begins.
           </p>
           
           <div className="bg-[#f6f6f6] rounded-2xl p-8 mb-8 border border-gray-100">
@@ -46,7 +46,7 @@ export default function CouncilRegulationsPage() {
           
           <h3 className="text-xl font-bold text-(--upwork-navy) mb-4">Working with Fixers</h3>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            Our experienced fixers can often advise you if they believe a permit may be required for the scope of work you have requested. However, they are not legal experts. Always consult directly with your local city council or a registered building surveyor before proceeding with major work.
+            Our fixers can often tell you if they think a permit might be needed for your job. However, they are not legal experts. Always check with your local council or a registered building surveyor before starting major work.
           </p>
         </div>
       </section>

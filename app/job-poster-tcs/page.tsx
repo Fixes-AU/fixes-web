@@ -29,22 +29,22 @@ export default function JobPosterTcsPage() {
         <div className="max-w-200 mx-auto">
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">1. Introduction</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            These Job Poster Terms and Conditions ("Terms") govern your use of the Fixes platform to post jobs, request quotes, and hire tradespeople. By using the platform as a Client, you agree to comply with these Terms.
+            These Terms and Conditions ("Terms") apply when you use the Fixes platform to post jobs, request quotes, and hire tradespeople. By using the platform as a Client, you agree to follow these Terms.
           </p>
           
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">2. Posting Jobs</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            When posting a job, you must provide accurate, complete, and honest information about the scope of work, location, and any relevant details or hazards. You must have the legal right to authorise work at the specified property.
+            When you post a job, give accurate and honest details about the work, location, and any hazards. You must have the right to approve work at the property.
           </p>
           
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">3. Payments and Escrow</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            Upon accepting a quote from a Fixer, the agreed funds will be captured via Stripe and held securely in escrow. Funds will only be released to the Fixer once you have confirmed the job is completed to a satisfactory standard, or in accordance with our dispute resolution policy.
+            When you accept a quote from a Fixer, the agreed amount is charged through Stripe and held safely in escrow. The money is only released to the Fixer after you confirm the job is done to your satisfaction, or after a dispute is resolved.
           </p>
 
           <h2 className="text-2xl font-extrabold text-(--upwork-navy) mb-6">4. Cancellations</h2>
           <p className="text-(--upwork-gray) mb-6 leading-relaxed">
-            If you cancel a job after a Fixer has been dispatched or has arrived on-site, a cancellation fee may apply to compensate the Fixer for their time and travel. Please refer to our full cancellation policy for specific details and fee structures.
+            If you cancel a job after a Fixer has been sent or has arrived, a cancellation fee may apply to cover the Fixer's time and travel. See our full cancellation policy for details and fees.
           </p>
 
           <div className="bg-[#f6f6f6] p-6 rounded-xl mt-10">

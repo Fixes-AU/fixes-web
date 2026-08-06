@@ -247,8 +247,8 @@ export default function InvestorsPage() {
             Corporate Governance
           </h2>
           <p className="text-[0.95rem] text-(--upwork-gray) leading-relaxed mb-10 max-w-150">
-            We are committed to maintaining the highest standards of corporate governance,
-            transparency, and accountability to our shareholders and the wider community.
+            We hold ourselves to high standards of corporate governance,
+            transparency, and accountability — to our shareholders and the wider community.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
