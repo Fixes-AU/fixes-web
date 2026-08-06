@@ -172,7 +172,7 @@ export default function AdminJobsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/admin/jobs/${job._id}`}>
+                        <Link href={`/admin/jobs/${job._id}`} aria-label="View job details">
                           <ChevronRight className="w-4 h-4 text-gray-300" />
                         </Link>
                       </td>

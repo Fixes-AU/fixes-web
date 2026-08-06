@@ -49,7 +49,7 @@ export function BrandManifesto() {
             href="/about-us"
             className="mt-7 inline-flex h-11 items-center gap-1 rounded-full bg-[#08544B] px-6 text-sm font-semibold text-white transition hover:bg-[#063F39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#08544B]"
           >
-            Learn More
+            About Fixes
             <ChevronRight className="size-4" />
           </Link>
         </div>

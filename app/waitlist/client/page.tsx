@@ -64,7 +64,7 @@ export default function ClientWaitlistPage() {
         <div className="w-full max-w-md my-auto">
           
           <div className="mb-8 md:mb-10">
-            <Link href="/">
+            <Link href="/" aria-label="Fixes home">
               <Image
                 src="/logo.svg"
                 alt="Fixes"

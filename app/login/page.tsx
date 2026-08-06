@@ -63,7 +63,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-linear-to-br from-white via-[#f2f7f2] to-white flex flex-col">
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
-          <Link href="/" className="inline-block">
+          <Link href="/" className="inline-block" aria-label="Fixes home">
             <Image
               src="/logo.svg"
               alt="Fixes"

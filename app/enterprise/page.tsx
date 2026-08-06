@@ -51,12 +51,12 @@ export default function EnterprisePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href={createFragmentHref("/register", { plan: "business" })}>
+            <Link href={createFragmentHref("/register", { plan: "business" })} aria-label="Create business account">
               <Button className="bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white rounded-full px-8 py-6 text-lg font-semibold w-full sm:w-auto">
                 Create business account
               </Button>
             </Link>
-            <Link href="/">
+            <Link href="/" aria-label="Back to home">
               <Button variant="outline" className="rounded-full px-8 py-6 text-lg font-semibold border-gray-300 text-(--upwork-navy) hover:bg-gray-50 w-full sm:w-auto">
                 Back to home
               </Button>

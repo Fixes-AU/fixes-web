@@ -36,7 +36,7 @@ export default function TradieWaitlistPage() {
         <div className="w-full max-w-md">
           
           <div className="mb-5 md:mb-6">
-            <Link href="/">
+            <Link href="/" aria-label="Fixer home">
               <img
                 src="/fixer-logo.svg"
                 alt="Fixer"

@@ -130,7 +130,7 @@ export default function AboutUsPage() {
               get around.
             </p>
             <Link href="/safety" className="text-[0.95rem] font-bold text-(--upwork-navy) underline underline-offset-3 hover:text-(--upwork-green) transition-colors">
-              Learn more
+              Learn about our safety commitment
             </Link>
           </div>
 
@@ -176,7 +176,7 @@ export default function AboutUsPage() {
               industry.
             </p>
             <Link href="/community-impact" className="text-[0.95rem] font-bold text-(--upwork-navy) underline underline-offset-3 hover:text-(--upwork-green) transition-colors">
-              Learn more
+              Explore our community impact
             </Link>
           </div>
         </div>
@@ -246,7 +246,7 @@ export default function AboutUsPage() {
                 responsibility initiatives.
               </p>
               <Link href="/investors" className="text-sm font-bold text-(--upwork-navy) underline underline-offset-3 hover:text-(--upwork-green) transition-colors">
-                Learn more
+                View investor relations
               </Link>
             </div>
           </div>

@@ -153,7 +153,7 @@ function DashboardLayout({
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center" aria-label="Fixes home">
               <Image
                 src="/logo.svg"
                 alt="Fixes"

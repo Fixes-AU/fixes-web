@@ -2802,7 +2802,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       <div className="min-h-screen bg-gradient-to-br from-white via-[#f2f7f2] to-white">
         <header className="border-b border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
-            <Link href="/" className="inline-block">
+            <Link href="/" className="inline-block" aria-label="Fixes home">
               <Image src="/logo.svg" alt="Fixes" width={120} height={40} className="h-8 w-auto" priority />
             </Link>
           </div>
@@ -2864,7 +2864,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       <div className="min-h-screen bg-gradient-to-br from-white via-[#f2f7f2] to-white">
         <header className="border-b border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
-            <Link href="/" className="inline-block">
+            <Link href="/" className="inline-block" aria-label="Fixes home">
               <Image src="/logo.svg" alt="Fixes" width={120} height={40} className="h-8 w-auto" priority />
             </Link>
           </div>

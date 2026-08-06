@@ -264,7 +264,7 @@ export default function AiLogsPage() {
                       </td>
 
                       <td className="px-3 py-3">
-                        <Link href={`/admin/ai-analytics/${log._id}`}>
+                        <Link href={`/admin/ai-analytics/${log._id}`} aria-label="View analytics log">
                           <ChevronRight className="w-4 h-4 text-gray-300" />
                         </Link>
                       </td>

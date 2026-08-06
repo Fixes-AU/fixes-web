@@ -101,7 +101,7 @@ export default function CleaningAdminLayout({ children }: { children: React.Reac
                 >
                   {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
-                <Link href="/cleaning-admin" className="flex items-center gap-2.5">
+                <Link href="/cleaning-admin" className="flex items-center gap-2.5" aria-label="Fixes cleaning admin dashboard">
                   <Image src="/logo.svg" alt="Fixes" width={80} height={28} className="h-6 w-auto" priority />
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-600 text-white uppercase tracking-wider">
                     Cleaning
