@@ -62,6 +62,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: '/admin/users', label: 'Users', icon: Users, permission: 'view:users' },
       { href: '/admin/waitlist-leads', label: 'Waitlist Leads', icon: ClipboardList, permission: 'view:waitlist_leads' },
       { href: '/admin/jobs', label: 'Jobs', icon: Briefcase, permission: 'view:jobs' },
+      { href: '/admin/online-tradies', label: 'Online Tradies', icon: Radio, permission: 'view:tradies' },
       { href: '/admin/tradies', label: 'Verification', icon: ShieldCheck, permission: 'view:tradies' },
       { href: '/admin/agency-applications', label: 'Agency Applications', icon: FileCheck2, permission: 'view:agencies' },
       { href: '/admin/agencies', label: 'Agencies', icon: Building2, permission: 'view:agencies' },
@@ -219,17 +220,16 @@ function AdminOnlineTradiesBadge() {
   const statusLabel = isStale ? `${label}. Showing the last known count.` : label
 
   return (
-    <div
-      className={`hidden min-[400px]:inline-flex h-8 min-w-[52px] items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors ${
+    <Link
+      href="/admin/online-tradies"
+      className={`hidden min-[400px]:inline-flex h-8 min-w-[52px] items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2 ${
         isStale
-          ? 'border-amber-200 bg-amber-50 text-amber-700'
+          ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
           : hasOnlineTradies
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-gray-200 bg-gray-50 text-gray-500'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            : 'border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
       }`}
-      role="status"
-      aria-live="polite"
-      aria-label={statusLabel}
+      aria-label={`View online tradies. ${statusLabel}`}
       title={statusLabel}
     >
       <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
@@ -245,7 +245,7 @@ function AdminOnlineTradiesBadge() {
       <Radio className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       <span className="hidden xl:inline">Online tradies</span>
       <span>{online ?? '—'}</span>
-    </div>
+    </Link>
   )
 }
 

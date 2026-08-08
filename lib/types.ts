@@ -533,6 +533,34 @@ export interface PendingTradieItem {
   }
 }
 
+export interface OnlineTradie {
+  userId: string
+  name: string
+  email: string
+  phone?: string
+  fixId?: string
+  avatarUrl: string | null
+  isActive: boolean
+  categories: TradieCategory[]
+  skillLevel: SkillLevel | string
+  isFullyVerified: boolean
+  isAgencyTradie: boolean
+  rating: { average: number; count: number }
+  jobSuccessRate: number
+  serviceRadiusKm: number
+  lastLocationUpdatedAt: string | null
+  onlineUpdatedAt: string
+  activeJob: {
+    _id: string
+    jobCode: string
+    title: string
+    status: JobStatus | string
+    category: JobCategory | string
+    suburb?: string
+    state?: string
+  } | null
+}
+
 export interface TradieDocumentsResponse {
   tradie: User
   categories: TradieCategory[]
