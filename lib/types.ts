@@ -55,6 +55,7 @@ export type TradieCategory =
   | 'general_labourer'
   | 'handyman'
   | 'gardening_landscaping'
+  | 'auto_care'
   | 'cleaning'
   | 'waste_removal'
 

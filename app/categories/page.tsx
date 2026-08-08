@@ -6,6 +6,7 @@ import {
   Zap, Droplets, Wind, Paintbrush, PaintRoller,
   Grid, Hammer, ShieldAlert, HardHat, Sparkles,
   Trash2, CircleEllipsis, ArrowRight, ChevronRight, Wrench, Leaf, House,
+  Car,
 } from 'lucide-react'
 import { Header, Footer } from '@/components/upwork'
 import { SERVICE_DATA } from '@/lib/service-data'
@@ -29,6 +30,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   general_labourer: HardHat,
   handyman: Wrench,
   gardening_landscaping: Leaf,
+  auto_care: Car,
   cleaning: Sparkles,
   waste_removal: Trash2,
   other: CircleEllipsis,

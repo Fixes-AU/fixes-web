@@ -277,6 +277,26 @@ export const SERVICE_DATA: ServiceMeta[] = [
     ],
   },
   {
+    slug: 'auto-care',
+    category: 'auto_care',
+    label: 'Auto Care',
+    tagline: 'Car washing & detailing',
+    description:
+      'Book mobile car washing and detailing, or choose workshop drop-off where available. Share vehicle details and clear photos so the quote reflects the vehicle condition, size, and service scope.',
+    accent: '#0EA5E9',
+    popularTasks: [
+      { label: 'Car Detailing', preFilledTitle: 'Car detailing service' },
+      { label: 'Car Washing', preFilledTitle: 'Car washing service' },
+      { label: 'Interior Detail', preFilledTitle: 'Interior car detailing' },
+      { label: 'Exterior Detail', preFilledTitle: 'Exterior car detailing' },
+    ],
+    howItWorks: [
+      { title: 'Describe the vehicle', desc: 'Choose car washing or detailing, add vehicle information, and upload clear photos from multiple angles.' },
+      { title: 'Choose service location', desc: 'Select mobile service at your address or client drop-off where eligible workshop tradies are available.' },
+      { title: 'Auto Care tradie dispatched', desc: 'A vetted, insured Auto Care tradie completes the service with required before and completion photos.' },
+    ],
+  },
+  {
     slug: 'cleaning',
     category: 'cleaning',
     label: 'Cleaning',

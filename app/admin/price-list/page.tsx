@@ -125,7 +125,7 @@ interface UploadedImage {
 const CATEGORIES = [
   'electrical', 'plumbing', 'hvac', 'plastering', 'painting',
   'flooring', 'carpentry', 'roofing', 'emergency_make_safe', 'general_labourer',
-  'handyman', 'gardening_landscaping', 'cleaning', 'waste_removal',
+  'handyman', 'gardening_landscaping', 'auto_care', 'cleaning', 'waste_removal',
 ]
 
 const ENTRY_TYPES = ['service', 'material', 'callout', 'hourly_rate']

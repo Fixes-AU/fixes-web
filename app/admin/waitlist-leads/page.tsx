@@ -60,6 +60,7 @@ export default function WaitlistLeadsPage() {
     general_labourer: 'General Labourer',
     handyman: 'Handyman',
     gardening_landscaping: 'Gardening & Landscaping',
+    auto_care: 'Auto Care',
     other: 'Other Trade',
   }
 

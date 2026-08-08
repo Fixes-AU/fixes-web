@@ -73,6 +73,23 @@ interface PostJobWizardProps {
   existingJobId?: string
 }
 
+type AutoCareServiceType = 'car_detailing' | 'car_washing' | 'both' | 'unknown'
+type AutoCareLocationMode = 'client_address' | 'client_dropoff'
+type AutoCareVehicleType = 'sedan' | 'hatchback' | 'suv_4wd' | 'ute' | 'van' | 'truck' | 'other'
+
+interface AutoCareDetailsForm {
+  serviceType: AutoCareServiceType
+  serviceLocationMode: AutoCareLocationMode
+  dropoffRadiusKm: number
+  vehicle: {
+    type: AutoCareVehicleType | ''
+    makeModel: string
+    year: string
+    colour: string
+    registrationNumber: string
+  }
+}
+
 
 function StepCategory({
   selectedCategory,
@@ -335,6 +352,215 @@ function StepDiagnosticQuestions({
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+function StepAutoCareDetails({
+  details,
+  imagesCount,
+  onChange,
+  onNext,
+}: {
+  details: AutoCareDetailsForm
+  imagesCount: number
+  onChange: (details: AutoCareDetailsForm) => void
+  onNext: () => void
+}) {
+  const needsRegistration = details.serviceLocationMode === 'client_dropoff'
+  const canProceed = Boolean(
+    details.serviceType &&
+    details.serviceLocationMode &&
+    details.vehicle.type &&
+    imagesCount >= 4 &&
+    (!needsRegistration || details.vehicle.registrationNumber.trim())
+  )
+
+  const setVehicle = (field: keyof AutoCareDetailsForm['vehicle'], value: string) => {
+    onChange({
+      ...details,
+      vehicle: {
+        ...details.vehicle,
+        [field]: value,
+      },
+    })
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Info className="w-7 h-7 text-sky-600" />
+        </div>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 text-sm font-medium rounded-full mb-3">
+          Auto Care
+        </span>
+        <h1 className="text-3xl md:text-4xl font-bold text-(--upwork-navy) mb-2">
+          Vehicle and service details
+        </h1>
+        <p className="text-(--upwork-gray) text-sm">
+          These details help us match the right mobile or workshop Auto Care tradie.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-semibold text-(--upwork-navy) mb-3">Service needed</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { value: 'car_detailing', label: 'Car Detailing' },
+              { value: 'car_washing', label: 'Car Washing' },
+              { value: 'both', label: 'Both' },
+            ].map(option => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onChange({ ...details, serviceType: option.value as AutoCareServiceType })}
+                className={`px-4 py-3 rounded-xl text-sm font-medium border transition-all ${details.serviceType === option.value
+                  ? 'bg-(--upwork-navy) text-white border-(--upwork-navy)'
+                  : 'bg-white text-(--upwork-navy) border-gray-300 hover:border-(--upwork-green)'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-(--upwork-navy) mb-3">Service location</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { value: 'client_address', label: 'At my address', desc: 'Mobile service comes to you' },
+              { value: 'client_dropoff', label: 'I can drop it off', desc: 'Show eligible workshop tradies' },
+            ].map(option => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onChange({ ...details, serviceLocationMode: option.value as AutoCareLocationMode })}
+                className={`px-4 py-3 rounded-xl text-left border transition-all ${details.serviceLocationMode === option.value
+                  ? 'bg-(--upwork-navy) text-white border-(--upwork-navy)'
+                  : 'bg-white text-(--upwork-navy) border-gray-300 hover:border-(--upwork-green)'
+                }`}
+              >
+                <span className="block text-sm font-semibold">{option.label}</span>
+                <span className={`block text-xs mt-1 ${details.serviceLocationMode === option.value ? 'text-white/70' : 'text-gray-400'}`}>
+                  {option.desc}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {details.serviceLocationMode === 'client_dropoff' && (
+          <div>
+            <label htmlFor="auto-care-radius" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+              Drop-off travel radius
+            </label>
+            <select
+              id="auto-care-radius"
+              value={details.dropoffRadiusKm}
+              onChange={(e) => onChange({ ...details, dropoffRadiusKm: Number(e.target.value) })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) bg-white focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+            >
+              <option value={5}>Up to 5 km</option>
+              <option value={10}>Up to 10 km</option>
+              <option value={20}>Up to 20 km</option>
+              <option value={60}>Flexible</option>
+            </select>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="auto-care-vehicle-type" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+              Vehicle type
+            </label>
+            <select
+              id="auto-care-vehicle-type"
+              value={details.vehicle.type}
+              onChange={(e) => setVehicle('type', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) bg-white focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+            >
+              <option value="">Select vehicle type...</option>
+              <option value="sedan">Sedan</option>
+              <option value="hatchback">Hatchback</option>
+              <option value="suv_4wd">SUV / 4WD</option>
+              <option value="ute">Ute</option>
+              <option value="van">Van</option>
+              <option value="truck">Truck / larger</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="auto-care-make-model" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+              Make and model
+            </label>
+            <input
+              id="auto-care-make-model"
+              value={details.vehicle.makeModel}
+              onChange={(e) => setVehicle('makeModel', e.target.value)}
+              placeholder="e.g. Toyota Corolla"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label htmlFor="auto-care-year" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+              Year
+            </label>
+            <input
+              id="auto-care-year"
+              value={details.vehicle.year}
+              onChange={(e) => setVehicle('year', e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
+              placeholder="e.g. 2021"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label htmlFor="auto-care-colour" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+              Colour
+            </label>
+            <input
+              id="auto-care-colour"
+              value={details.vehicle.colour}
+              onChange={(e) => setVehicle('colour', e.target.value)}
+              placeholder="e.g. White"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="auto-care-registration" className="block text-sm font-semibold text-(--upwork-navy) mb-2">
+            Registration number {needsRegistration ? '' : <span className="text-gray-400 font-normal">(optional)</span>}
+          </label>
+          <input
+            id="auto-care-registration"
+            value={details.vehicle.registrationNumber}
+            onChange={(e) => setVehicle('registrationNumber', e.target.value.toUpperCase())}
+            placeholder="e.g. ABC123"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent"
+          />
+        </div>
+
+        {imagesCount < 4 && (
+          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-700">
+              Auto Care needs at least 4 vehicle photos for quote assessment. Please go back and add front, rear, side, and interior photos.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!canProceed}
+        className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 mt-8 bg-(--upwork-green) hover:bg-(--upwork-green-dark) disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors"
+      >
+        Continue to Location
+        <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   )
 }
@@ -2051,6 +2277,18 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [propertyType, setPropertyType] = useState<PropertyType | ''>('')
   const [bedrooms, setBedrooms] = useState(3)
   const [bathrooms, setBathrooms] = useState(2)
+  const [autoCareDetails, setAutoCareDetails] = useState<AutoCareDetailsForm>({
+    serviceType: 'car_detailing',
+    serviceLocationMode: 'client_address',
+    dropoffRadiusKm: 20,
+    vehicle: {
+      type: '',
+      makeModel: '',
+      year: '',
+      colour: '',
+      registrationNumber: '',
+    },
+  })
 
   const [classifySuggestion, setClassifySuggestion] = useState<{
     suggestedCategory: TradieCategory
@@ -2156,7 +2394,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
   const cleaningStepMap: Record<number, number> = { 10: 2, 14: 3, 11: 4, 4: 5, 12: 6, 13: 7 }
-  const effectiveStep = isAgencyCategory ? (cleaningStepMap[currentStep] ?? currentStep) : (currentStep === 15 ? 5 : currentStep)
+  const effectiveStep = isAgencyCategory
+    ? (cleaningStepMap[currentStep] ?? currentStep)
+    : (currentStep === 15 ? 5 : currentStep === 26 ? 4 : currentStep)
   const effectiveTotalSteps = isAgencyCategory ? 7 : totalSteps
   const progress = Math.min((effectiveStep / effectiveTotalSteps) * 100, 100)
 
@@ -2193,6 +2433,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } finally {
       setIsDiagnosticLoading(false)
     }
+  }
+
+  const handleDiagnosticNext = () => {
+    setCurrentStep(category === 'auto_care' ? 26 : 4)
   }
 
 
@@ -2295,6 +2539,19 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         },
         preferredTime: timeValue,
         diagnosticAnswers: readableDiagnosticAnswers,
+        ...(category === 'auto_care'
+          ? {
+            autoCareDetails: {
+              serviceType: autoCareDetails.serviceType,
+              serviceLocationMode: autoCareDetails.serviceLocationMode,
+              dropoffRadiusKm: autoCareDetails.dropoffRadiusKm,
+              vehicle: {
+                ...autoCareDetails.vehicle,
+                registrationRequired: autoCareDetails.serviceLocationMode === 'client_dropoff',
+              },
+            },
+          }
+          : {}),
         ...(timeValue === 'scheduled' && resolvedScheduledFor
           ? {
             scheduledFor: (() => {
@@ -2321,7 +2578,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } finally {
       setIsSubmitting(false)
     }
-  }, [isAuthenticated, router, title, description, category, images, address, suburb, postcode, locationState, coords, scheduledFor, diagnosticAnswers])
+  }, [isAuthenticated, router, title, description, category, images, address, suburb, postcode, locationState, coords, scheduledFor, diagnosticAnswers, autoCareDetails])
 
 
   const handleAcceptQuote = useCallback(async (paymentMethodId?: string) => {
@@ -2601,9 +2858,13 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const handleBack = () => {
     if (currentStep === 25) {
       setCurrentStep(3)
+    } else if (currentStep === 26) {
+      setCurrentStep(25)
     } else if (currentStep === 4) {
       if (isAgencyCategory) {
         setCurrentStep(11)
+      } else if (category === 'auto_care') {
+        setCurrentStep(26)
       } else {
         setCurrentStep(25)
       }
@@ -3070,9 +3331,18 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             questions={diagnosticQuestions}
             answers={diagnosticAnswers}
             onAnswerChange={(qId, ans) => setDiagnosticAnswers(prev => ({ ...prev, [qId]: ans }))}
-            onNext={() => setCurrentStep(4)}
+            onNext={handleDiagnosticNext}
             isLoading={isDiagnosticLoading}
             categoryLabel={category ? CATEGORY_LABELS[category] : ''}
+          />
+        )}
+
+        {currentStep === 26 && (
+          <StepAutoCareDetails
+            details={autoCareDetails}
+            imagesCount={images.length}
+            onChange={setAutoCareDetails}
+            onNext={() => setCurrentStep(4)}
           />
         )}
 

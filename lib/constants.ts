@@ -19,6 +19,7 @@ export const VALID_CATEGORIES: TradieCategory[] = [
   'general_labourer',
   'handyman',
   'gardening_landscaping',
+  'auto_care',
   'cleaning',
   'waste_removal',
 ]
@@ -38,6 +39,7 @@ export const CATEGORY_LABELS: Record<JobCategory, string> = {
   general_labourer: 'General Labourer',
   handyman: 'Handyman',
   gardening_landscaping: 'Gardening & Landscaping',
+  auto_care: 'Auto Care',
   cleaning: 'Cleaning',
   waste_removal: 'Waste Removal',
   other: 'Other',
