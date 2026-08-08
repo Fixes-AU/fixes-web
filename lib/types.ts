@@ -550,6 +550,8 @@ export interface OnlineTradie {
   serviceRadiusKm: number
   lastLocationUpdatedAt: string | null
   onlineUpdatedAt: string
+  liveConnectedAt: string | null
+  liveSocketCount: number
   activeJob: {
     _id: string
     jobCode: string

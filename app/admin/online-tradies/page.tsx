@@ -323,7 +323,7 @@ export default function AdminOnlineTradiesPage() {
             </span>
             <div>
               <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Online Tradies</h1>
-              <p className="mt-0.5 text-sm text-gray-400">Tradies currently marked online in Fixer</p>
+              <p className="mt-0.5 text-sm text-gray-400">Tradies connected now and available for jobs</p>
             </div>
           </div>
         </div>
@@ -420,7 +420,7 @@ export default function AdminOnlineTradiesPage() {
 
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-xs text-gray-400">
-          {isLoading ? 'Loading online tradies...' : `${total} online ${total === 1 ? 'tradie' : 'tradies'}`}
+          {isLoading ? 'Loading online tradies...' : `${total} live online ${total === 1 ? 'tradie' : 'tradies'}`}
         </p>
         {isStale && error && <p className="text-xs font-medium text-amber-600">{error}</p>}
       </div>
@@ -462,7 +462,7 @@ export default function AdminOnlineTradiesPage() {
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
                               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                              Online {timeAgo(tradie.onlineUpdatedAt)}
+                              Connected {timeAgo(tradie.liveConnectedAt || tradie.onlineUpdatedAt)}
                             </span>
                             {tradie.fixId && <span className="text-[10px] font-mono text-gray-400">{tradie.fixId}</span>}
                           </div>
