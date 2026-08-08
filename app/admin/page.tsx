@@ -16,6 +16,7 @@ import {
   WifiOff,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { publishAdminOnlineTradiesCount } from '@/lib/admin-online-tradies-events'
 import { connectSocket, getSocket } from '@/lib/socket'
 import type { AdminStats } from '@/lib/types'
 
@@ -47,6 +48,7 @@ export default function AdminDashboardPage() {
       const res = await api.get<AdminStats>('/api/admin/stats')
       statsRef.current = res.data
       setStats(res.data)
+      publishAdminOnlineTradiesCount(res.data.tradies.online)
       setLastUpdated(new Date())
       setLoadError(null)
       setIsStale(false)

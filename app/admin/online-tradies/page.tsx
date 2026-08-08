@@ -18,6 +18,7 @@ import {
   User,
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { publishAdminOnlineTradiesCount } from '@/lib/admin-online-tradies-events'
 import { connectSocket, getSocket } from '@/lib/socket'
 import { JOB_STATUS_COLORS, JOB_STATUS_LABELS, TRADIE_CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
 import type { JobStatus, OnlineTradie, TradieCategory } from '@/lib/types'
@@ -238,6 +239,7 @@ export default function AdminOnlineTradiesPage() {
 
       setTradies(res.data)
       setTotal(res.pagination.total)
+      publishAdminOnlineTradiesCount(res.pagination.total)
       setLastUpdated(new Date().toISOString())
       setError('')
       setIsStale(false)

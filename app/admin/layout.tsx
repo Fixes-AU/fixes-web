@@ -35,6 +35,7 @@ import {
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
 import { api } from '@/lib/api'
+import { ADMIN_ONLINE_TRADIES_COUNT_EVENT } from '@/lib/admin-online-tradies-events'
 import { connectSocket, getSocket } from '@/lib/socket'
 
 interface SidebarLink {
@@ -195,6 +196,19 @@ function AdminOnlineTradiesBadge() {
     const interval = setInterval(loadOnlineCount, ONLINE_COUNT_REFRESH_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [loadOnlineCount])
+
+  useEffect(() => {
+    const handleSharedCountChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ online?: number }>).detail
+      if (typeof detail?.online !== 'number' || !Number.isFinite(detail.online)) return
+
+      setOnline(detail.online)
+      setIsStale(false)
+    }
+
+    window.addEventListener(ADMIN_ONLINE_TRADIES_COUNT_EVENT, handleSharedCountChanged)
+    return () => window.removeEventListener(ADMIN_ONLINE_TRADIES_COUNT_EVENT, handleSharedCountChanged)
+  }, [])
 
   useEffect(() => {
     const socket = getSocket() ?? connectSocket()
