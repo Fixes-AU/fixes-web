@@ -25,11 +25,11 @@ const nextConfig = {
 
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com https://maps.gstatic.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://res.cloudinary.com https://tools.applemediaservices.com https://play.google.com",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://tools.applemediaservices.com https://play.google.com https://maps.gstatic.com https://maps.googleapis.com https://*.googleapis.com https://*.ggpht.com",
       "font-src 'self' data:",
-      `connect-src 'self' ${apiUrl} ${wsUrl} https://api.cloudinary.com https://*.stripe.com https://vitals.vercel-insights.com https://va.vercel-scripts.com`,
+      `connect-src 'self' ${apiUrl} ${wsUrl} https://api.cloudinary.com https://*.stripe.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://maps.googleapis.com https://routes.googleapis.com https://places.googleapis.com`,
       "frame-src https://js.stripe.com https://*.stripe.com",
       "media-src 'self'",
       "object-src 'none'",
