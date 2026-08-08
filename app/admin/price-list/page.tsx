@@ -86,17 +86,16 @@ export default function PriceListPage() {
       if (categoryFilter) qs.set('category', categoryFilter)
       if (typeFilter) qs.set('entryType', typeFilter)
       if (search) qs.set('search', search)
-      const res = await api.get<{ data: PriceListEntry[]; pagination: { total: number } }>(`/api/admin/price-list?${qs}`)
-      const body = res.data as any
-      setEntries(body.data || [])
-      setTotal(body.pagination?.total || 0)
+      const res = await api.getPaginated<PriceListEntry>(`/api/admin/price-list?${qs}`)
+      setEntries(res.data || [])
+      setTotal(res.pagination?.total || 0)
     } catch { /* silent */ } finally { setIsLoading(false) }
   }, [page, categoryFilter, typeFilter, search])
 
   const fetchConfig = useCallback(async () => {
     try {
-      const res = await api.get<{ data: PriceListConfig }>('/api/admin/price-list/config')
-      setConfig((res.data as any).data)
+      const res = await api.get<PriceListConfig>('/api/admin/price-list/config')
+      setConfig(res.data)
     } catch { /* silent */ }
   }, [])
 
@@ -155,12 +154,12 @@ export default function PriceListPage() {
     setIsTesting(true)
     setTestResult(null)
     try {
-      const res = await api.post<{ data: AlgorithmTestResult }>('/api/admin/price-list/test-match', {
+      const res = await api.post<AlgorithmTestResult>('/api/admin/price-list/test-match', {
         title: testTitle,
         description: testDescription,
         category: testCategory,
       })
-      setTestResult((res.data as any).data)
+      setTestResult(res.data)
     } catch { /* silent */ } finally { setIsTesting(false) }
   }
 
