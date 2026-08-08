@@ -625,13 +625,13 @@ function StepPhotos({
       {images.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-6">
           {images.map((img, index) => (
-            <div key={img.publicId} className="relative group rounded-xl overflow-hidden aspect-square">
-              <Image
+            <div key={img.publicId || img.url} className="relative group rounded-xl overflow-hidden aspect-square bg-gray-100">
+              {/* eslint-disable-next-line @next/next/no-img-element -- user-selected previews can be temporary blob URLs. */}
+              <img
                 src={img.url}
                 alt={`Upload ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 640px) 33vw, 25vw"
+                className="h-full w-full object-cover"
+                loading="lazy"
               />
               <button
                 onClick={() => removeImage(index)}
@@ -646,9 +646,10 @@ function StepPhotos({
 
       <button
         onClick={onNext}
-        className="w-full max-w-sm mx-auto block bg-(--upwork-green) hover:bg-(--upwork-green-dark) text-white font-medium py-3 px-6 rounded-xl transition-colors"
+        disabled={isUploading}
+        className="w-full max-w-sm mx-auto block bg-(--upwork-green) hover:bg-(--upwork-green-dark) disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors"
       >
-        {images.length > 0 ? 'Next' : 'Skip — no photos'}
+        {isUploading ? 'Uploading photos...' : images.length > 0 ? 'Next' : 'Skip — no photos'}
       </button>
     </div>
   )
@@ -2417,15 +2418,21 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
   const handlePhotosNext = async () => {
+    if (isUploading) return
+
     setCurrentStep(25)
     setIsDiagnosticLoading(true)
     setDiagnosticAnswers({})
+    const uploadedImageUrls = images
+      .filter((img) => !img.url.startsWith('blob:'))
+      .map((img) => img.url)
+
     try {
       const res = await api.post<{ questions: DiagnosticQuestion[] }>('/api/jobs/preflight-questions', {
         title,
         description,
         category: category || 'other',
-        imageUrls: images.map(img => img.url),
+        imageUrls: uploadedImageUrls,
       })
       setDiagnosticQuestions(res.data.questions || [])
     } catch {
