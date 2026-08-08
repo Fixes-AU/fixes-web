@@ -30,6 +30,7 @@ import {
   Building2,
   FileCheck2,
   Radio,
+  DollarSign,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
@@ -83,6 +84,7 @@ const sidebarGroups: SidebarGroup[] = [
     links: [
       { href: '/admin/commission', label: 'Commission', icon: Percent, permission: 'view:commission' },
       { href: '/admin/transactions', label: 'Transactions', icon: CreditCard, permission: 'view:transactions' },
+      { href: '/admin/price-list', label: 'Price List', icon: DollarSign, permission: 'view:commission' },
     ],
   },
   {
