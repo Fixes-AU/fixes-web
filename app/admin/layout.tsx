@@ -180,10 +180,10 @@ function AdminOnlineTradiesBadge() {
     const requestId = ++latestRequestRef.current
 
     try {
-      const res = await api.get<{ online: number }>('/api/admin/tradies/online-count')
+      const res = await api.get<{ tradies: { online: number } }>('/api/admin/stats')
       if (requestId !== latestRequestRef.current) return
 
-      setOnline(res.data.online)
+      setOnline(res.data.tradies.online)
       setIsStale(false)
     } catch {
       if (requestId === latestRequestRef.current) setIsStale(true)
