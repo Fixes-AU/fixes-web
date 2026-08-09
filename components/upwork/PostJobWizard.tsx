@@ -34,6 +34,7 @@ import {
   Smartphone,
   CheckCircle2,
 } from 'lucide-react'
+import QRCode from 'qrcode'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
@@ -2316,6 +2317,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const wasAuthenticatedOnMount = useRef(isAuthenticated)
   const [pendingTimeValue, setPendingTimeValue] = useState<PreferredTime | null>(null)
   const [pendingScheduledFor, setPendingScheduledFor] = useState<string | undefined>(undefined)
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -2375,7 +2377,12 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         })
         .catch(() => setUseNewCard(true))
     }
-  }, [currentStep])
+    if (currentStep === 16 && !qrDataUrl) {
+      QRCode.toDataURL('https://fixesau.com/app/fixes', { width: 128, margin: 1 })
+        .then(setQrDataUrl)
+        .catch(() => {})
+    }
+  }, [currentStep, qrDataUrl])
 
   useEffect(() => {
     if (existingJobId) {
@@ -3587,13 +3594,17 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
               </div>
               <div className="inline-block bg-white p-3 rounded-xl border shadow-sm">
                 <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent('https://fixesau.com/app/fixes')}`}
-                    alt="QR code to download Fixes app"
-                    width={128}
-                    height={128}
-                    className="rounded"
-                  />
+                  {qrDataUrl ? (
+                    <img
+                      src={qrDataUrl}
+                      alt="QR code to download Fixes app"
+                      width={128}
+                      height={128}
+                      className="rounded"
+                    />
+                  ) : (
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                  )}
                 </div>
               </div>
             </div>
