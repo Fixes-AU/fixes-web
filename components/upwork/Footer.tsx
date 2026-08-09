@@ -34,7 +34,7 @@ const footerLinks: Record<string, FooterLink[]> = {
     { label: "Help & support", href: "/support" },
     { label: "Fixes reviews", href: "/reviews" },
     { label: "Resources", href: "/resources" },
-    { label: "Blog", href: "/blog" },
+    { label: "Blog", href: "https://blog.fixesau.com" },
     { label: "Community", href: "/community" },
   ],
   Company: [

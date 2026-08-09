@@ -25,7 +25,7 @@ const navItems = [
     label: "Why Fixes",
     items: [
       { title: "About Us", href: "/about-us", desc: "Our mission and team" },
-      { title: "Blog", href: "/blog", desc: "Latest news and updates" },
+      { title: "Blog", href: "https://blog.fixesau.com", desc: "Latest news and updates" },
       { title: "Community Impact", href: "/community-impact", desc: "How we help the community" },
       { title: "Investors", href: "/investors", desc: "Invest in Fixes" },
     ],
