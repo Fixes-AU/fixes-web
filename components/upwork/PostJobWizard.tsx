@@ -3630,16 +3630,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   )}
                 </div>
               </div>
-              {magicToken && (
-                <p className="text-xs text-green-600 mt-2">Auto-login enabled — you&apos;ll be signed in automatically</p>
-              )}
             </div>
 
             <p className="text-xs text-(--upwork-gray)">
-              {magicToken
-                ? <>Scan the QR code or download the app — you&apos;ll be logged in automatically and taken to your quote.</>
-                : <>Log in with <strong className="text-(--upwork-navy)">{user?.email || authEmail}</strong> in the app to see your quote and complete your booking.</>
-              }
+              Download the app and log in with <strong className="text-(--upwork-navy)">{user?.email || authEmail}</strong> — your quote will be waiting for you.
             </p>
 
             <p className="text-xs text-amber-600">

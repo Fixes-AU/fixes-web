@@ -56,7 +56,10 @@ function OpenAppContent() {
     }
   }, [token, jobId, email])
 
-  const storeUrl = platform === 'ios' ? APP_STORE_URL : PLAY_STORE_URL
+  const playStoreWithReferrer = (token || jobId)
+    ? `${PLAY_STORE_URL}&referrer=${encodeURIComponent(`token=${token}&jobId=${jobId}&email=${email}`)}`
+    : PLAY_STORE_URL
+  const storeUrl = platform === 'ios' ? APP_STORE_URL : playStoreWithReferrer
 
   const handleStoreRedirect = () => {
     window.location.href = storeUrl

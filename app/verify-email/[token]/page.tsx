@@ -65,15 +65,19 @@ export default function VerifyEmailPage() {
   const [state, setState] = useState<State>('loading')
   const [countdown, setCountdown] = useState(5)
   const [role, setRole] = useState<'client' | 'tradie' | null>(null)
+  const [hasPendingJob, setHasPendingJob] = useState(false)
   const isMobile = useIsMobile()
 
   useEffect(() => {
     async function verify() {
       try {
-        const res = await api.get<{ message: string; role?: string }>(`/api/auth/verify-email/${token}`, true)
+        const res = await api.get<{ message: string; role?: string; hasPendingJob?: boolean }>(`/api/auth/verify-email/${token}`, true)
         
         if (res.data.role) {
           setRole(res.data.role as 'client' | 'tradie')
+        }
+        if (res.data.hasPendingJob) {
+          setHasPendingJob(true)
         }
 
         if (res.data.message === 'Email already verified') {
@@ -92,6 +96,7 @@ export default function VerifyEmailPage() {
     if (state !== 'success' && state !== 'already_verified') return
     if (role === 'tradie') return
     if (isMobile) return
+    if (hasPendingJob) return
 
     const interval = setInterval(() => {
       setCountdown((c) => {
@@ -103,7 +108,7 @@ export default function VerifyEmailPage() {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [state, role, isMobile, router])
+  }, [state, role, isMobile, hasPendingJob, router])
 
   return (
     <div className="min-h-screen bg-[#f9faf9] flex items-center justify-center px-4">
@@ -133,6 +138,13 @@ export default function VerifyEmailPage() {
               <div className="mt-4 space-y-4">
                 <p className="text-sm text-gray-500">
                   You're all set. Open the Fixes app to accept your quote and connect with a tradie.
+                </p>
+                <AppStoreButtons />
+              </div>
+            ) : hasPendingJob ? (
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-gray-500">
+                  Email verified! Open the <strong>Fixes app</strong> on your phone to accept your quote and get connected with a tradie.
                 </p>
                 <AppStoreButtons />
               </div>
@@ -167,6 +179,13 @@ export default function VerifyEmailPage() {
               <div className="mt-4 space-y-4">
                 <p className="text-sm text-gray-500">
                   Your email is already verified. Open the Fixes app to continue.
+                </p>
+                <AppStoreButtons />
+              </div>
+            ) : hasPendingJob ? (
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-gray-500">
+                  Your email is already verified. Open the <strong>Fixes app</strong> on your phone to accept your quote.
                 </p>
                 <AppStoreButtons />
               </div>
