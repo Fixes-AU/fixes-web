@@ -2384,8 +2384,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       if (createdJob?._id) params.set('jobId', createdJob._id)
       const email = user?.email || authEmail
       if (email) params.set('email', email)
-      const deepLink = `fixes://login?${params.toString()}`
-      QRCode.toDataURL(deepLink, { width: 128, margin: 1 })
+      const smartUrl = `${window.location.origin}/open-app?${params.toString()}`
+      QRCode.toDataURL(smartUrl, { width: 128, margin: 1 })
         .then(setQrDataUrl)
         .catch(() => {})
     }
