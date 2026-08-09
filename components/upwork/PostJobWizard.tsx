@@ -2317,6 +2317,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const wasAuthenticatedOnMount = useRef(isAuthenticated)
   const [pendingTimeValue, setPendingTimeValue] = useState<PreferredTime | null>(null)
   const [pendingScheduledFor, setPendingScheduledFor] = useState<string | undefined>(undefined)
+  const [magicToken, setMagicToken] = useState<string | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -2377,12 +2378,18 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         })
         .catch(() => setUseNewCard(true))
     }
-    if (currentStep === 16 && !qrDataUrl) {
-      QRCode.toDataURL('https://fixesau.com/app/fixes', { width: 128, margin: 1 })
+    if (currentStep === 16) {
+      const params = new URLSearchParams()
+      if (magicToken) params.set('token', magicToken)
+      if (createdJob?._id) params.set('jobId', createdJob._id)
+      const email = user?.email || authEmail
+      if (email) params.set('email', email)
+      const deepLink = `fixes://login?${params.toString()}`
+      QRCode.toDataURL(deepLink, { width: 128, margin: 1 })
         .then(setQrDataUrl)
         .catch(() => {})
     }
-  }, [currentStep, qrDataUrl])
+  }, [currentStep, magicToken, createdJob, user, authEmail])
 
   useEffect(() => {
     if (existingJobId) {
@@ -2634,6 +2641,14 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       setCreatedQuote(res.data.quote)
 
       if (!wasAuthenticatedOnMount.current) {
+        try {
+          const tokenRes = await api.post<{ token: string }>('/api/auth/magic-token', {
+            jobId: res.data.job._id,
+          })
+          setMagicToken(tokenRes.data.token)
+        } catch {
+          // Non-critical — app will fall back to email pre-fill
+        }
         setCurrentStep(16)
       } else {
         setCurrentStep(7)
@@ -2913,6 +2928,14 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
       if (!wasAuthenticatedOnMount.current) {
         setCreatedQuote(res.data.quote || null)
+        try {
+          const tokenRes = await api.post<{ token: string }>('/api/auth/magic-token', {
+            jobId: res.data.job._id,
+          })
+          setMagicToken(tokenRes.data.token)
+        } catch {
+          // Non-critical
+        }
         setCurrentStep(16)
       } else if (res.data.clientSecret) {
         setClientSecret(res.data.clientSecret)
@@ -3590,14 +3613,14 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             <div className="pt-4 border-t">
               <div className="flex items-center justify-center gap-2 text-sm text-(--upwork-gray) mb-3">
                 <Smartphone className="w-4 h-4" />
-                <span>Scan to download</span>
+                <span>Scan with your phone to open in the app</span>
               </div>
               <div className="inline-block bg-white p-3 rounded-xl border shadow-sm">
                 <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
                   {qrDataUrl ? (
                     <img
                       src={qrDataUrl}
-                      alt="QR code to download Fixes app"
+                      alt="QR code to open job in Fixes app"
                       width={128}
                       height={128}
                       className="rounded"
@@ -3607,10 +3630,20 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   )}
                 </div>
               </div>
+              {magicToken && (
+                <p className="text-xs text-green-600 mt-2">Auto-login enabled — you&apos;ll be signed in automatically</p>
+              )}
             </div>
 
             <p className="text-xs text-(--upwork-gray)">
-              Log in with <strong className="text-(--upwork-navy)">{user?.email || authEmail}</strong> in the app to see your quote and complete your booking.
+              {magicToken
+                ? <>Scan the QR code or download the app — you&apos;ll be logged in automatically and taken to your quote.</>
+                : <>Log in with <strong className="text-(--upwork-navy)">{user?.email || authEmail}</strong> in the app to see your quote and complete your booking.</>
+              }
+            </p>
+
+            <p className="text-xs text-amber-600">
+              Don&apos;t forget to verify your email to accept the quote. Check your inbox for a verification link.
             </p>
           </div>
         )}
