@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -30,6 +30,9 @@ import {
   Repeat,
   ListChecks,
   ClipboardList,
+  Download,
+  Smartphone,
+  CheckCircle2,
 } from 'lucide-react'
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { useAuth } from '@/contexts/auth-context'
@@ -2310,6 +2313,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [isAuthLoading, setIsAuthLoading] = useState(false)
   const { login, registerClient } = useAuth()
 
+  const wasAuthenticatedOnMount = useRef(isAuthenticated)
+  const [pendingTimeValue, setPendingTimeValue] = useState<PreferredTime | null>(null)
+  const [pendingScheduledFor, setPendingScheduledFor] = useState<string | undefined>(undefined)
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [createdJob, setCreatedJob] = useState<Job | null>(null)
@@ -2397,7 +2404,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const cleaningStepMap: Record<number, number> = { 10: 2, 14: 3, 11: 4, 4: 5, 12: 6, 13: 7 }
   const effectiveStep = isAgencyCategory
     ? (cleaningStepMap[currentStep] ?? currentStep)
-    : (currentStep === 15 ? 5 : currentStep === 26 ? 4 : currentStep)
+    : (currentStep === 15 ? 5 : currentStep === 16 ? 5 : currentStep === 26 ? 4 : currentStep)
   const effectiveTotalSteps = isAgencyCategory ? 7 : totalSteps
   const progress = Math.min((effectiveStep / effectiveTotalSteps) * 100, 100)
 
@@ -2507,7 +2514,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
   const handleSubmitJob = useCallback(async (timeValue: PreferredTime, scheduledForOverride?: string) => {
     if (!isAuthenticated) {
-      router.push('/login')
+      setPendingTimeValue(timeValue)
+      setPendingScheduledFor(scheduledForOverride)
+      setCurrentStep(15)
       return
     }
 
@@ -2532,11 +2541,53 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         {}
       )
 
+      let finalImages = images
+      const localFiles = images.filter((img): img is JobImage & { _localFile: File } =>
+        img.url.startsWith('blob:') && '_localFile' in img
+      )
+      if (localFiles.length > 0) {
+        const uploaded: JobImage[] = []
+        for (const img of localFiles) {
+          try {
+            const signRes = await api.post<SignedUploadResponse>('/api/uploads/sign', { folder: 'jobs' })
+            const signed = signRes.data
+            const formData = new FormData()
+            formData.append('file', img._localFile)
+            formData.append('api_key', signed.apiKey)
+            formData.append('timestamp', signed.timestamp.toString())
+            formData.append('signature', signed.signature)
+            formData.append('folder', signed.folder)
+
+            const cloudRes = await fetch(
+              `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
+              { method: 'POST', body: formData }
+            )
+            const cloudData = await cloudRes.json()
+
+            await api.post('/api/uploads/confirm', {
+              publicId: cloudData.public_id,
+              url: cloudData.secure_url,
+            })
+
+            uploaded.push({
+              url: cloudData.secure_url,
+              publicId: cloudData.public_id,
+              uploadedAt: new Date().toISOString(),
+            })
+          } catch {
+            // Skip failed uploads
+          }
+        }
+        const remoteImages = images.filter(img => !img.url.startsWith('blob:'))
+        finalImages = [...remoteImages, ...uploaded]
+        setImages(finalImages)
+      }
+
       const res = await api.post<{ job: Job; quote: Quote }>('/api/jobs', {
         title,
         description,
         category: category || 'other',
-        images,
+        images: finalImages,
         location: {
           address,
           suburb,
@@ -2574,7 +2625,12 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
       setCreatedJob(res.data.job)
       setCreatedQuote(res.data.quote)
-      setCurrentStep(7)
+
+      if (!wasAuthenticatedOnMount.current) {
+        setCurrentStep(16)
+      } else {
+        setCurrentStep(7)
+      }
     } catch (err) {
       setCurrentStep(5)
       if (err instanceof ApiError) {
@@ -2765,8 +2821,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }
 
   const handleCleaningAccept = useCallback(async () => {
-    if (!cleaningQuote || !isAuthenticated) {
-      if (!isAuthenticated) router.push('/login')
+    if (!cleaningQuote) return
+    if (!isAuthenticated) {
+      setCurrentStep(15)
       return
     }
 
@@ -2847,7 +2904,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         setCreatedQuote(res.data.quote)
       }
 
-      if (res.data.clientSecret) {
+      if (!wasAuthenticatedOnMount.current) {
+        setCreatedQuote(res.data.quote || null)
+        setCurrentStep(16)
+      } else if (res.data.clientSecret) {
         setClientSecret(res.data.clientSecret)
         setAcceptedPrice(cleaningQuote.totalEstimate)
         setCurrentStep(8)
@@ -2882,7 +2942,9 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } else if (currentStep === 14) {
       setCurrentStep(10)
     } else if (currentStep === 15) {
-      setCurrentStep(4)
+      setCurrentStep(5)
+    } else if (currentStep === 16) {
+      setCurrentStep(5)
     } else if (currentStep === 5) {
       setCurrentStep(4)
     } else if (currentStep === 12) {
@@ -2934,8 +2996,6 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     if (coords) {
       if (isAgencyCategory) {
         setCurrentStep(12)
-      } else if (!isAuthenticated) {
-        setCurrentStep(15)
       } else {
         setCurrentStep(5)
       }
@@ -2991,15 +3051,13 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     }
     if (isAgencyCategory) {
       setCurrentStep(12)
-    } else if (!isAuthenticated) {
-      setCurrentStep(15)
     } else {
       setCurrentStep(5)
     }
   }
 
 
-  if (isAuthenticated && user?.role === 'client' && !user?.isEmailVerified) {
+  if (isAuthenticated && user?.role === 'client' && !user?.isEmailVerified && wasAuthenticatedOnMount.current) {
     return (
       <div className="min-h-screen bg-[#f9faf9] flex items-center justify-center px-4">
         <div className="bg-white border border-amber-200 rounded-2xl p-8 sm:p-10 w-full max-w-md text-center shadow-sm">
@@ -3277,7 +3335,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             Back
           </button>
           <span className="text-sm text-[var(--upwork-gray)]">
-            Step {currentStep === 25 ? '3.5' : currentStep === 15 ? 5 : effectiveStep} of {effectiveTotalSteps}
+            Step {currentStep === 25 ? '3.5' : currentStep === 15 || currentStep === 16 ? 5 : effectiveStep} of {effectiveTotalSteps}
           </span>
         </div>
         <div className="h-1 bg-gray-200">
@@ -3451,7 +3509,11 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   } else {
                     await login(authEmail, authPassword)
                   }
-                  setCurrentStep(5)
+                  if (pendingTimeValue) {
+                    handleSubmitJob(pendingTimeValue, pendingScheduledFor)
+                  } else {
+                    setCurrentStep(5)
+                  }
                 } catch (err: unknown) {
                   setAuthError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
                 } finally {
@@ -3474,6 +3536,70 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
               ) : (
                 <>Don&apos;t have an account?{' '}<button type="button" onClick={() => { setAuthGateMode('signup'); setAuthError('') }} className="text-(--upwork-green) font-medium hover:underline">Sign up free</button></>
               )}
+            </p>
+          </div>
+        )}
+
+        {currentStep === 16 && createdQuote && (
+          <div className="max-w-lg mx-auto text-center space-y-6">
+            <div className="flex justify-center">
+              <CheckCircle2 className="w-16 h-16 text-green-500" />
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-(--upwork-navy)">
+              Your Quote is Ready!
+            </h1>
+
+            {createdQuote.options[0] && (
+              <div className="border rounded-2xl overflow-hidden">
+                <PremiumQuoteCard option={createdQuote.options[0]} />
+              </div>
+            )}
+
+            <p className="text-(--upwork-gray) text-sm leading-relaxed">
+              Download the <strong>Fixes</strong> app to accept your quote, make payment, and get connected with a verified tradie.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <a
+                href="https://apps.apple.com/au/app/fixes/id6777596020"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                App Store
+              </a>
+              <a
+                href="https://play.google.com/store/apps/details?id=com.fixesau.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.36l2.473 1.432a1 1 0 0 1 0 1.744l-2.473 1.432-2.546-2.546 2.546-2.062zM5.864 2.658L16.8 9.285l-2.302 2.302L5.864 2.658z"/></svg>
+                Google Play
+              </a>
+            </div>
+
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-center gap-2 text-sm text-(--upwork-gray) mb-3">
+                <Smartphone className="w-4 h-4" />
+                <span>Scan to download</span>
+              </div>
+              <div className="inline-block bg-white p-3 rounded-xl border shadow-sm">
+                <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent('https://fixesau.com/app/fixes')}`}
+                    alt="QR code to download Fixes app"
+                    width={128}
+                    height={128}
+                    className="rounded"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-(--upwork-gray)">
+              Log in with <strong className="text-(--upwork-navy)">{user?.email || authEmail}</strong> in the app to see your quote and complete your booking.
             </p>
           </div>
         )}
