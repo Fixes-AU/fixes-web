@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Smartphone, Download, Loader2 } from 'lucide-react'
 
@@ -15,7 +15,7 @@ function getPlatform(): 'ios' | 'android' | 'desktop' {
   return 'desktop'
 }
 
-export default function OpenAppPage() {
+function OpenAppContent() {
   const searchParams = useSearchParams()
   const token = searchParams.get('token') || ''
   const jobId = searchParams.get('jobId') || ''
@@ -128,5 +128,19 @@ export default function OpenAppPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function OpenAppPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f9faf9] flex items-center justify-center px-4">
+          <Loader2 className="w-8 h-8 text-[var(--upwork-green)] animate-spin" />
+        </div>
+      }
+    >
+      <OpenAppContent />
+    </Suspense>
   )
 }
