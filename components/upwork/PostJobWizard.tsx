@@ -2512,8 +2512,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [])
 
 
-  const handleSubmitJob = useCallback(async (timeValue: PreferredTime, scheduledForOverride?: string) => {
-    if (!isAuthenticated) {
+  const handleSubmitJob = useCallback(async (timeValue: PreferredTime, scheduledForOverride?: string, forceAuthenticated = false) => {
+    if (!isAuthenticated && !forceAuthenticated) {
       setPendingTimeValue(timeValue)
       setPendingScheduledFor(scheduledForOverride)
       setCurrentStep(15)
@@ -3486,7 +3486,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
               </div>
               {authGateMode === 'signup' && (
                 <div>
-                  <label htmlFor="auth-phone" className="block text-sm font-medium text-(--upwork-navy) mb-1.5">Phone <span className="text-gray-400 font-normal">(optional)</span></label>
+                  <label htmlFor="auth-phone" className="block text-sm font-medium text-(--upwork-navy) mb-1.5">Phone</label>
                   <input
                     id="auth-phone"
                     type="tel"
@@ -3510,7 +3510,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                     await login(authEmail, authPassword)
                   }
                   if (pendingTimeValue) {
-                    handleSubmitJob(pendingTimeValue, pendingScheduledFor)
+                    handleSubmitJob(pendingTimeValue, pendingScheduledFor, true)
                   } else {
                     setCurrentStep(5)
                   }
@@ -3520,7 +3520,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   setIsAuthLoading(false)
                 }
               }}
-              disabled={isAuthLoading || !authEmail || !authPassword || (authGateMode === 'signup' && !authName)}
+              disabled={isAuthLoading || !authEmail || !authPassword || (authGateMode === 'signup' && (!authName || !authPhone))}
               className="w-full mt-6 bg-(--upwork-green) hover:bg-(--upwork-green-dark) disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {isAuthLoading ? (

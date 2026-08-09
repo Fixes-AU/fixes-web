@@ -128,7 +128,11 @@ async function apiFetch<T>(
       res = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions)
     } else {
       if (typeof window !== 'undefined') {
-        window.location.href = '/login'
+        const protectedPrefixes = ['/dashboard', '/admin', '/agency', '/cleaning-admin', '/admin-select']
+        const isProtectedPage = protectedPrefixes.some(p => window.location.pathname.startsWith(p))
+        if (isProtectedPage) {
+          window.location.href = '/login'
+        }
       }
       throw new Error('Session expired. Please log in again.')
     }
