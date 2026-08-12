@@ -3,11 +3,36 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, Megaphone, Send, Users, Wrench, Globe } from 'lucide-react'
+import {
+  Bell,
+  CheckCircle2,
+  Globe,
+  Megaphone,
+  MessageSquareText,
+  Send,
+  Users,
+  Wrench,
+} from 'lucide-react'
 import { api } from '@/lib/api'
 import AdminActionConfirmDialog from '@/components/admin/AdminActionConfirmDialog'
 
 type Target = 'tradie' | 'client' | 'all'
+
+type SmsTestResult = {
+  phone: string
+  sid: string
+  status: string | null
+}
+
+const SMS_TEST_MESSAGE = 'Fixes: Your SMS configuration test was successful.'
+
+const isAustralianMobile = (value: string) => {
+  const input = value.trim()
+  if (!/^[\d\s()+.-]+$/.test(input)) return false
+
+  const digits = input.replace(/\D/g, '')
+  return /^04\d{8}$/.test(digits) || /^614\d{8}$/.test(digits)
+}
 
 const TARGET_OPTIONS: { value: Target; label: string; desc: string; icon: React.ReactNode }[] = [
   {
@@ -38,8 +63,14 @@ export default function AdminNotificationsPage() {
   const [result,   setResult]   = useState<{ total: number; failures: number } | null>(null)
   const [error,    setError]    = useState<string | null>(null)
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
+  const [smsPhone, setSmsPhone] = useState('')
+  const [smsLoading, setSmsLoading] = useState(false)
+  const [smsResult, setSmsResult] = useState<SmsTestResult | null>(null)
+  const [smsError, setSmsError] = useState<string | null>(null)
+  const [showSmsPasswordDialog, setShowSmsPasswordDialog] = useState(false)
 
   const canSend = title.trim() && body.trim() && !loading
+  const canSendSms = isAustralianMobile(smsPhone) && !smsLoading
 
   const handleSend = () => {
     if (!canSend) return
@@ -66,6 +97,38 @@ export default function AdminNotificationsPage() {
       setError(err?.message ?? 'Something went wrong')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSmsTest = () => {
+    if (!canSendSms) return
+    setSmsResult(null)
+    setSmsError(null)
+    setShowSmsPasswordDialog(true)
+  }
+
+  const executeSmsTest = async (token: string) => {
+    setSmsLoading(true)
+    setSmsResult(null)
+    setSmsError(null)
+
+    try {
+      const res = await api.raw<{
+        success: boolean
+        data: SmsTestResult
+        message: string
+      }>('/api/admin/notifications/sms-test', {
+        method: 'POST',
+        body: { phone: smsPhone.trim() },
+        headers: { 'X-Admin-Action-Token': token },
+      })
+      setSmsResult(res.data)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'The test SMS could not be sent.'
+      setSmsError(message)
+      throw err
+    } finally {
+      setSmsLoading(false)
     }
   }
 
@@ -173,6 +236,83 @@ export default function AdminNotificationsPage() {
         {loading ? 'Sending…' : `Send to ${TARGET_OPTIONS.find(o => o.value === target)?.label}`}
       </button>
 
+      <section className="mt-12 border-t border-gray-200 pt-8">
+        <div className="flex items-start gap-3 mb-5">
+          <div className="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
+            <MessageSquareText className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Test SMS Delivery</h2>
+            <p className="text-sm text-gray-500">
+              Send the fixed test message to one Australian mobile number only.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
+          <div>
+            <label htmlFor="sms-test-phone" className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Recipient mobile number
+            </label>
+            <input
+              id="sms-test-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={smsPhone}
+              onChange={event => {
+                setSmsPhone(event.target.value.slice(0, 24))
+                setSmsResult(null)
+                setSmsError(null)
+              }}
+              placeholder="04XX XXX XXX"
+              aria-describedby="sms-test-phone-help"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+            />
+            <p id="sms-test-phone-help" className="text-xs text-gray-500 mt-1.5">
+              Accepted formats: 04XX XXX XXX or +61 4XX XXX XXX.
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+            <p className="text-xs font-semibold uppercase text-gray-500 mb-1">Fixed message</p>
+            <p className="text-sm text-gray-700">{SMS_TEST_MESSAGE}</p>
+          </div>
+
+          <button
+            onClick={handleSmsTest}
+            disabled={!canSendSms}
+            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <Send className="w-4 h-4" />
+            {smsLoading ? 'Sending test...' : 'Send Test SMS'}
+          </button>
+
+          {smsResult && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-700">
+                <CheckCircle2 className="w-4 h-4" />
+                <p className="text-sm font-semibold">Test SMS accepted by Twilio</p>
+              </div>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs text-green-700">
+                <dt>Recipient</dt>
+                <dd className="font-medium">{smsResult.phone}</dd>
+                <dt>Status</dt>
+                <dd className="font-medium">{smsResult.status || 'queued'}</dd>
+                <dt>Message SID</dt>
+                <dd className="font-mono break-all">{smsResult.sid}</dd>
+              </dl>
+            </div>
+          )}
+
+          {smsError && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{smsError}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
       <AdminActionConfirmDialog
         open={showPasswordDialog}
         onOpenChange={setShowPasswordDialog}
@@ -183,6 +323,18 @@ export default function AdminNotificationsPage() {
         confirmLabel="Send Broadcast"
         onConfirm={executeSend}
         onSuccess={() => setShowPasswordDialog(false)}
+      />
+
+      <AdminActionConfirmDialog
+        open={showSmsPasswordDialog}
+        onOpenChange={setShowSmsPasswordDialog}
+        title="Send Test SMS"
+        description={`This sends one test SMS to ${smsPhone.trim()}. Enter your password to confirm.`}
+        action="notification:sms_test"
+        variant="default"
+        confirmLabel="Send Test SMS"
+        onConfirm={executeSmsTest}
+        onSuccess={() => setShowSmsPasswordDialog(false)}
       />
     </div>
   )
