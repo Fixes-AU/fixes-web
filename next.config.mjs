@@ -37,7 +37,7 @@ const nextConfig = {
       "font-src 'self' data:",
       `connect-src 'self' ${apiUrl} ${wsUrl} https://api.cloudinary.com https://*.stripe.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://maps.googleapis.com https://routes.googleapis.com https://places.googleapis.com`,
       "frame-src https://js.stripe.com https://*.stripe.com",
-      "media-src 'self'",
+      "media-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' https://*.stripe.com",
