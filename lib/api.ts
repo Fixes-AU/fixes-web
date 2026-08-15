@@ -147,6 +147,27 @@ async function apiFetch<T>(
   return json as T
 }
 
+async function apiFetchBlob(endpoint: string): Promise<Blob> {
+  const request = () => {
+    const token = getAccessToken()
+    return fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+  }
+  let res = await request()
+  if (res.status === 401 && await attemptTokenRefresh()) res = await request()
+  if (!res.ok) {
+    let message = 'The requested file could not be loaded.'
+    let data: Record<string, unknown> = {}
+    try {
+      data = await res.json() as Record<string, unknown>
+      if (typeof data.message === 'string') message = data.message
+    } catch {}
+    throw new ApiError(message, res.status, data)
+  }
+  return res.blob()
+}
+
 
 export class ApiError extends Error {
   status: number
@@ -205,5 +226,9 @@ export const api = {
 
   raw<T>(endpoint: string, options?: FetchOptions): Promise<T> {
     return apiFetch<T>(endpoint, options)
+  },
+
+  getBlob(endpoint: string): Promise<Blob> {
+    return apiFetchBlob(endpoint)
   },
 }

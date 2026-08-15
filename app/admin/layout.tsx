@@ -31,6 +31,7 @@ import {
   FileCheck2,
   Radio,
   DollarSign,
+  PhoneCall,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
@@ -78,6 +79,7 @@ const sidebarGroups: SidebarGroup[] = [
       { href: '/admin/bug-reports', label: 'Bug Reports', icon: Bug, permission: 'view:bug_reports' },
       { href: '/admin/notifications', label: 'Notifications', icon: Bell, permission: 'view:notifications' },
       { href: '/admin/ai-analytics', label: 'AI Analytics', icon: Bot, permission: 'view:ai_analytics' },
+      { href: '/admin/voice-assistant', label: 'Call Assistant', icon: PhoneCall, permission: 'view:voice_calls' },
       { href: '/admin/delete-requests', label: 'Delete Requests', icon: Trash2, permission: 'view:delete_requests' },
     ],
   },
