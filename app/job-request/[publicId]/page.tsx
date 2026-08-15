@@ -108,6 +108,58 @@ const PROPERTY_TYPES = [
 ] as const
 
 const fieldClass = 'w-full rounded-xl border border-gray-300 bg-white px-3.5 py-3 text-[16px] text-[var(--upwork-navy)] outline-none transition focus:border-transparent focus:ring-2 focus:ring-[var(--upwork-green)]'
+const ADDRESS_VERIFICATION_MESSAGE = 'We could not confidently verify this address. Please choose the matching address suggestion, then generate your quote again.'
+
+const hasVerifiedCoordinates = (location: DraftLocation) => (
+  Number.isFinite(location.coordinates?.lat) && Number.isFinite(location.coordinates?.lng)
+)
+
+const geocodeDraftLocation = async (location: DraftLocation): Promise<DraftLocation> => {
+  if (hasVerifiedCoordinates(location)) return location
+  if (typeof window === 'undefined' || !window.google?.maps?.Geocoder) {
+    throw new Error(ADDRESS_VERIFICATION_MESSAGE)
+  }
+
+  const query = [
+    location.address,
+    location.suburb,
+    [location.state, location.postcode].filter(Boolean).join(' '),
+    'Australia',
+  ].filter(Boolean).join(', ')
+
+  const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+    new google.maps.Geocoder().geocode(
+      { address: query, componentRestrictions: { country: 'AU' } },
+      (matches, status) => {
+        if (status === google.maps.GeocoderStatus.OK && matches?.length) resolve(matches)
+        else reject(new Error(ADDRESS_VERIFICATION_MESSAGE))
+      }
+    )
+  })
+
+  const match = results.find((result) => !result.partial_match && result.geometry?.location)
+  if (!match) throw new Error(ADDRESS_VERIFICATION_MESSAGE)
+
+  const component = (type: string) => match.address_components.find((item) => item.types.includes(type))
+  const country = component('country')?.short_name?.toUpperCase()
+  const matchedState = component('administrative_area_level_1')?.short_name?.toUpperCase()
+  const matchedPostcode = component('postal_code')?.long_name?.trim()
+  if (
+    country !== 'AU' ||
+    (location.state && matchedState !== location.state.trim().toUpperCase()) ||
+    (location.postcode && matchedPostcode !== location.postcode.trim())
+  ) {
+    throw new Error(ADDRESS_VERIFICATION_MESSAGE)
+  }
+
+  return {
+    ...location,
+    coordinates: {
+      lat: match.geometry.location.lat(),
+      lng: match.geometry.location.lng(),
+    },
+  }
+}
 
 const normalizeAutoCareDetails = (value: AutoCareDetails | null): AutoCareDetails => ({
   serviceType: value?.serviceType || 'car_detailing',
@@ -269,31 +321,32 @@ export default function VoiceJobRequestPage() {
     updatePayload('diagnosticAnswers', { ...payload?.diagnosticAnswers, [field]: value })
   }
 
-  const saveDraft = async () => {
-    if (!payload || !draft) throw new Error('Draft is not loaded')
+  const saveDraft = async (payloadOverride?: DraftPayload) => {
+    const draftPayload = payloadOverride || payload
+    if (!draftPayload || !draft) throw new Error('Draft is not loaded')
     setSaving(true)
     setError('')
     try {
       const patch = {
-        category: payload.category,
-        title: payload.title,
-        description: payload.description,
-        location: payload.location,
-        preferredTime: payload.preferredTime,
-        scheduledFor: payload.preferredTime === 'scheduled' && payload.scheduledFor
+        category: draftPayload.category,
+        title: draftPayload.title,
+        description: draftPayload.description,
+        location: draftPayload.location,
+        preferredTime: draftPayload.preferredTime,
+        scheduledFor: draftPayload.preferredTime === 'scheduled' && draftPayload.scheduledFor
           ? datetimeLocalInStateToISO(
-              payload.scheduledFor.endsWith('Z')
-                ? formatDatetimeLocalInState(new Date(payload.scheduledFor), payload.location.state)
-                : payload.scheduledFor,
-              payload.location.state
+              draftPayload.scheduledFor.endsWith('Z')
+                ? formatDatetimeLocalInState(new Date(draftPayload.scheduledFor), draftPayload.location.state)
+                : draftPayload.scheduledFor,
+              draftPayload.location.state
             )
           : null,
-        diagnosticAnswers: payload.diagnosticAnswers || {},
-        autoCareDetails: payload.category === 'auto_care' ? autoCareDetails : null,
+        diagnosticAnswers: draftPayload.diagnosticAnswers || {},
+        autoCareDetails: draftPayload.category === 'auto_care' ? normalizeAutoCareDetails(draftPayload.autoCareDetails) : null,
         isAgencyManaged: isManaged,
-        cleaningType: isManaged ? payload.cleaningType : null,
-        cleaningTasks: isManaged ? payload.cleaningTasks : [],
-        propertyDetails: isManaged ? payload.propertyDetails : {},
+        cleaningType: isManaged ? draftPayload.cleaningType : null,
+        cleaningTasks: isManaged ? draftPayload.cleaningTasks : [],
+        propertyDetails: isManaged ? draftPayload.propertyDetails : {},
       }
       const response = await api.raw<{ data: { draft: VoiceDraft } }>(`/api/voice-assistant/drafts/${publicId}`, {
         method: 'PATCH',
@@ -394,11 +447,14 @@ export default function VoiceJobRequestPage() {
   }
 
   const finalize = async () => {
-    if (!user || user.role !== 'client') return
+    if (!user || user.role !== 'client' || !payload) return
     setFinalizing(true)
     setError('')
     try {
-      await saveDraft()
+      const verifiedLocation = await geocodeDraftLocation(payload.location)
+      const verifiedPayload = { ...payload, location: verifiedLocation }
+      if (verifiedPayload !== payload) setPayload(verifiedPayload)
+      await saveDraft(verifiedPayload)
       const keyName = `fixes:voice-finalize:${publicId}`
       let idempotencyKey = sessionStorage.getItem(keyName)
       if (!idempotencyKey) {
@@ -413,7 +469,15 @@ export default function VoiceJobRequestPage() {
       setResult(response.data)
       sessionStorage.removeItem(capabilityStorageKey(publicId))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'The job and quote could not be created.')
+      const message = requestError instanceof ApiError
+        ? requestError.message
+        : requestError instanceof Error && requestError.message === ADDRESS_VERIFICATION_MESSAGE
+          ? requestError.message
+          : 'The job and quote could not be created.'
+      setError(message)
+      if (message === ADDRESS_VERIFICATION_MESSAGE) {
+        document.getElementById('job-address-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
     } finally {
       setFinalizing(false)
     }
@@ -579,7 +643,7 @@ export default function VoiceJobRequestPage() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+          <div id="job-address-card" className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
             <h2 className="text-lg font-bold text-[var(--upwork-navy)]">Job address</h2>
             <p className="mt-1 text-sm text-gray-600">Select an Australian address so Fixes can verify its map coordinates.</p>
             <div className="mt-5"><AddressAutocomplete defaultValue={[payload.location.address, payload.location.suburb, payload.location.state, payload.location.postcode].filter(Boolean).join(', ')} onManualMode={() => document.getElementById('manual-address')?.focus()} onSelect={(address) => updatePayload('location', { address: address.address, suburb: address.suburb, postcode: address.postcode, state: address.state, coordinates: { lat: address.lat, lng: address.lng } })} /></div>
