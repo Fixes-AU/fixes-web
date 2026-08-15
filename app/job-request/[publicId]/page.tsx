@@ -10,10 +10,14 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Eye,
+  EyeOff,
   ImagePlus,
   Loader2,
   LockKeyhole,
   MapPin,
+  Mail,
+  RefreshCw,
   ShieldCheck,
   X,
 } from 'lucide-react'
@@ -94,6 +98,7 @@ type FinalizationResult = {
   quote?: { options?: QuoteOption[] }
   clientSecret?: string
 }
+type VerificationStatus = { tone: 'info' | 'success' | 'error'; message: string }
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 const CATEGORIES = Object.entries(CATEGORY_LABELS)
@@ -257,11 +262,53 @@ function PaymentPanel({ amount, jobId, onDone }: { amount: number; jobId: string
   )
 }
 
+function EmailVerificationPanel({
+  email,
+  status,
+  resending,
+  checking,
+  resendCooldown,
+  onResend,
+  onRefresh,
+}: {
+  email: string
+  status: VerificationStatus | null
+  resending: boolean
+  checking: boolean
+  resendCooldown: number
+  onResend: () => void
+  onRefresh: () => void
+}) {
+  const statusClass = status?.tone === 'error'
+    ? 'text-red-700'
+    : status?.tone === 'success'
+      ? 'text-green-700'
+      : 'text-amber-700'
+
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+      <p className="flex items-center gap-2 font-semibold text-amber-900"><Mail className="h-5 w-5" /> Verify your email</p>
+      <p className="mt-2 text-sm text-amber-800">We sent a verification link to <strong>{email}</strong>. You can generate and review your quote now, but you must verify your email before accepting it or paying.</p>
+      {status && <p role={status.tone === 'error' ? 'alert' : 'status'} className={`mt-3 text-xs font-semibold ${statusClass}`}>{status.message}</p>}
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <button type="button" onClick={onResend} disabled={resending || resendCooldown > 0} className="flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-white px-3 py-2.5 text-sm font-semibold text-amber-900 disabled:cursor-not-allowed disabled:opacity-50">
+          {resending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend email'}
+        </button>
+        <button type="button" onClick={onRefresh} disabled={checking} className="flex items-center justify-center gap-2 rounded-xl bg-amber-700 px-3 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+          <RefreshCw className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} />
+          I&apos;ve verified
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function VoiceJobRequestPage() {
   const params = useParams<{ publicId: string }>()
   const publicId = params.publicId
   const router = useRouter()
-  const { user, isLoading: authLoading, login, registerClient } = useAuth()
+  const { user, isLoading: authLoading, login, registerClient, refreshUser } = useAuth()
   const [capability, setCapability] = useState('')
   const [draft, setDraft] = useState<VoiceDraft | null>(null)
   const [payload, setPayload] = useState<DraftPayload | null>(null)
@@ -273,8 +320,14 @@ export default function VoiceJobRequestPage() {
   const [error, setError] = useState('')
   const [savedMessage, setSavedMessage] = useState('')
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
-  const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '' })
+  const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' })
   const [authWorking, setAuthWorking] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null)
+  const [resendingVerification, setResendingVerification] = useState(false)
+  const [checkingVerification, setCheckingVerification] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const [result, setResult] = useState<FinalizationResult | null>(null)
 
   // Send both supported transports while the draft is anonymous. After login,
@@ -287,6 +340,29 @@ export default function VoiceJobRequestPage() {
   const isManaged = payload ? ['cleaning', 'waste_removal'].includes(payload.category) : false
   const selectedTemplate = templates.find((item) => item.cleaningType === payload?.cleaningType) || null
   const autoCareDetails = normalizeAutoCareDetails(payload?.autoCareDetails || null)
+
+  const refreshVerificationStatus = useCallback(async () => {
+    try {
+      const response = await api.get<{ user: { isEmailVerified: boolean } }>('/api/auth/me')
+      if (!response.data.user.isEmailVerified) return false
+      await refreshUser()
+      return true
+    } catch {
+      return false
+    }
+  }, [refreshUser])
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = window.setInterval(() => setResendCooldown((current) => Math.max(0, current - 1)), 1000)
+    return () => window.clearInterval(timer)
+  }, [resendCooldown])
+
+  useEffect(() => {
+    if (!user || user.role !== 'client' || user.isEmailVerified) return
+    const timer = window.setInterval(() => { void refreshVerificationStatus() }, 15_000)
+    return () => window.clearInterval(timer)
+  }, [refreshVerificationStatus, user])
 
   useEffect(() => {
     if (!publicId) return
@@ -459,23 +535,84 @@ export default function VoiceJobRequestPage() {
   }
 
   const submitAuth = async () => {
-    setAuthWorking(true)
     setError('')
+    const name = authForm.name.trim()
+    const email = authForm.email.trim().toLowerCase()
+    const phone = authForm.phone.trim()
+
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+    if (authMode === 'register') {
+      if (!name) {
+        setError('Please enter your full name.')
+        return
+      }
+      if (authForm.password.length < 8) {
+        setError('Password must be at least 8 characters.')
+        return
+      }
+      if (authForm.password !== authForm.confirmPassword) {
+        setError('Passwords do not match.')
+        return
+      }
+    }
+
+    setAuthWorking(true)
     try {
       if (authMode === 'login') {
-        await login(authForm.email, authForm.password)
+        const signedInUser = await login(email, authForm.password)
+        if (!signedInUser.isEmailVerified) {
+          setVerificationStatus({ tone: 'info', message: 'Verify your email before accepting or paying for the quote.' })
+        }
       } else {
         await registerClient({
-          name: authForm.name,
-          email: authForm.email,
+          name,
+          email,
           password: authForm.password,
-          phone: authForm.phone || undefined,
+          phone: phone || undefined,
         })
+        setVerificationStatus({ tone: 'success', message: 'Account created. Check your inbox for the verification link.' })
       }
+      setAuthForm((current) => ({ ...current, name, email, phone, password: '', confirmPassword: '' }))
     } catch (requestError) {
-      setError(requestError instanceof ApiError ? requestError.message : 'Account authentication failed.')
+      if (authMode === 'register' && requestError instanceof ApiError && requestError.status === 409) {
+        setAuthMode('login')
+        setAuthForm((current) => ({ ...current, email, password: '', confirmPassword: '' }))
+        setError('An account already exists for this email. Log in to continue with your saved draft.')
+      } else {
+        setError(requestError instanceof ApiError ? requestError.message : 'Account authentication failed.')
+      }
     } finally {
       setAuthWorking(false)
+    }
+  }
+
+  const resendVerification = async () => {
+    setResendingVerification(true)
+    setVerificationStatus(null)
+    try {
+      await api.post('/api/auth/resend-verification', {})
+      setResendCooldown(60)
+      setVerificationStatus({ tone: 'success', message: 'A new verification email was sent. Check your inbox and spam folder.' })
+    } catch (requestError) {
+      setVerificationStatus({ tone: 'error', message: requestError instanceof ApiError ? requestError.message : 'The verification email could not be resent.' })
+    } finally {
+      setResendingVerification(false)
+    }
+  }
+
+  const checkVerification = async () => {
+    setCheckingVerification(true)
+    setVerificationStatus(null)
+    try {
+      const verified = await refreshVerificationStatus()
+      if (!verified) {
+        setVerificationStatus({ tone: 'info', message: 'Your email is not verified yet. Use the link in your inbox, then check again.' })
+      }
+    } finally {
+      setCheckingVerification(false)
     }
   }
 
@@ -553,7 +690,7 @@ export default function VoiceJobRequestPage() {
             <CheckCircle2 className="mb-4 h-12 w-12 text-[var(--upwork-green)]" />
             <h1 className="text-2xl font-bold text-[var(--upwork-navy)]">Your job and quote are ready</h1>
             <p className="mt-2 text-gray-600">Reference {result.job.jobCode || result.job._id}. Nothing has been charged.</p>
-            {result.clientSecret ? (
+            {result.clientSecret && user?.isEmailVerified ? (
               <div className="mt-8">
                 <h2 className="mb-2 text-lg font-bold text-[var(--upwork-navy)]">Choose whether to pay now</h2>
                 <p className="mb-5 text-sm text-gray-600">You can complete the secure payment, or cancel this job without making a payment.</p>
@@ -561,6 +698,11 @@ export default function VoiceJobRequestPage() {
                   <PaymentPanel amount={amount} jobId={result.job._id} onDone={() => router.push(`/dashboard/jobs/${result.job._id}`)} />
                 </Elements>
                 <button type="button" onClick={cancelCreatedJob} className="mt-3 w-full rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-700">Cancel job</button>
+              </div>
+            ) : result.clientSecret && user?.role === 'client' ? (
+              <div className="mt-8 space-y-3">
+                <EmailVerificationPanel email={user.email} status={verificationStatus} resending={resendingVerification} checking={checkingVerification} resendCooldown={resendCooldown} onResend={() => { void resendVerification() }} onRefresh={() => { void checkVerification() }} />
+                <button type="button" onClick={cancelCreatedJob} className="w-full rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-700">Cancel job</button>
               </div>
             ) : (
               <div className="mt-7 space-y-3">
@@ -710,10 +852,16 @@ export default function VoiceJobRequestPage() {
               <h2 className="font-bold text-[var(--upwork-navy)]">Sign in to create the real job</h2>
               <p className="mt-1 text-xs text-gray-600">The secure link lets you edit this draft. Your client account is required before Fixes generates a live job and quote.</p>
               <div className="mt-4 grid grid-cols-2 rounded-xl bg-gray-100 p-1 text-sm"><button type="button" onClick={() => setAuthMode('login')} className={`rounded-lg py-2 font-semibold ${authMode === 'login' ? 'bg-white text-[var(--upwork-navy)] shadow-sm' : 'text-gray-500'}`}>Log in</button><button type="button" onClick={() => setAuthMode('register')} className={`rounded-lg py-2 font-semibold ${authMode === 'register' ? 'bg-white text-[var(--upwork-navy)] shadow-sm' : 'text-gray-500'}`}>Register</button></div>
-              <div className="mt-4 space-y-3">{authMode === 'register' && <><input placeholder="Full name" autoComplete="name" value={authForm.name} onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })} className={fieldClass} /><input placeholder="Phone (optional)" autoComplete="tel" value={authForm.phone} onChange={(event) => setAuthForm({ ...authForm, phone: event.target.value })} className={fieldClass} /></>}<input type="email" placeholder="Email" autoComplete="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} className={fieldClass} /><input type="password" placeholder="Password" autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} className={fieldClass} /><button type="button" onClick={submitAuth} disabled={authWorking || !authForm.email || !authForm.password || (authMode === 'register' && !authForm.name)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--upwork-green)] px-4 py-3 font-semibold text-white disabled:opacity-50">{authWorking && <Loader2 className="h-4 w-4 animate-spin" />}{authMode === 'login' ? 'Log in and continue' : 'Create client account'}</button></div>
+              <form onSubmit={(event) => { event.preventDefault(); void submitAuth() }} className="mt-4 space-y-3">
+                {authMode === 'register' && <><input placeholder="Full name" autoComplete="name" value={authForm.name} onChange={(event) => setAuthForm({ ...authForm, name: event.target.value })} className={fieldClass} /><input type="tel" placeholder="Phone (optional)" autoComplete="tel" value={authForm.phone} onChange={(event) => setAuthForm({ ...authForm, phone: event.target.value })} className={fieldClass} /></>}
+                <input type="email" placeholder="Email" autoComplete="email" value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} className={fieldClass} />
+                <div className="relative"><input type={showPassword ? 'text' : 'password'} placeholder={authMode === 'login' ? 'Password' : 'Password (minimum 8 characters)'} autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} value={authForm.password} onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })} className={`${fieldClass} pr-11`} /><button type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button></div>
+                {authMode === 'register' && <div className="relative"><input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm password" autoComplete="new-password" value={authForm.confirmPassword} onChange={(event) => setAuthForm({ ...authForm, confirmPassword: event.target.value })} className={`${fieldClass} pr-11`} /><button type="button" onClick={() => setShowConfirmPassword((current) => !current)} aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button></div>}
+                <button type="submit" disabled={authWorking || !authForm.email || !authForm.password || (authMode === 'register' && (!authForm.name || !authForm.confirmPassword))} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--upwork-green)] px-4 py-3 font-semibold text-white disabled:opacity-50">{authWorking && <Loader2 className="h-4 w-4 animate-spin" />}{authMode === 'login' ? 'Log in and continue' : 'Create client account'}</button>
+              </form>
             </div>
           ) : user.role === 'client' ? (
-            <div className="rounded-2xl border border-green-200 bg-green-50 p-5"><p className="flex items-center gap-2 font-semibold text-green-800"><CheckCircle2 className="h-5 w-5" /> Signed in as {user.name}</p><p className="mt-1 text-xs text-green-700">You can now generate the job and quote.</p></div>
+            user.isEmailVerified ? <div className="rounded-2xl border border-green-200 bg-green-50 p-5"><p className="flex items-center gap-2 font-semibold text-green-800"><CheckCircle2 className="h-5 w-5" /> Signed in as {user.name}</p><p className="mt-1 text-xs text-green-700">Your email is verified. You can generate, accept and pay for your quote.</p></div> : <EmailVerificationPanel email={user.email} status={verificationStatus} resending={resendingVerification} checking={checkingVerification} resendCooldown={resendCooldown} onResend={() => { void resendVerification() }} onRefresh={() => { void checkVerification() }} />
           ) : (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800"><p className="font-semibold">A client account is required</p><p className="mt-1">Tradie and administrator sessions cannot own a customer job.</p></div>
           )}
