@@ -78,6 +78,7 @@ function extractAddressComponents(place: google.maps.places.PlaceResult): Addres
 export default function AddressAutocomplete({ onSelect, onManualMode, defaultValue = '' }: AddressAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
+  const onSelectRef = useRef(onSelect)
   const [inputValue, setInputValue] = useState(defaultValue)
   const [hasSelected, setHasSelected] = useState(false)
 
@@ -85,6 +86,10 @@ export default function AddressAutocomplete({ onSelect, onManualMode, defaultVal
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ?? '',
     libraries: LIBRARIES,
   })
+
+  useEffect(() => {
+    onSelectRef.current = onSelect
+  }, [onSelect])
 
   const handlePlaceChanged = useCallback(() => {
     const ac = autocompleteRef.current
@@ -98,8 +103,8 @@ export default function AddressAutocomplete({ onSelect, onManualMode, defaultVal
 
     setInputValue(place.formatted_address || components.address)
     setHasSelected(true)
-    onSelect(components)
-  }, [onSelect])
+    onSelectRef.current(components)
+  }, [])
 
   useEffect(() => {
     if (!isLoaded || !inputRef.current || autocompleteRef.current) return
@@ -115,6 +120,7 @@ export default function AddressAutocomplete({ onSelect, onManualMode, defaultVal
 
     return () => {
       google.maps.event.clearInstanceListeners(ac)
+      if (autocompleteRef.current === ac) autocompleteRef.current = null
     }
   }, [isLoaded, handlePlaceChanged])
 
