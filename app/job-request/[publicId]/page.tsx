@@ -192,7 +192,13 @@ export default function VoiceJobRequestPage() {
   const [authWorking, setAuthWorking] = useState(false)
   const [result, setResult] = useState<FinalizationResult | null>(null)
 
-  const draftHeaders = useMemo(() => ({ 'x-fixes-draft-token': capability }), [capability])
+  // Send both supported transports while the draft is anonymous. After login,
+  // apiFetch replaces Authorization with the user's Bearer token and the
+  // dedicated header continues carrying the draft capability for finalization.
+  const draftHeaders = useMemo(() => ({
+    Authorization: `Draft ${capability}`,
+    'x-fixes-draft-token': capability,
+  }), [capability])
   const isManaged = payload ? ['cleaning', 'waste_removal'].includes(payload.category) : false
   const selectedTemplate = templates.find((item) => item.cleaningType === payload?.cleaningType) || null
   const autoCareDetails = normalizeAutoCareDetails(payload?.autoCareDetails || null)
