@@ -114,9 +114,50 @@ const hasVerifiedCoordinates = (location: DraftLocation) => (
   Number.isFinite(location.coordinates?.lat) && Number.isFinite(location.coordinates?.lng)
 )
 
+type GoogleAddressMatch = google.maps.GeocoderResult | google.maps.places.PlaceResult
+
+const isMatchingAustralianAddress = (location: DraftLocation, match: GoogleAddressMatch) => {
+  const components = match.address_components || []
+  const component = (type: string) => components.find((item) => item.types.includes(type))
+  const country = component('country')?.short_name?.toUpperCase()
+  const matchedState = component('administrative_area_level_1')?.short_name?.toUpperCase()
+  const matchedPostcode = component('postal_code')?.long_name?.trim()
+  return Boolean(
+    match.geometry?.location &&
+    country === 'AU' &&
+    (!location.state || matchedState === location.state.trim().toUpperCase()) &&
+    (!location.postcode || matchedPostcode === location.postcode.trim())
+  )
+}
+
+const resolveWithGooglePlaces = async (query: string) => {
+  if (!window.google?.maps?.places?.AutocompleteService || !window.google?.maps?.places?.PlacesService) {
+    return null
+  }
+
+  const predictions = await new Promise<google.maps.places.AutocompletePrediction[]>((resolve) => {
+    new google.maps.places.AutocompleteService().getPlacePredictions(
+      { input: query, componentRestrictions: { country: 'au' }, types: ['address'] },
+      (matches, status) => resolve(status === google.maps.places.PlacesServiceStatus.OK ? matches || [] : [])
+    )
+  })
+  if (!predictions.length) return null
+
+  return new Promise<google.maps.places.PlaceResult | null>((resolve) => {
+    const service = new google.maps.places.PlacesService(document.createElement('div'))
+    service.getDetails(
+      {
+        placeId: predictions[0].place_id,
+        fields: ['address_components', 'formatted_address', 'geometry'],
+      },
+      (place, status) => resolve(status === google.maps.places.PlacesServiceStatus.OK ? place : null)
+    )
+  })
+}
+
 const geocodeDraftLocation = async (location: DraftLocation): Promise<DraftLocation> => {
   if (hasVerifiedCoordinates(location)) return location
-  if (typeof window === 'undefined' || !window.google?.maps?.Geocoder) {
+  if (typeof window === 'undefined' || !window.google?.maps) {
     throw new Error(ADDRESS_VERIFICATION_MESSAGE)
   }
 
@@ -127,36 +168,28 @@ const geocodeDraftLocation = async (location: DraftLocation): Promise<DraftLocat
     'Australia',
   ].filter(Boolean).join(', ')
 
-  const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-    new google.maps.Geocoder().geocode(
-      { address: query, componentRestrictions: { country: 'AU' } },
-      (matches, status) => {
-        if (status === google.maps.GeocoderStatus.OK && matches?.length) resolve(matches)
-        else reject(new Error(ADDRESS_VERIFICATION_MESSAGE))
-      }
-    )
-  })
+  const placesMatch = await resolveWithGooglePlaces(query)
+  let match: GoogleAddressMatch | null = placesMatch && isMatchingAustralianAddress(location, placesMatch)
+    ? placesMatch
+    : null
 
-  const match = results.find((result) => !result.partial_match && result.geometry?.location)
-  if (!match) throw new Error(ADDRESS_VERIFICATION_MESSAGE)
-
-  const component = (type: string) => match.address_components.find((item) => item.types.includes(type))
-  const country = component('country')?.short_name?.toUpperCase()
-  const matchedState = component('administrative_area_level_1')?.short_name?.toUpperCase()
-  const matchedPostcode = component('postal_code')?.long_name?.trim()
-  if (
-    country !== 'AU' ||
-    (location.state && matchedState !== location.state.trim().toUpperCase()) ||
-    (location.postcode && matchedPostcode !== location.postcode.trim())
-  ) {
-    throw new Error(ADDRESS_VERIFICATION_MESSAGE)
+  if (!match && window.google.maps.Geocoder) {
+    const results = await new Promise<google.maps.GeocoderResult[]>((resolve) => {
+      new google.maps.Geocoder().geocode(
+        { address: query, componentRestrictions: { country: 'AU' } },
+        (matches, status) => resolve(status === google.maps.GeocoderStatus.OK ? matches || [] : [])
+      )
+    })
+    match = results.find((result) => !result.partial_match && isMatchingAustralianAddress(location, result)) || null
   }
+  if (!match?.geometry?.location) throw new Error(ADDRESS_VERIFICATION_MESSAGE)
+  const matchedLocation = match.geometry.location
 
   return {
     ...location,
     coordinates: {
-      lat: match.geometry.location.lat(),
-      lng: match.geometry.location.lng(),
+      lat: matchedLocation.lat(),
+      lng: matchedLocation.lng(),
     },
   }
 }
