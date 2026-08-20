@@ -32,12 +32,19 @@ import {
   Radio,
   DollarSign,
   PhoneCall,
+  Megaphone,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider, useWebNotifications } from '@/contexts/notifications-context'
 import { api } from '@/lib/api'
 import { ADMIN_ONLINE_TRADIES_COUNT_EVENT } from '@/lib/admin-online-tradies-events'
 import { connectSocket, getSocket } from '@/lib/socket'
+import {
+  canAccessMainAdminPanel,
+  canAccessMarketingPanel,
+  getAdminPanels,
+  resolveAuthenticatedLanding,
+} from '@/lib/admin-routing'
 
 interface SidebarLink {
   href: string
@@ -68,6 +75,12 @@ const sidebarGroups: SidebarGroup[] = [
       { href: '/admin/tradies', label: 'Verification', icon: ShieldCheck, permission: 'view:tradies' },
       { href: '/admin/agency-applications', label: 'Agency Applications', icon: FileCheck2, permission: 'view:agencies' },
       { href: '/admin/agencies', label: 'Agencies', icon: Building2, permission: 'view:agencies' },
+    ],
+  },
+  {
+    label: 'Marketing',
+    links: [
+      { href: '/admin/marketing', label: 'Campaigns', icon: Megaphone, permission: 'view:marketing' },
     ],
   },
   {
@@ -308,17 +321,26 @@ function SidebarNav({ links, closeMobile }: { links: SidebarGroup[]; closeMobile
 function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const isAdmin = user?.role === 'admin'
+  const isMarketingRoute = pathname.startsWith('/admin/marketing')
+  const isProfileRoute = pathname === '/admin/profile'
+  const canUseMainPanel = canAccessMainAdminPanel(user)
+  const canUseMarketingPanel = canAccessMarketingPanel(user)
+  const hasRouteAccess = isProfileRoute || (isMarketingRoute ? canUseMarketingPanel : canUseMainPanel)
 
   useEffect(() => {
-    if (!isLoading && !isAdmin) {
+    if (isLoading) return
+    if (!isAdmin) {
       router.replace('/login')
+    } else if (!hasRouteAccess && user) {
+      router.replace(resolveAuthenticatedLanding(user))
     }
-  }, [isAdmin, isLoading, router])
+  }, [hasRouteAccess, isAdmin, isLoading, router, user])
 
-  if (isLoading || !isAdmin) {
+  if (isLoading || !isAdmin || !hasRouteAccess) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="w-6 h-6 border-2 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
@@ -358,16 +380,16 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <Link href="/admin" className="flex items-center gap-2.5" aria-label="Fixes admin dashboard">
+            <Link href={canUseMainPanel ? '/admin' : (canUseMarketingPanel ? '/admin/marketing' : '/no-admin-access')} className="flex items-center gap-2.5" aria-label="Fixes admin dashboard">
               <Image src="/logo.svg" alt="Fixes" width={80} height={28} className="h-6 w-auto" priority />
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#2563EB] text-white uppercase tracking-wider">
-                Admin
+                {canUseMainPanel ? 'Admin' : 'Marketing'}
               </span>
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
-            {user.isCleaningAdmin && (
+            {getAdminPanels(user).length > 1 && (
               <Link
                 href="/admin-select"
                 className="hidden sm:flex items-center gap-1 text-xs text-teal-500 hover:text-teal-600 transition-colors"
@@ -383,8 +405,8 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
               <ArrowLeft className="w-3 h-3" />
               Main Site
             </Link>
-            <AdminOnlineTradiesBadge />
-            <AdminBellMenu />
+            {canUseMainPanel && <AdminOnlineTradiesBadge />}
+            {canUseMainPanel && <AdminBellMenu />}
             <div className="hidden sm:block text-right">
               <p className="text-xs font-medium text-gray-700 leading-tight">{user.name}</p>
               <p className="text-[10px] text-gray-400">{user.fixId}</p>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Building2, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AUSTRALIAN_STATES, ROOFING_CAPABILITIES } from '@/lib/constants'
+import { captureMarketingTouch, registrationAttributionPayload } from '@/lib/marketing-attribution'
 
 const CATEGORY_OPTIONS = [
   { value: 'electrical', label: 'Electrical' },
@@ -42,6 +43,13 @@ export default function AgencyRegistrationPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [roofingCapabilities, setRoofingCapabilities] = useState<string[]>([])
   const [roofingJurisdictions, setRoofingJurisdictions] = useState<string[]>([])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const campaign = params.get('campaign')
+    const code = params.get('code')
+    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
+  }, [])
 
   const toggleCategory = (value: string) => {
     setCategories(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value])
@@ -85,6 +93,7 @@ export default function AgencyRegistrationPage() {
         documents: form.documentNotes
           ? [{ type: 'other', label: 'Application document notes', notes: form.documentNotes }]
           : [],
+        marketingAttribution: registrationAttributionPayload(),
       }, true)
       setSubmitted(true)
     } catch (err: any) {

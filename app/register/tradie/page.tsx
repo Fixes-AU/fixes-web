@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -10,6 +10,7 @@ import { Eye, EyeOff, Loader2, Info } from 'lucide-react'
 import { api, setTokens, ApiError } from '@/lib/api'
 import { VALID_CATEGORIES, CATEGORY_LABELS, ROOFING_CAPABILITIES, AUSTRALIAN_STATES } from '@/lib/constants'
 import type { RegisterTradieResponse, TradieCategory, RoofingCapability } from '@/lib/types'
+import { captureMarketingTouch, clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
 
 export default function RegisterTradiePage() {
   const router = useRouter()
@@ -28,10 +29,49 @@ export default function RegisterTradiePage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const campaign = params.get('campaign')
+    const code = params.get('code')
+    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
+  }, [])
+
+  const completeRegistration = async (signupToken: string) => {
+    const res = await api.post<RegisterTradieResponse>('/api/auth/register/tradie', {
+      name, email, password, phone, category,
+      roofingCapabilities: category === 'roofing' ? roofingCapabilities : [],
+      roofingJurisdictions: category === 'roofing' ? roofingJurisdictions : [],
+      skillLevel,
+      skills: skills ? skills.split(',').map((item) => item.trim()).filter(Boolean) : [],
+      bio: bio || undefined,
+      signupToken,
+    }, true)
+    setTokens(res.data.accessToken, res.data.refreshToken)
+    clearRegistrationAttribution()
+    router.push('/dashboard')
+  }
+
+  const verifyOtp = async () => {
+    if (!/^\d{6}$/.test(otp)) { setError('Enter the 6-digit verification code'); return }
+    setIsSubmitting(true); setError('')
+    try {
+      const response = await api.post<{ signupToken: string }>('/api/auth/register/tradie/verify', { email, otp }, true)
+      await completeRegistration(response.data.signupToken)
+    } catch (err) { setError(err instanceof ApiError ? err.message : 'Verification failed. Please try again.') }
+    finally { setIsSubmitting(false) }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (otpSent) {
+      await verifyOtp()
+      return
+    }
 
     if (!name || !email || !password || !category || !skillLevel) {
       setError('Name, email, password, category and skill level are required')
@@ -56,27 +96,12 @@ export default function RegisterTradiePage() {
     setIsSubmitting(true)
 
     try {
-      const res = await api.post<RegisterTradieResponse>(
-        '/api/auth/register/tradie',
-        {
-          name,
-          email,
-          password,
-          phone: phone || undefined,
-          category,
-          roofingCapabilities: category === 'roofing' ? roofingCapabilities : [],
-          roofingJurisdictions: category === 'roofing' ? roofingJurisdictions : [],
-          skillLevel,
-          skills: skills
-            ? skills.split(',').map((s) => s.trim()).filter(Boolean)
-            : [],
-          bio: bio || undefined,
-        },
-        true
-      )
-
-      setTokens(res.data.accessToken, res.data.refreshToken)
-      router.push('/dashboard')
+      await api.post('/api/auth/register/tradie/init', {
+        email,
+        phone,
+        marketingAttribution: registrationAttributionPayload(),
+      }, true)
+      setOtpSent(true)
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message)
@@ -385,6 +410,14 @@ export default function RegisterTradiePage() {
                 />
               </div>
 
+              {otpSent && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
+                  <label htmlFor="tradie-registration-otp" className="block text-sm font-medium text-emerald-900">Verification code</label>
+                  <input id="tradie-registration-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={event => setOtp(event.target.value.replace(/\D/g, ''))} placeholder="6-digit code" className="w-full px-4 py-3 border border-emerald-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-(--upwork-green)" />
+                  <p className="text-xs text-emerald-700">We sent the code to your email and phone. Your campaign attribution is retained through verification.</p>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -393,10 +426,10 @@ export default function RegisterTradiePage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating account...
+                    {otpSent ? 'Verifying...' : 'Sending code...'}
                   </>
                 ) : (
-                  'Create Tradie Account'
+                  otpSent ? 'Verify and create account' : 'Continue to verification'
                 )}
               </button>
             </form>

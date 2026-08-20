@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { api, getAccessToken } from '@/lib/api'
 import { API_BASE_URL } from '@/lib/constants'
 import { useCleaningAdminSubscription } from '@/contexts/cleaning-admin-realtime-context'
+import ScopedCampaignReport from '@/components/admin/ScopedCampaignReport'
 
 interface RevenueData {
   period: string
@@ -151,7 +152,7 @@ export default function RevenuePage() {
   }
 
   return (
-    <div>
+    <div className="space-y-10">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold text-gray-800">Revenue Report</h1>
         <div className="flex items-center gap-2">
@@ -340,6 +341,9 @@ export default function RevenuePage() {
           </div>
         </>
       )}
+      <div className="border-t border-gray-200 pt-8">
+        <ScopedCampaignReport endpoint="/api/cleaning-admin/marketing-report" title="Cleaning campaign performance" description="Read-only registrations, discounted cleaning and waste-removal jobs, and Fixes-funded promotion impact. Campaign and code controls remain with Marketing Admin." providerLabel="Cleaner basis" />
+      </div>
     </div>
   )
 }

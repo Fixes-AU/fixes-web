@@ -6,6 +6,23 @@ export interface ApiResponse<T> {
   data: T
 }
 
+export interface ApiFieldError {
+  path: string
+  code: string
+  message: string
+}
+
+export interface ApiErrorEnvelope {
+  success: false
+  message: string
+  code: string
+  requestId: string | null
+  retryable: boolean
+  details: Record<string, unknown>
+  fieldErrors: ApiFieldError[]
+  errors?: unknown
+}
+
 export interface PaginatedResponse<T> {
   success: boolean
   message: string
@@ -32,6 +49,7 @@ export interface User {
   isEmailVerified: boolean
   isActive: boolean
   isCleaningAdmin?: boolean
+  isMarketingAdmin?: boolean
   isFullAdmin?: boolean
   isSuperAdmin?: boolean
   adminPermissions?: string[]

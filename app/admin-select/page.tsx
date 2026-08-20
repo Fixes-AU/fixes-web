@@ -4,8 +4,9 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, LogOut } from 'lucide-react'
+import { ArrowRight, LogOut, Megaphone } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
+import { getAdminPanels, resolveAuthenticatedLanding } from '@/lib/admin-routing'
 
 export default function AdminSelectPage() {
   const { user, isLoading, logout } = useAuth()
@@ -17,10 +18,8 @@ export default function AdminSelectPage() {
       router.replace('/login')
       return
     }
-    if (user.isCleaningAdmin && user.isFullAdmin === false) {
-      router.replace('/cleaning-admin')
-    } else if (!user.isCleaningAdmin) {
-      router.replace('/admin')
+    if (getAdminPanels(user).length < 2) {
+      router.replace(resolveAuthenticatedLanding(user))
     }
   }, [user, isLoading, router])
 
@@ -36,6 +35,8 @@ export default function AdminSelectPage() {
     logout()
     router.push('/login')
   }
+
+  const panels = getAdminPanels(user)
 
   return (
     <div className="min-h-screen bg-linear-to-br from-white via-[#f2f7f2] to-white flex flex-col">
@@ -69,7 +70,7 @@ export default function AdminSelectPage() {
           </p>
 
           <div className="space-y-4">
-            <Link
+            {panels.includes('main') && <Link
               href="/admin"
               className="group flex items-center gap-5 bg-white rounded-2xl border border-gray-200 p-6 hover:border-[#2563EB] hover:shadow-sm transition-all"
             >
@@ -81,9 +82,9 @@ export default function AdminSelectPage() {
                 <p className="text-sm text-(--upwork-gray) mt-0.5">Users, jobs, tradies, disputes & platform settings</p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-[#2563EB] transition-colors shrink-0" />
-            </Link>
+            </Link>}
 
-            <Link
+            {panels.includes('cleaning') && <Link
               href="/cleaning-admin"
               className="group flex items-center gap-5 bg-white rounded-2xl border border-gray-200 p-6 hover:border-teal-500 hover:shadow-sm transition-all"
             >
@@ -95,7 +96,21 @@ export default function AdminSelectPage() {
                 <p className="text-sm text-(--upwork-gray) mt-0.5">Jobs, cleaners, invites, rates, revenue & dispatch</p>
               </div>
               <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors shrink-0" />
-            </Link>
+            </Link>}
+
+            {panels.includes('marketing') && <Link
+              href="/admin/marketing"
+              className="group flex items-center gap-5 bg-white rounded-2xl border border-gray-200 p-6 hover:border-violet-500 hover:shadow-sm transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+                <Megaphone className="w-6 h-6 text-violet-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base font-semibold text-(--upwork-navy)">Marketing Admin</h2>
+                <p className="text-sm text-(--upwork-gray) mt-0.5">Campaigns, discount codes, attribution, reporting and exports</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-violet-500 transition-colors shrink-0" />
+            </Link>}
           </div>
 
           <p className="text-center text-xs text-(--upwork-gray) mt-8">

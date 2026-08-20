@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { AlertCircle, BriefcaseBusiness, Building2, CreditCard, Info, Loader2, Power, ShieldCheck, Users } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/auth-context'
+import ScopedCampaignReport from '@/components/admin/ScopedCampaignReport'
 
 interface AgencyMembership {
   _id: string
@@ -59,6 +60,7 @@ export default function AgencyPortalShellPage() {
   const [loadingAgency, setLoadingAgency] = useState(true)
   const [togglingAgencyId, setTogglingAgencyId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [reportAgencyId, setReportAgencyId] = useState('')
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -80,6 +82,10 @@ export default function AgencyPortalShellPage() {
         setMemberships(nextMemberships)
 
         const portalMemberships = nextMemberships.filter(canUseAgencyPortal)
+        const reportMemberships = portalMemberships.filter(member => hasAgencyPermission(member, 'agency:view_dashboard'))
+        setReportAgencyId(current => reportMemberships.some(member => member.agencyId?._id === current)
+          ? current
+          : (reportMemberships[0]?.agencyId?._id || ''))
         const readinessEntries = await Promise.all(
           portalMemberships
             .filter(member => member.agencyId?._id)
@@ -136,6 +142,7 @@ export default function AgencyPortalShellPage() {
   }
 
   const portalMemberships = memberships.filter(canUseAgencyPortal)
+  const reportMemberships = portalMemberships.filter(member => hasAgencyPermission(member, 'agency:view_dashboard'))
   const hasWorkerOnlyMembership = memberships.length > 0 && portalMemberships.length === 0
 
   return (
@@ -285,6 +292,13 @@ export default function AgencyPortalShellPage() {
               )
             })}
           </div>
+        )}
+
+        {reportMemberships.length > 0 && (
+          <section className="space-y-4 border-t border-gray-200 pt-8">
+            {reportMemberships.length > 1 && <div className="flex justify-end"><select value={reportAgencyId} onChange={event => setReportAgencyId(event.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700">{reportMemberships.map(member => <option key={member.agencyId?._id} value={member.agencyId?._id}>{member.agencyId?.name}</option>)}</select></div>}
+            <ScopedCampaignReport endpoint={reportAgencyId ? `/api/agency/${reportAgencyId}/marketing-report` : null} title="Agency campaign performance" description="Read-only registrations for current agency members, discounted agency jobs, and settlement impact. Other agencies and global campaign controls are excluded." providerLabel="Agency service basis" />
+          </section>
         )}
       </section>
     </main>

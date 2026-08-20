@@ -1,6 +1,6 @@
 // fixes-web/lib/api.ts
 
-import type { ApiResponse, PaginatedResponse } from './types'
+import type { ApiErrorEnvelope, ApiFieldError, ApiResponse, PaginatedResponse } from './types'
 import { API_BASE_URL } from './constants'
 
 
@@ -43,11 +43,43 @@ export function clearTokens(): void {
 
 
 let isRefreshing = false
-let refreshPromise: Promise<boolean> | null = null
+type RefreshOutcome = 'refreshed' | 'invalid' | 'unavailable'
+let refreshPromise: Promise<RefreshOutcome> | null = null
 
-async function attemptTokenRefresh(): Promise<boolean> {
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+)
+
+async function readJsonObject(res: Response): Promise<Record<string, unknown>> {
+  const text = await res.text()
+  if (!text) return {}
+
+  try {
+    const parsed: unknown = JSON.parse(text)
+    return isRecord(parsed) ? parsed : {}
+  } catch {
+    // Never surface gateway HTML or arbitrary upstream text as an application error.
+    return {}
+  }
+}
+
+const refreshUnavailableError = () => new ApiError(
+  'Your session could not be verified. Check your connection and try again.',
+  503,
+  {
+    success: false,
+    message: 'Your session could not be verified. Check your connection and try again.',
+    code: 'DEPENDENCY_UNAVAILABLE',
+    requestId: null,
+    retryable: true,
+    details: {},
+    fieldErrors: [],
+  }
+)
+
+async function attemptTokenRefresh(): Promise<RefreshOutcome> {
   const refresh = getRefreshToken()
-  if (!refresh) return false
+  if (!refresh) return 'invalid'
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
@@ -57,19 +89,20 @@ async function attemptTokenRefresh(): Promise<boolean> {
     })
 
     if (!res.ok) {
+      if (![400, 401, 403].includes(res.status)) return 'unavailable'
       clearTokens()
-      return false
+      return 'invalid'
     }
 
-    const json = (await res.json()) as ApiResponse<{
+    const json = (await readJsonObject(res)) as unknown as ApiResponse<{
       accessToken: string
       refreshToken: string
     }>
+    if (!json.data?.accessToken || !json.data?.refreshToken) return 'unavailable'
     setTokens(json.data.accessToken, json.data.refreshToken)
-    return true
+    return 'refreshed'
   } catch {
-    clearTokens()
-    return false
+    return 'unavailable'
   }
 }
 
@@ -115,18 +148,18 @@ async function apiFetch<T>(
       refreshPromise = attemptTokenRefresh()
     }
 
-    const refreshed = await refreshPromise
+    const refreshOutcome = await refreshPromise
     isRefreshing = false
     refreshPromise = null
 
-    if (refreshed) {
+    if (refreshOutcome === 'refreshed') {
       const newToken = getAccessToken()
       if (newToken) {
         requestHeaders['Authorization'] = `Bearer ${newToken}`
       }
       fetchOptions.headers = requestHeaders
       res = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions)
-    } else {
+    } else if (refreshOutcome === 'invalid') {
       if (typeof window !== 'undefined') {
         const protectedPrefixes = ['/dashboard', '/admin', '/agency', '/cleaning-admin', '/admin-select']
         const isProtectedPage = protectedPrefixes.some(p => window.location.pathname.startsWith(p))
@@ -134,14 +167,34 @@ async function apiFetch<T>(
           window.location.href = '/login'
         }
       }
-      throw new Error('Session expired. Please log in again.')
+      throw new ApiError('Session expired. Please log in again.', 401, {
+        success: false,
+        message: 'Session expired. Please log in again.',
+        code: 'SESSION_INVALID',
+        requestId: null,
+        retryable: false,
+        details: {},
+        fieldErrors: [],
+      })
+    } else {
+      throw refreshUnavailableError()
     }
   }
 
-  const json = await res.json()
+  const json = await readJsonObject(res)
 
   if (!res.ok) {
-    throw new ApiError(json.message || 'Something went wrong', res.status, json)
+    const data: Record<string, unknown> = {
+      ...json,
+      requestId: typeof json.requestId === 'string'
+        ? json.requestId
+        : res.headers.get('X-Request-Id'),
+    }
+    throw new ApiError(
+      typeof data.message === 'string' ? data.message : 'Something went wrong',
+      res.status,
+      data
+    )
   }
 
   return json as T
@@ -155,14 +208,21 @@ async function apiFetchBlob(endpoint: string): Promise<Blob> {
     })
   }
   let res = await request()
-  if (res.status === 401 && await attemptTokenRefresh()) res = await request()
+  if (res.status === 401) {
+    const refreshOutcome = await attemptTokenRefresh()
+    if (refreshOutcome === 'refreshed') res = await request()
+    else if (refreshOutcome === 'unavailable') throw refreshUnavailableError()
+  }
   if (!res.ok) {
     let message = 'The requested file could not be loaded.'
     let data: Record<string, unknown> = {}
     try {
-      data = await res.json() as Record<string, unknown>
+      data = await readJsonObject(res)
       if (typeof data.message === 'string') message = data.message
     } catch {}
+    data.requestId = typeof data.requestId === 'string'
+      ? data.requestId
+      : res.headers.get('X-Request-Id')
     throw new ApiError(message, res.status, data)
   }
   return res.blob()
@@ -172,6 +232,11 @@ async function apiFetchBlob(endpoint: string): Promise<Blob> {
 export class ApiError extends Error {
   status: number
   data: Record<string, unknown>
+  code: string
+  requestId: string | null
+  retryable: boolean
+  details: Record<string, unknown>
+  fieldErrors: ApiFieldError[]
 
   constructor(
     message: string,
@@ -182,6 +247,31 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
     this.data = data
+    this.code = typeof data.code === 'string' ? data.code : 'REQUEST_FAILED'
+    this.requestId = typeof data.requestId === 'string' ? data.requestId : null
+    this.retryable = data.retryable === true
+    this.details = isRecord(data.details) ? data.details : {}
+    this.fieldErrors = Array.isArray(data.fieldErrors)
+      ? data.fieldErrors.filter((item): item is ApiFieldError => (
+          isRecord(item) &&
+          typeof item.path === 'string' &&
+          typeof item.code === 'string' &&
+          typeof item.message === 'string'
+        ))
+      : []
+  }
+
+  toEnvelope(): ApiErrorEnvelope {
+    return {
+      success: false,
+      message: this.message,
+      code: this.code,
+      requestId: this.requestId,
+      retryable: this.retryable,
+      details: this.details,
+      fieldErrors: this.fieldErrors,
+      ...(this.data.errors !== undefined && { errors: this.data.errors }),
+    }
   }
 }
 

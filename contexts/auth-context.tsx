@@ -11,7 +11,8 @@ import {
   type ReactNode,
 } from 'react'
 import type { User, TradieProfile, LoginResponse, MeResponse } from '@/lib/types'
-import { api, setTokens, clearTokens, getAccessToken } from '@/lib/api'
+import { api, ApiError, setTokens, clearTokens, getAccessToken } from '@/lib/api'
+import { clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
 
 
 interface AuthContextValue {
@@ -23,6 +24,7 @@ interface AuthContextValue {
   isTradie: boolean
   isAdmin: boolean
   isCleaningAdmin: boolean
+  isMarketingAdmin: boolean
   login: (email: string, password: string) => Promise<User>
   registerClient: (data: RegisterClientData) => Promise<User>
   logout: () => Promise<void>
@@ -34,6 +36,8 @@ interface RegisterClientData {
   email: string
   password: string
   phone?: string
+  marketingCode?: string
+  analyticsConsent?: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -64,10 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.get<MeResponse>('/api/auth/me')
       setUser(res.data.user)
       setProfile(res.data.profile)
-    } catch {
-      clearTokens()
-      setUser(null)
-      setProfile(null)
+    } catch (error) {
+      const sessionIsInvalid = error instanceof ApiError &&
+        error.status === 401 &&
+        ['SESSION_INVALID', 'AUTHENTICATION_REQUIRED'].includes(error.code)
+      if (sessionIsInvalid) {
+        clearTokens()
+        setUser(null)
+        setProfile(null)
+      }
     }
   }, [])
 
@@ -99,13 +108,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerClient = useCallback(
     async (data: RegisterClientData): Promise<User> => {
+      const { marketingCode, analyticsConsent = true, ...accountData } = data
       const res = await api.post<LoginResponse>(
         '/api/auth/register/client',
-        data as unknown as Record<string, unknown>,
+        {
+          ...accountData,
+          marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode, analyticsConsent }),
+        } as unknown as Record<string, unknown>,
         true
       )
       setTokens(res.data.accessToken, res.data.refreshToken)
       setUser(res.data.user)
+      clearRegistrationAttribution()
       return res.data.user
     },
     []
@@ -140,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isTradie: user?.role === 'tradie',
     isAdmin: user?.role === 'admin',
     isCleaningAdmin: !!(user?.role === 'admin' && user?.isCleaningAdmin),
+    isMarketingAdmin: !!(user?.role === 'admin' && user?.isMarketingAdmin),
     login,
     registerClient,
     logout,

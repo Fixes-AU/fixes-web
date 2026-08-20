@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { NotificationsProvider } from '@/contexts/notifications-context'
 import { CleaningAdminRealtimeProvider } from '@/contexts/cleaning-admin-realtime-context'
 import CleaningAdminInbox from '@/components/admin/CleaningAdminInbox'
+import { canAccessCleaningAdminPanel, getAdminPanels, resolveAuthenticatedLanding } from '@/lib/admin-routing'
 
 const sidebarLinks = [
   { href: '/cleaning-admin',          label: 'Dashboard',  icon: LayoutDashboard },
@@ -40,13 +41,13 @@ export default function CleaningAdminLayout({ children }: { children: React.Reac
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const hasAccess = user?.role === 'admin' && (user?.isCleaningAdmin || user?.isFullAdmin !== false)
+  const hasAccess = canAccessCleaningAdminPanel(user)
 
   useEffect(() => {
     if (!isLoading && !hasAccess) {
-      router.replace('/login')
+      router.replace(user?.role === 'admin' ? resolveAuthenticatedLanding(user) : '/login')
     }
-  }, [hasAccess, isLoading, router])
+  }, [hasAccess, isLoading, router, user])
 
   if (isLoading || !hasAccess) {
     return (
@@ -111,19 +112,19 @@ export default function CleaningAdminLayout({ children }: { children: React.Reac
 
               <div className="flex items-center gap-3">
                 <Link
-                  href={user?.isCleaningAdmin ? '/admin-select' : '/admin'}
+                  href={getAdminPanels(user).length > 1 ? '/admin-select' : '/admin'}
                   className="hidden sm:flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <ArrowLeft className="w-3 h-3" />
-                  {user?.isCleaningAdmin ? 'Switch Panel' : 'Main Admin'}
+                  {getAdminPanels(user).length > 1 ? 'Switch Panel' : 'Main Admin'}
                 </Link>
                 <CleaningAdminInbox />
                 <div className="hidden sm:block text-right">
-                  <p className="text-xs font-medium text-gray-700 leading-tight">{user.name}</p>
+                  <p className="text-xs font-medium text-gray-700 leading-tight">{user?.name}</p>
                   <p className="text-[10px] text-gray-400">Cleaning Admin</p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center text-white text-xs font-semibold">
-                  {user.name?.charAt(0).toUpperCase()}
+                  {user?.name?.charAt(0).toUpperCase()}
                 </div>
               </div>
             </div>

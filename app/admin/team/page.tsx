@@ -22,6 +22,7 @@ interface AdminUser {
   isSuperAdmin: boolean
   isFullAdmin: boolean
   isCleaningAdmin: boolean
+  isMarketingAdmin: boolean
   adminPermissions: string[]
   createdAt: string
 }
@@ -48,12 +49,18 @@ const PRESET_LABELS: Record<string, { label: string; description: string; color:
     description: 'Dashboard and jobs access only',
     color: 'bg-teal-50 text-teal-700 border-teal-200',
   },
+  marketing_admin: {
+    label: 'Marketing Admin',
+    description: 'Campaign management, reporting and export access',
+    color: 'bg-violet-50 text-violet-700 border-violet-200',
+  },
 }
 
 function getRoleBadge(admin: AdminUser) {
   if (admin.isSuperAdmin) return { label: 'Super Admin', color: 'bg-purple-100 text-purple-700' }
   if (admin.isFullAdmin !== false) return { label: 'Full Admin', color: 'bg-blue-50 text-blue-600' }
   if (admin.isCleaningAdmin) return { label: 'Cleaning Admin', color: 'bg-teal-50 text-teal-600' }
+  if (admin.isMarketingAdmin) return { label: 'Marketing Admin', color: 'bg-violet-50 text-violet-600' }
   if (admin.adminPermissions?.length > 0) return { label: 'Limited Admin', color: 'bg-amber-50 text-amber-600' }
   return { label: 'No Access', color: 'bg-red-50 text-red-500' }
 }
@@ -69,6 +76,9 @@ export default function AdminTeamPage() {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
   const [customPerms, setCustomPerms] = useState<string[]>([])
   const [editingSuperAdmin, setEditingSuperAdmin] = useState(false)
+  const [editingFullAdmin, setEditingFullAdmin] = useState(false)
+  const [editingCleaningAdmin, setEditingCleaningAdmin] = useState(false)
+  const [editingMarketingAdmin, setEditingMarketingAdmin] = useState(false)
   const [pendingSave, setPendingSave] = useState(false)
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -108,6 +118,9 @@ export default function AdminTeamPage() {
     setEditingAdmin(admin)
     setCustomPerms([...(admin.adminPermissions || [])])
     setEditingSuperAdmin(admin.isSuperAdmin)
+    setEditingFullAdmin(admin.isFullAdmin !== false)
+    setEditingCleaningAdmin(admin.isCleaningAdmin === true)
+    setEditingMarketingAdmin(admin.isMarketingAdmin === true)
 
     if (config) {
       const currentPerms = admin.adminPermissions || []
@@ -129,6 +142,9 @@ export default function AdminTeamPage() {
     if (!config) return
     setSelectedPreset(presetKey)
     setCustomPerms([...config.presets[presetKey]])
+    setEditingFullAdmin(presetKey === 'full_admin')
+    setEditingCleaningAdmin(presetKey === 'cleaning_admin')
+    setEditingMarketingAdmin(presetKey === 'marketing_admin')
   }
 
   const togglePerm = (perm: string) => {
@@ -140,15 +156,12 @@ export default function AdminTeamPage() {
 
   const executeSave = async (token: string) => {
     if (!editingAdmin) return
-    const body: Record<string, unknown> = selectedPreset
-      ? { preset: selectedPreset }
-      : {
-        permissions: customPerms,
-        isFullAdmin: config?.presets.full_admin?.length === customPerms.length &&
-          config?.presets.full_admin?.every(p => customPerms.includes(p)),
-        isCleaningAdmin: config?.presets.cleaning_admin?.length === customPerms.length &&
-          config?.presets.cleaning_admin?.every(p => customPerms.includes(p)),
-      }
+    const body: Record<string, unknown> = {
+      permissions: customPerms,
+      isFullAdmin: editingFullAdmin,
+      isCleaningAdmin: editingCleaningAdmin,
+      isMarketingAdmin: editingMarketingAdmin,
+    }
 
     // Include super admin toggle if changed
     if (editingSuperAdmin !== editingAdmin.isSuperAdmin) {
@@ -339,8 +352,37 @@ export default function AdminTeamPage() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-gray-700 mb-3">Quick Presets</p>
+                <p className="text-xs font-semibold text-gray-700 mb-3">Panel capabilities</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {[
+                    { label: 'Main Admin', value: editingFullAdmin, set: setEditingFullAdmin, activeClass: 'border-blue-300 bg-blue-50' },
+                    { label: 'Cleaning Admin', value: editingCleaningAdmin, set: setEditingCleaningAdmin, activeClass: 'border-teal-300 bg-teal-50' },
+                    { label: 'Marketing Admin', value: editingMarketingAdmin, set: setEditingMarketingAdmin, activeClass: 'border-violet-300 bg-violet-50' },
+                  ].map((panel) => (
+                    <button
+                      key={panel.label}
+                      type="button"
+                      onClick={() => {
+                        setSelectedPreset(null)
+                        panel.set(!panel.value)
+                      }}
+                      className={`flex items-center justify-between rounded-xl border p-3 text-left transition-colors ${
+                        panel.value ? panel.activeClass : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <span className="text-xs font-medium text-gray-700">{panel.label}</span>
+                      <span className={`w-4 h-4 rounded border flex items-center justify-center ${panel.value ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}`}>
+                        {panel.value && <Check className="w-3 h-3 text-white" />}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-2">An admin may hold more than one panel capability. Granular permissions remain the backend authority.</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-3">Quick Presets</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {Object.entries(PRESET_LABELS).map(([key, meta]) => (
                     <button
                       key={key}
@@ -508,7 +550,7 @@ export default function AdminTeamPage() {
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Role Preset</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {Object.entries(PRESET_LABELS).map(([key, meta]) => (
                     <button
                       key={key}

@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { ApiError } from '@/lib/api'
 import { parseFragmentState } from '@/lib/fragmentState'
 import { Button } from '@/components/ui/button'
+import { captureMarketingTouch } from '@/lib/marketing-attribution'
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showBusinessDialog, setShowBusinessDialog] = useState(false)
+  const [marketingCode, setMarketingCode] = useState('')
+  const [analyticsConsent, setAnalyticsConsent] = useState(true)
 
   useEffect(() => {
     const syncPlan = () => {
@@ -43,6 +46,18 @@ export default function RegisterPage() {
     syncPlan()
     window.addEventListener('hashchange', syncPlan)
     return () => window.removeEventListener('hashchange', syncPlan)
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const campaign = params.get('campaign')
+    const code = params.get('code')
+    if (code) setMarketingCode(code.toUpperCase())
+    if (campaign || code) void captureMarketingTouch({
+      campaignIdentifier: campaign,
+      manualCode: code,
+      method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url',
+    }).catch(() => {})
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,6 +87,8 @@ export default function RegisterPage() {
         email,
         password,
         phone: phone || undefined,
+        marketingCode: marketingCode || undefined,
+        analyticsConsent,
       })
       router.push('/dashboard')
     } catch (err) {
@@ -187,6 +204,19 @@ export default function RegisterPage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-shadow"
                 />
               </div>
+
+              <div>
+                <label htmlFor="register-marketing-code" className="block text-sm font-medium text-(--upwork-navy) mb-1.5">
+                  Campaign or discount code <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input id="register-marketing-code" value={marketingCode} onChange={event => setMarketingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))} placeholder="e.g. COFFEE20" maxLength={64} className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-shadow" />
+                <p className="text-xs text-gray-400 mt-1">If the offer is eligible, it will be saved to your account and revalidated when you accept a quote.</p>
+              </div>
+
+              <label className="flex items-start gap-2 text-xs text-gray-500">
+                <input type="checkbox" checked={analyticsConsent} onChange={event => setAnalyticsConsent(event.target.checked)} className="mt-0.5" />
+                Allow Fixes to use campaign interaction data to measure this signup. Turning this off does not remove an eligible offer from your account.
+              </label>
 
               <div>
                 <label

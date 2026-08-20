@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AGENCY_CATEGORIES, CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
+import { registrationAttributionPayload } from '@/lib/marketing-attribution'
 
 export default function TradieWaitlistPage() {
   const [formData, setFormData] = useState({ name: '', email: '', suburb: '', postcode: '', tradeCategory: '' })
@@ -19,7 +20,7 @@ export default function TradieWaitlistPage() {
     setIsSubmitting(true)
 
     try {
-      await api.post('/api/auth/join-waitlist', { ...formData, type: 'tradie' }, true)
+      await api.post('/api/auth/join-waitlist', { ...formData, type: 'tradie', marketingAttribution: registrationAttributionPayload() }, true)
       setIsSuccess(true)
     } catch (err: any) {
       setError(err.message || 'Failed to join waitlist')

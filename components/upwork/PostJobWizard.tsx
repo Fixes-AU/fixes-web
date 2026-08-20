@@ -39,6 +39,19 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import { useAuth } from '@/contexts/auth-context'
 import { api, ApiError } from '@/lib/api'
 import AddressAutocomplete from '@/components/upwork/AddressAutocomplete'
+import { DiscountPreviewPanel } from '@/components/upwork/DiscountPreviewPanel'
+import type { DiscountPreview } from '@/lib/discount-preview'
+import {
+  beginDiscountCheckout,
+  clearPersistedDiscountCheckout,
+  createFinancialIdempotencyKey,
+  discountCheckoutErrorMessage,
+  loadPersistedDiscountCheckout,
+  prepareDiscountCheckout,
+  retryDiscountSavedCard,
+  selectionFromPreview,
+  type PersistedDiscountCheckout,
+} from '@/lib/discount-checkout'
 
 import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES, AGENCY_CATEGORIES, CLEANING_TYPE_LABELS } from '@/lib/constants'
 import {
@@ -1643,9 +1656,9 @@ function StepQuote({
   job: Job
   selectedTier: SkillLevel | null
   onSelectTier: (tier: SkillLevel | null) => void
-  onAccept: () => void
+  onAccept: (discountPreview: DiscountPreview | null) => void
   onCancel: () => void
-  onReschedule: (isoTime: string, tier: SkillLevel | null, price: number) => void
+  onReschedule: (isoTime: string, tier: SkillLevel | null, price: number, discountPreview: DiscountPreview | null) => void
   isAccepting: boolean
   isRescheduling: boolean
   acceptError: string
@@ -1653,6 +1666,7 @@ function StepQuote({
   const [showSchedulePicker, setShowSchedulePicker] = useState(false)
   const [selectedMorningTier, setSelectedMorningTier] = useState<SkillLevel | null>(null)
   const [selectedWeekdayTier, setSelectedWeekdayTier] = useState<SkillLevel | null>(null)
+  const [discountPreview, setDiscountPreview] = useState<DiscountPreview | null>(null)
 
   const handleSelectMainTier = (tier: SkillLevel) => {
     setSelectedMorningTier(null)
@@ -1686,6 +1700,21 @@ function StepQuote({
       return Math.round(((ev - mo.suggestedFixedPrice) / ev) * 100)
     }))
     : 0
+
+  const discountOptionSet = selectedMorningTier
+    ? 'morning'
+    : selectedWeekdayTier
+      ? 'weekday'
+      : 'standard'
+  const discountTier = selectedMorningTier || selectedWeekdayTier || selectedTier || quote.options[0]?.tier || null
+  let discountScheduledFor: string | undefined
+  if ((selectedMorningTier || selectedWeekdayTier) && pickedTime) {
+    try {
+      discountScheduledFor = datetimeLocalInStateToISO(pickedTime, job.location?.state)
+    } catch {
+      discountScheduledFor = undefined
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -1872,7 +1901,7 @@ function StepQuote({
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => {
-                        onReschedule(pickedTime, mo.tier as SkillLevel ?? 'premium', mo.suggestedFixedPrice)
+                        onReschedule(pickedTime, mo.tier as SkillLevel ?? 'premium', mo.suggestedFixedPrice, discountPreview)
                       }}
                       disabled={isRescheduling || !pickedTime}
                       className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white"
@@ -1898,7 +1927,7 @@ function StepQuote({
               ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                   <button
-                    onClick={onAccept}
+                    onClick={() => onAccept(discountPreview)}
                     disabled={isAccepting}
                     className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
@@ -1945,7 +1974,7 @@ function StepQuote({
 
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <button
-              onClick={onAccept}
+              onClick={() => onAccept(discountPreview)}
               disabled={isAccepting}
               className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
@@ -2100,7 +2129,7 @@ function StepQuote({
               {isWeekdaySelected ? (
                 <button
                   onClick={() => {
-                    onReschedule(pickedTime, wo.tier as SkillLevel ?? 'premium', wo.suggestedFixedPrice)
+                    onReschedule(pickedTime, wo.tier as SkillLevel ?? 'premium', wo.suggestedFixedPrice, discountPreview)
                   }}
                   disabled={isRescheduling || !pickedTime}
                   className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white bg-purple-600 hover:bg-purple-700"
@@ -2113,7 +2142,7 @@ function StepQuote({
                 </button>
               ) : (
                 <button
-                  onClick={onAccept}
+                  onClick={() => onAccept(discountPreview)}
                   disabled={isAccepting}
                   className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
@@ -2138,6 +2167,14 @@ function StepQuote({
           </div>
         )
       })()}
+
+      <DiscountPreviewPanel
+        jobId={job._id}
+        tier={discountTier}
+        optionSet={discountOptionSet}
+        scheduledFor={discountScheduledFor}
+        onPreviewChange={setDiscountPreview}
+      />
     </div>
   )
 }
@@ -2147,10 +2184,12 @@ function StepQuote({
 
 function PaymentForm({
   amount,
+  scheduledCommitment,
   onSuccess,
   onCancel,
 }: {
   amount: number
+  scheduledCommitment: boolean
   onSuccess: () => void
   onCancel: () => void
 }) {
@@ -2164,13 +2203,18 @@ function PaymentForm({
     setIsConfirming(true)
     setPayError('')
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/dashboard`,
-      },
-      redirect: 'if_required',
-    })
+    const confirmation = scheduledCommitment
+      ? await stripe.confirmSetup({
+          elements,
+          confirmParams: { return_url: `${window.location.origin}/dashboard` },
+          redirect: 'if_required',
+        })
+      : await stripe.confirmPayment({
+          elements,
+          confirmParams: { return_url: `${window.location.origin}/dashboard` },
+          redirect: 'if_required',
+        })
+    const { error } = confirmation
 
     if (error) {
       setPayError(error.message || 'Payment failed. Please try again.')
@@ -2211,7 +2255,7 @@ function PaymentForm({
           ) : (
             <>
               <ShieldCheck className="w-4 h-4" />
-              Pay ${amount} AUD
+              {scheduledCommitment ? 'Save payment method' : `Pay $${amount} AUD`}
             </>
           )}
         </button>
@@ -2353,6 +2397,8 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   const [acceptError, setAcceptError] = useState('')
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [acceptedPrice, setAcceptedPrice] = useState<number>(0)
+  const [discountCheckout, setDiscountCheckout] = useState<PersistedDiscountCheckout | null>(null)
+  const [scheduledCommitment, setScheduledCommitment] = useState(false)
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [stripeInstance, setStripeInstance] = useState<any>(null)
 
@@ -2390,6 +2436,28 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         .catch(() => {})
     }
   }, [currentStep, magicToken, createdJob, user, authEmail])
+
+  useEffect(() => {
+    if (currentStep !== 7 || !createdJob?._id || clientSecret) return
+    const persisted = loadPersistedDiscountCheckout(createdJob._id)
+    if (!persisted?.checkoutAttemptId) return
+    let active = true
+    setIsAccepting(true)
+    beginDiscountCheckout(persisted)
+      .then(response => {
+        if (!active || !response.clientSecret) return
+        setDiscountCheckout(loadPersistedDiscountCheckout(createdJob._id))
+        setScheduledCommitment(response.scheduledCommitment)
+        setAcceptedPrice(response.pricing.clientChargeIncGstCents / 100)
+        setClientSecret(response.clientSecret)
+        setCurrentStep(8)
+      })
+      .catch(error => {
+        if (active) setAcceptError(discountCheckoutErrorMessage(error))
+      })
+      .finally(() => { if (active) setIsAccepting(false) })
+    return () => { active = false }
+  }, [currentStep, createdJob?._id, clientSecret])
 
   useEffect(() => {
     if (existingJobId) {
@@ -2666,27 +2734,33 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
   }, [isAuthenticated, router, title, description, category, images, address, suburb, postcode, locationState, coords, scheduledFor, diagnosticAnswers, autoCareDetails])
 
 
-  const handleAcceptQuote = useCallback(async (paymentMethodId?: string) => {
+  const handleAcceptQuote = useCallback(async (discountPreview: DiscountPreview | null = null) => {
     if (!createdJob || !selectedTier) return
     setIsAccepting(true)
     setAcceptError('')
 
     try {
-      const body: Record<string, unknown> = { tier: selectedTier }
-      if (paymentMethodId) body.paymentMethodId = paymentMethodId
+      if (discountPreview) {
+        const request = prepareDiscountCheckout(selectionFromPreview(discountPreview))
+        const checkout = await beginDiscountCheckout(request)
+        if (!checkout.clientSecret) throw new Error('Payment setup is not ready. Please try again.')
+        setDiscountCheckout(loadPersistedDiscountCheckout(createdJob._id))
+        setScheduledCommitment(checkout.scheduledCommitment)
+        setAcceptedPrice(checkout.pricing.clientChargeIncGstCents / 100)
+        setClientSecret(checkout.clientSecret)
+        setCurrentStep(8)
+        return
+      }
 
-      const res = await api.post<{ job: Job; payment: unknown; clientSecret: string }>(
+      const body: Record<string, unknown> = { tier: selectedTier }
+
+      const res = await api.raw<{ data: { job: Job; payment: unknown; clientSecret: string } }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        body
+        { method: 'POST', body, headers: { 'Idempotency-Key': createFinancialIdempotencyKey('accept') } }
       )
 
       const selectedOption = createdQuote?.options.find(o => o.tier === selectedTier)
       setAcceptedPrice(quoteBreakdown(selectedOption).totalIncGst)
-
-      if (paymentMethodId) {
-        router.push('/dashboard')
-        return
-      }
 
       const secret = res.data.clientSecret
       if (!secret) throw new Error('No client secret returned from server')
@@ -2694,6 +2768,10 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       setClientSecret(secret)
       setCurrentStep(8)
     } catch (err: any) {
+      if (discountPreview) {
+        setAcceptError(discountCheckoutErrorMessage(err))
+        return
+      }
       if (err instanceof ApiError) {
         setAcceptError(err.message)
       } else {
@@ -2702,7 +2780,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
     } finally {
       setIsAccepting(false)
     }
-  }, [createdJob, selectedTier, router])
+  }, [createdJob, selectedTier])
 
 
 
@@ -2717,7 +2795,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
 
 
 
-  const handleRescheduleToScheduled = useCallback(async (isoTime: string, tier: SkillLevel | null, price: number) => {
+  const handleRescheduleToScheduled = useCallback(async (isoTime: string, tier: SkillLevel | null, price: number, discountPreview: DiscountPreview | null = null) => {
     console.log('[Reschedule] Calling handleRescheduleToScheduled:', { isoTime, tier, price })
     if (!createdJob || !tier || price <= 0) {
       console.warn('[Reschedule] Missing requirements:', { createdJob: !!createdJob, tier, price })
@@ -2733,9 +2811,26 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       )
 
 
-      const acceptRes = await api.post<{ clientSecret: string }>(
+      if (discountPreview) {
+        const request = prepareDiscountCheckout(selectionFromPreview(discountPreview))
+        const checkout = await beginDiscountCheckout(request)
+        if (!checkout.clientSecret) throw new Error('Payment setup is not ready. Please try again.')
+        setSelectedTier(tier)
+        setAcceptedPrice(checkout.pricing.clientChargeIncGstCents / 100)
+        setDiscountCheckout(loadPersistedDiscountCheckout(createdJob._id))
+        setScheduledCommitment(checkout.scheduledCommitment)
+        setClientSecret(checkout.clientSecret)
+        setCurrentStep(8)
+        return
+      }
+
+      const acceptRes = await api.raw<{ data: { clientSecret: string } }>(
         `/api/jobs/${createdJob._id}/accept-quote`,
-        { tier, scheduledFor: auISO, priceOverride: price }
+        {
+          method: 'POST',
+          body: { tier, scheduledFor: auISO, priceOverride: price },
+          headers: { 'Idempotency-Key': createFinancialIdempotencyKey('accept') },
+        }
       )
       const secret = acceptRes.data.clientSecret
       if (!secret) throw new Error('No client secret returned.')
@@ -2755,11 +2850,13 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
       setCurrentStep(8)
 
     } catch (err) {
-      setAcceptError(err instanceof ApiError ? err.message : 'Failed to book at standard rates. Please try again.')
+      setAcceptError(discountPreview
+        ? discountCheckoutErrorMessage(err)
+        : (err instanceof ApiError ? err.message : 'Failed to book at standard rates. Please try again.'))
     } finally {
       setIsRescheduling(false)
     }
-  }, [createdJob])
+  }, [createdJob, createdQuote])
 
 
   const handleCleaningTypeSelect = async (type: CleaningType) => {
@@ -3169,7 +3266,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             job={createdJob}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
-            onAccept={() => handleAcceptQuote()}
+            onAccept={handleAcceptQuote}
             onCancel={handleCancelJob}
             onReschedule={handleRescheduleToScheduled}
             isAccepting={isAccepting}
@@ -3200,9 +3297,27 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
         if (!stripe) throw new Error('Stripe failed to load')
 
-        const { error } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: selectedSavedCard,
-        })
+        if (discountCheckout) {
+          const response = await retryDiscountSavedCard({
+            request: discountCheckout,
+            paymentMethodId: selectedSavedCard,
+          })
+          if (response.state === 'requires_payment_method') {
+            throw new Error('That payment method could not be used. Choose another card.')
+          }
+          if (response.state === 'requires_action') {
+            if (!response.clientSecret) throw new Error('Payment verification could not be opened. Please try again.')
+            const confirmation = response.scheduledCommitment
+              ? await stripe.confirmCardSetup(response.clientSecret, { payment_method: selectedSavedCard })
+              : await stripe.confirmCardPayment(response.clientSecret, { payment_method: selectedSavedCard })
+            if (confirmation.error) throw new Error(confirmation.error.message || 'Payment verification failed.')
+          }
+          clearPersistedDiscountCheckout(createdJob?._id || discountCheckout.selection.jobId)
+          router.push('/dashboard')
+          return
+        }
+
+        const { error } = await stripe.confirmCardPayment(clientSecret, { payment_method: selectedSavedCard })
 
         if (error) {
           setAcceptError(error.message || 'Payment failed. Please try again.')
@@ -3232,11 +3347,13 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
             </div>
             <h1 className="text-2xl font-bold text-[var(--upwork-navy)] mb-1">Secure Payment</h1>
             <p className="text-[var(--upwork-gray)] text-sm">
-              Your payment of{' '}
+              {scheduledCommitment ? 'Save a payment method to secure your discounted booking of ' : 'Your payment of '}
               <span className="font-semibold text-[var(--upwork-navy)]">
                 {formatMoney(acceptedPrice)} AUD
               </span>{' '}
-              is held in escrow until your job is completed.
+              {scheduledCommitment
+                ? ' now. Fixes will request authorization closer to the service date.'
+                : ' is held in escrow until your job is completed.'}
             </p>
           </div>
 
@@ -3288,7 +3405,7 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
                   {isPayingWithSaved ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Confirming…</>
                   ) : (
-                    <><ShieldCheck className="w-4 h-4" /> Pay {formatMoney(acceptedPrice)} AUD</>
+                    <><ShieldCheck className="w-4 h-4" /> {scheduledCommitment ? 'Save card securely' : `Pay ${formatMoney(acceptedPrice)} AUD`}</>
                   )}
                 </button>
                 <button
@@ -3336,7 +3453,11 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
               >
                 <PaymentForm
                   amount={acceptedPrice}
-                  onSuccess={() => router.push('/dashboard')}
+                  scheduledCommitment={scheduledCommitment}
+                  onSuccess={() => {
+                    if (createdJob?._id) clearPersistedDiscountCheckout(createdJob._id)
+                    router.push('/dashboard')
+                  }}
                   onCancel={handleCancelJob}
                 />
               </Elements>

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, Loader2, Sparkles, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { api, setTokens, ApiError } from '@/lib/api'
+import { captureMarketingTouch, clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
  
 interface InvitePreview {
   category: 'cleaning' | 'waste_removal'
@@ -75,6 +76,12 @@ function CleanerRegisterForm() {
       .finally(() => setIsValidating(false))
   }, [token])
 
+  useEffect(() => {
+    const campaign = searchParams.get('campaign')
+    const code = searchParams.get('code')
+    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : searchParams.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
+  }, [searchParams])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -96,10 +103,11 @@ function CleanerRegisterForm() {
     try {
       const res = await api.post<RegisterAgencyResponse>(
         '/api/auth/register/cleaning',
-        { name, email, phone, password, inviteToken: token },
+        { name, email, phone, password, inviteToken: token, marketingAttribution: registrationAttributionPayload() },
         true
       )
       setTokens(res.data.accessToken, res.data.refreshToken)
+      clearRegistrationAttribution()
       setSuccess(true)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Registration failed. Please try again.')

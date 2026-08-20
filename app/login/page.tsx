@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { ApiError } from '@/lib/api'
+import { resolveAuthenticatedLanding } from '@/lib/admin-routing'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -34,20 +35,7 @@ export default function LoginPage() {
     try {
       const user = await login(email, password)
 
-      if (user.role === 'admin') {
-        const hasBoth = user.isCleaningAdmin && user.isFullAdmin !== false
-        const cleaningOnly = user.isCleaningAdmin && user.isFullAdmin === false
-
-        if (hasBoth) {
-          router.push('/admin-select')
-        } else if (cleaningOnly) {
-          router.push('/cleaning-admin')
-        } else {
-          router.push('/admin')
-        }
-      } else {
-        router.push('/dashboard')
-      }
+      router.push(resolveAuthenticatedLanding(user))
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message)
