@@ -25,6 +25,7 @@ export interface MarketingCampaign {
   endsAt: string
   timezone: string
   ownerId: string
+  defaultSignupCodeId?: string | null
   budgetCents: number | null
   reservedBudgetCents: number
   authorizedBudgetCents: number
@@ -265,6 +266,9 @@ export const marketingApi = {
   }),
   transitionCampaign: (id: string, version: number, nextStatus: CampaignStatus, reason: string, token: string) => api.raw<{ data: { campaign: MarketingCampaign } }>(`/api/admin/marketing/campaigns/${id}/transition`, {
     method: 'POST', headers: { 'If-Match': `"${version}"`, 'X-Admin-Action-Token': token }, body: { nextStatus, reason },
+  }),
+  setDefaultSignupOffer: (id: string, version: number, codeId: string | null, token: string) => api.raw<{ data: { campaign: MarketingCampaign } }>(`/api/admin/marketing/campaigns/${id}/default-signup-offer`, {
+    method: 'PATCH', headers: { 'If-Match': `"${version}"`, 'X-Admin-Action-Token': token }, body: { codeId },
   }),
   createCode: (campaignId: string, draft: DiscountCodeDraft, token: string) => api.raw<{ data: { code: DiscountCode } }>(`/api/admin/marketing/campaigns/${campaignId}/codes`, {
     method: 'POST', headers: { 'X-Admin-Action-Token': token }, body: serializeCode(draft),

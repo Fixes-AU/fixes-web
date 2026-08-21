@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Building2, CheckCircle2, Loader2, ShieldCheck } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AUSTRALIAN_STATES, ROOFING_CAPABILITIES } from '@/lib/constants'
-import { captureMarketingTouch, registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { useMarketingRegistrationEntry } from '@/hooks/use-marketing-registration-entry'
+import MarketingRegistrationField from '@/components/marketing/MarketingRegistrationField'
 
 const CATEGORY_OPTIONS = [
   { value: 'electrical', label: 'Electrical' },
@@ -43,13 +45,7 @@ export default function AgencyRegistrationPage() {
   const [categories, setCategories] = useState<string[]>([])
   const [roofingCapabilities, setRoofingCapabilities] = useState<string[]>([])
   const [roofingJurisdictions, setRoofingJurisdictions] = useState<string[]>([])
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const campaign = params.get('campaign')
-    const code = params.get('code')
-    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
-  }, [])
+  const { marketingCode, setMarketingCode, marketingStatus, marketingMessage, waitForMarketingCapture } = useMarketingRegistrationEntry()
 
   const toggleCategory = (value: string) => {
     setCategories(prev => prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value])
@@ -65,6 +61,7 @@ export default function AgencyRegistrationPage() {
       return
     }
     try {
+      await waitForMarketingCapture()
       await api.post('/api/agency-applications', {
         companyName: form.companyName,
         ownerName: form.ownerName,
@@ -93,7 +90,7 @@ export default function AgencyRegistrationPage() {
         documents: form.documentNotes
           ? [{ type: 'other', label: 'Application document notes', notes: form.documentNotes }]
           : [],
-        marketingAttribution: registrationAttributionPayload(),
+        marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode }),
       }, true)
       setSubmitted(true)
     } catch (err: any) {
@@ -200,6 +197,15 @@ export default function AgencyRegistrationPage() {
               </label>
             ))}
           </div>
+
+          <MarketingRegistrationField
+            id="agency-marketing-code"
+            value={marketingCode}
+            onChange={setMarketingCode}
+            status={marketingStatus}
+            message={marketingMessage}
+            accent="blue"
+          />
 
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-2">Trade categories</p>

@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -11,7 +11,12 @@ import { useAuth } from '@/contexts/auth-context'
 import { ApiError } from '@/lib/api'
 import { parseFragmentState } from '@/lib/fragmentState'
 import { Button } from '@/components/ui/button'
-import { captureMarketingTouch } from '@/lib/marketing-attribution'
+import {
+  captureMarketingTouch,
+  loadPublicMarketingCampaign,
+  marketingEntryFromSearch,
+  type PublicMarketingCampaign,
+} from '@/lib/marketing-attribution'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +41,10 @@ export default function RegisterPage() {
   const [showBusinessDialog, setShowBusinessDialog] = useState(false)
   const [marketingCode, setMarketingCode] = useState('')
   const [analyticsConsent, setAnalyticsConsent] = useState(true)
+  const [marketingStatus, setMarketingStatus] = useState<'idle' | 'loading' | 'captured' | 'error'>('idle')
+  const [marketingMessage, setMarketingMessage] = useState('')
+  const [publicCampaign, setPublicCampaign] = useState<PublicMarketingCampaign | null>(null)
+  const marketingCaptureRef = useRef<Promise<unknown> | null>(null)
 
   useEffect(() => {
     const syncPlan = () => {
@@ -49,15 +58,31 @@ export default function RegisterPage() {
   }, [])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const campaign = params.get('campaign')
-    const code = params.get('code')
-    if (code) setMarketingCode(code.toUpperCase())
-    if (campaign || code) void captureMarketingTouch({
-      campaignIdentifier: campaign,
-      manualCode: code,
-      method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url',
-    }).catch(() => {})
+    const entry = marketingEntryFromSearch(window.location.search)
+    if (!entry) return
+
+    if (entry.manualCode) setMarketingCode(entry.manualCode)
+    setMarketingStatus('loading')
+    setMarketingMessage('Checking your campaign offer...')
+
+    const capture = Promise.all([
+      captureMarketingTouch(entry),
+      entry.campaignIdentifier
+        ? loadPublicMarketingCampaign(entry.campaignIdentifier)
+        : Promise.resolve(null),
+    ]).then(([, campaign]) => {
+      setPublicCampaign(campaign)
+      setMarketingStatus('captured')
+      setMarketingMessage(entry.manualCode
+        ? `Offer code ${entry.manualCode} is ready and will be checked again when you accept a quote.`
+        : `${campaign?.campaign.name || 'Campaign'} has been linked to this signup.`)
+    }).catch(() => {
+      setMarketingStatus('error')
+      setMarketingMessage('We could not verify this campaign link. You can still sign up and enter the code again later.')
+    })
+
+    marketingCaptureRef.current = capture
+    void capture.catch(() => undefined)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +107,7 @@ export default function RegisterPage() {
     setIsSubmitting(true)
 
     try {
+      if (marketingCaptureRef.current) await marketingCaptureRef.current
       await registerClient({
         name,
         email,
@@ -209,8 +235,20 @@ export default function RegisterPage() {
                 <label htmlFor="register-marketing-code" className="block text-sm font-medium text-(--upwork-navy) mb-1.5">
                   Campaign or discount code <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <input id="register-marketing-code" value={marketingCode} onChange={event => setMarketingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))} placeholder="e.g. COFFEE20" maxLength={64} className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-shadow" />
+                <input id="register-marketing-code" value={marketingCode} onChange={event => {
+                  setMarketingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))
+                  setMarketingStatus('idle')
+                  setMarketingMessage('')
+                }} placeholder="e.g. COFFEE20" maxLength={64} className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-shadow" />
                 <p className="text-xs text-gray-400 mt-1">If the offer is eligible, it will be saved to your account and revalidated when you accept a quote.</p>
+                {marketingMessage && (
+                  <p className={`text-xs mt-2 ${marketingStatus === 'error' ? 'text-amber-700' : marketingStatus === 'captured' ? 'text-emerald-700' : 'text-gray-500'}`} role={marketingStatus === 'error' ? 'alert' : 'status'}>
+                    {marketingMessage}
+                  </p>
+                )}
+                {publicCampaign?.campaign.termsSummary && marketingStatus === 'captured' && (
+                  <p className="text-xs text-gray-500 mt-1">{publicCampaign.campaign.termsSummary}</p>
+                )}
               </div>
 
               <label className="flex items-start gap-2 text-xs text-gray-500">

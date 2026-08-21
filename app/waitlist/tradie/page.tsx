@@ -7,12 +7,15 @@ import { Loader2, CheckCircle2, ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api'
 import { AGENCY_CATEGORIES, CATEGORY_LABELS, VALID_CATEGORIES } from '@/lib/constants'
 import { registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { useMarketingRegistrationEntry } from '@/hooks/use-marketing-registration-entry'
+import MarketingRegistrationField from '@/components/marketing/MarketingRegistrationField'
 
 export default function TradieWaitlistPage() {
   const [formData, setFormData] = useState({ name: '', email: '', suburb: '', postcode: '', tradeCategory: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
+  const { marketingCode, setMarketingCode, marketingStatus, marketingMessage, waitForMarketingCapture } = useMarketingRegistrationEntry()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,7 +23,8 @@ export default function TradieWaitlistPage() {
     setIsSubmitting(true)
 
     try {
-      await api.post('/api/auth/join-waitlist', { ...formData, type: 'tradie', marketingAttribution: registrationAttributionPayload() }, true)
+      await waitForMarketingCapture()
+      await api.post('/api/auth/join-waitlist', { ...formData, type: 'tradie', marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode }) }, true)
       setIsSuccess(true)
     } catch (err: any) {
       setError(err.message || 'Failed to join waitlist')
@@ -168,6 +172,14 @@ export default function TradieWaitlistPage() {
                     />
                   </div>
                 </div>
+
+                <MarketingRegistrationField
+                  id="tradie-waitlist-marketing-code"
+                  value={marketingCode}
+                  onChange={setMarketingCode}
+                  status={marketingStatus}
+                  message={marketingMessage}
+                />
 
                 <div className="pt-2">
                   <button

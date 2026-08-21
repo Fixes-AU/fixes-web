@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Loader2, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react'
 import { api } from '@/lib/api'
 import { registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { useMarketingRegistrationEntry } from '@/hooks/use-marketing-registration-entry'
+import MarketingRegistrationField from '@/components/marketing/MarketingRegistrationField'
 
 export default function ClientWaitlistPage() {
   const [step, setStep] = useState<1 | 2>(1)
@@ -23,6 +25,7 @@ export default function ClientWaitlistPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState('')
+  const { marketingCode, setMarketingCode, marketingStatus, marketingMessage, waitForMarketingCapture } = useMarketingRegistrationEntry()
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,11 +47,12 @@ export default function ClientWaitlistPage() {
     ]
 
     try {
+      await waitForMarketingCapture()
       await api.post('/api/auth/join-waitlist', { 
         ...formData, 
         type: 'client',
         questionnaire: formattedQuestionnaire,
-        marketingAttribution: registrationAttributionPayload(),
+        marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode }),
       }, true)
       setIsSuccess(true)
     } catch (err: any) {
@@ -177,6 +181,14 @@ export default function ClientWaitlistPage() {
                     />
                   </div>
                 </div>
+
+                <MarketingRegistrationField
+                  id="client-waitlist-marketing-code"
+                  value={marketingCode}
+                  onChange={setMarketingCode}
+                  status={marketingStatus}
+                  message={marketingMessage}
+                />
 
                 <div className="pt-2">
                   <button

@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import QRCode from 'qrcode'
 import {
   AlertTriangle, Archive, BarChart3, CalendarDays, ChevronLeft, ChevronRight, CirclePause,
-  CirclePlay, Copy, Download, Edit3, ExternalLink, Loader2, Megaphone, Plus, RefreshCw, Search, Ticket, XCircle,
+  CirclePlay, Edit3, Loader2, Megaphone, Plus, RefreshCw, Search, Ticket, XCircle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { useMarketingWorkspace } from '@/hooks/use-marketing-workspace'
@@ -20,6 +19,8 @@ import MarketingInsights from './MarketingInsights'
 import BulkCodeDialog from './BulkCodeDialog'
 import MarketingBulkJobs from './MarketingBulkJobs'
 import MarketingOperations from './MarketingOperations'
+import MarketingDistributionPanel from './MarketingDistributionPanel'
+import DefaultSignupOfferControl from './DefaultSignupOfferControl'
 
 type TransitionTarget =
   | { kind: 'campaign'; campaign: MarketingCampaign; nextStatus: CampaignStatus }
@@ -97,6 +98,13 @@ export default function MarketingWorkspace() {
     setNotice(`Bulk generation of ${count} individual codes was queued.`)
   }
 
+  const saveDefaultSignupOffer = async (codeId: string | null, token: string) => {
+    const campaign = state.selectedCampaign
+    if (!campaign) return
+    await actions.runMutation(() => marketingApi.setDefaultSignupOffer(campaign._id, campaign.version, codeId, token))
+    setNotice(codeId ? 'Default signup offer saved.' : 'Campaign-only links are now tracking only.')
+  }
+
   if (state.loading) return <LoadingState />
   if (!state.access && state.error) return <FatalError error={state.error} onRetry={() => actions.loadCampaigns()} />
 
@@ -128,7 +136,7 @@ export default function MarketingWorkspace() {
       <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between text-xs text-gray-500"><span>{state.total} campaign{state.total === 1 ? '' : 's'}</span><div className="flex items-center gap-2"><button disabled={state.page <= 1} onClick={() => actions.setPage(state.page - 1)} className="marketing-pagination-button"><ChevronLeft className="w-4 h-4" /></button><span>Page {state.page} of {state.totalPages}</span><button disabled={state.page >= state.totalPages} onClick={() => actions.setPage(state.page + 1)} className="marketing-pagination-button"><ChevronRight className="w-4 h-4" /></button></div></div>
     </section>
 
-    {state.detailLoading ? <div className="rounded-2xl border border-gray-200 bg-white py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-violet-600" /></div> : state.selectedCampaign && <CampaignDetail campaign={state.selectedCampaign} codes={state.codes} canManage={Boolean(state.access?.canManage)} canExport={Boolean(state.access?.canExport)} bulkRefreshKey={bulkRefreshKey} onEdit={() => setCampaignForm({ open: true, campaign: state.selectedCampaign })} onCreateCode={() => setCodeForm({ open: true, code: null })} onEditCode={code => setCodeForm({ open: true, code })} onBulkCode={setBulkSource} onCampaignTransition={nextStatus => setTransition({ kind: 'campaign', campaign: state.selectedCampaign!, nextStatus })} onCodeTransition={(code, nextStatus) => setTransition({ kind: 'code', campaign: state.selectedCampaign!, code, nextStatus })} />}
+    {state.detailLoading ? <div className="rounded-2xl border border-gray-200 bg-white py-20 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-violet-600" /></div> : state.selectedCampaign && <CampaignDetail campaign={state.selectedCampaign} codes={state.codes} canManage={Boolean(state.access?.canManage)} canExport={Boolean(state.access?.canExport)} busy={state.mutating} bulkRefreshKey={bulkRefreshKey} onEdit={() => setCampaignForm({ open: true, campaign: state.selectedCampaign })} onCreateCode={() => setCodeForm({ open: true, code: null })} onEditCode={code => setCodeForm({ open: true, code })} onBulkCode={setBulkSource} onDefaultSignupOffer={saveDefaultSignupOffer} onCampaignTransition={nextStatus => setTransition({ kind: 'campaign', campaign: state.selectedCampaign!, nextStatus })} onCodeTransition={(code, nextStatus) => setTransition({ kind: 'code', campaign: state.selectedCampaign!, code, nextStatus })} />}
     <MarketingInsights campaignId={state.selectedCampaign?._id} campaignName={state.selectedCampaign?.publicName} canExport={Boolean(state.access?.canExport)} />
     <MarketingOperations />
 
@@ -139,14 +147,9 @@ export default function MarketingWorkspace() {
   </div>
 }
 
-function CampaignDetail({ campaign, codes, canManage, canExport, bulkRefreshKey, onEdit, onCreateCode, onEditCode, onBulkCode, onCampaignTransition, onCodeTransition }: { campaign: MarketingCampaign; codes: DiscountCode[]; canManage: boolean; canExport: boolean; bulkRefreshKey: number; onEdit: () => void; onCreateCode: () => void; onEditCode: (code: DiscountCode) => void; onBulkCode: (code: DiscountCode) => void; onCampaignTransition: (status: CampaignStatus) => void; onCodeTransition: (code: DiscountCode, status: DiscountCodeStatus) => void }) {
-  const [qrData, setQrData] = useState('')
-  const [copied, setCopied] = useState(false)
-  const campaignUrl = typeof window === 'undefined' ? '' : `${window.location.origin}/register?campaign=${encodeURIComponent(campaign.publicIdentifier)}`
-  const qrUrl = campaignUrl ? `${campaignUrl}&via=qr` : ''
-  useEffect(() => { let active = true; if (qrUrl) QRCode.toDataURL(qrUrl, { width: 512, margin: 2, errorCorrectionLevel: 'M' }).then(value => { if (active) setQrData(value) }); return () => { active = false } }, [qrUrl])
+function CampaignDetail({ campaign, codes, canManage, canExport, busy, bulkRefreshKey, onEdit, onCreateCode, onEditCode, onBulkCode, onDefaultSignupOffer, onCampaignTransition, onCodeTransition }: { campaign: MarketingCampaign; codes: DiscountCode[]; canManage: boolean; canExport: boolean; busy: boolean; bulkRefreshKey: number; onEdit: () => void; onCreateCode: () => void; onEditCode: (code: DiscountCode) => void; onBulkCode: (code: DiscountCode) => void; onDefaultSignupOffer: (codeId: string | null, token: string) => Promise<void>; onCampaignTransition: (status: CampaignStatus) => void; onCodeTransition: (code: DiscountCode, status: DiscountCodeStatus) => void }) {
   return <section className="rounded-2xl border border-gray-200 bg-white overflow-hidden"><div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-start justify-between gap-4"><div><div className="flex items-center gap-2"><h2 className="text-lg font-bold text-gray-900">{campaign.publicName}</h2><StatusBadge status={campaign.status} /></div><p className="text-sm text-gray-500 mt-1">{campaign.termsSummary}</p><p className="text-[10px] text-gray-400 mt-2">Version {campaign.version} · Updated {new Date(campaign.updatedAt).toLocaleString('en-AU')}</p></div>{canManage && <div className="flex flex-wrap gap-2"><button onClick={onEdit} className="marketing-button-secondary"><Edit3 className="w-4 h-4" /> Edit</button>{(campaignTransitions[campaign.status] || []).map(status => <button key={status} onClick={() => onCampaignTransition(status)} className={['ended', 'archived'].includes(status) ? 'marketing-button-danger' : 'marketing-button-secondary'}>{status === 'active' ? <CirclePlay className="w-4 h-4" /> : status === 'paused' ? <CirclePause className="w-4 h-4" /> : <Archive className="w-4 h-4" />} {CAMPAIGN_STATUS_LABELS[status]}</button>)}</div>}</div>
-    <div className="grid lg:grid-cols-[1fr_220px] gap-5 p-5"><div className="space-y-5"><div className="grid sm:grid-cols-3 gap-3"><Info label="Campaign period" value={`${formatDate(campaign.startsAt)} – ${formatDate(campaign.endsAt)}`} /><Info label="Budget" value={formatAud(campaign.budgetCents)} sub={`${formatAud(campaign.reservedBudgetCents + campaign.authorizedBudgetCents + campaign.redeemedBudgetCents)} committed`} /><Info label="Attribution" value={[campaign.tracking?.source, campaign.tracking?.medium].filter(Boolean).join(' / ') || 'Direct'} /></div><div className="flex items-center justify-between"><div><h3 className="font-semibold text-gray-900">Codes and tracked offers</h3><p className="text-xs text-gray-400">Financial changes require password confirmation.</p></div>{canManage && <button onClick={onCreateCode} className="marketing-button-primary"><Plus className="w-4 h-4" /> Add code</button>}</div>{codes.length === 0 ? <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">No codes created for this campaign.</div> : <div className="space-y-3">{codes.map(code => <CodeCard key={code._id} code={code} canManage={canManage} onEdit={() => onEditCode(code)} onBulk={() => onBulkCode(code)} onTransition={status => onCodeTransition(code, status)} />)}</div>}<MarketingBulkJobs campaignId={campaign._id} canExport={canExport} refreshKey={bulkRefreshKey} /></div><aside className="rounded-xl border border-violet-100 bg-violet-50/50 p-4 h-fit"><h3 className="text-sm font-semibold text-gray-800">Signup QR and link</h3><p className="text-[11px] text-gray-500 mt-1">The QR uses the public identifier and carries no admin credentials.</p>{qrData ? <img src={qrData} alt={`QR code for ${campaign.publicName}`} className="w-40 h-40 mx-auto my-3 rounded-lg bg-white" /> : <div className="h-40 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-violet-500" /></div>}<div className="flex gap-2"><button className="marketing-button-secondary flex-1" onClick={async () => { await navigator.clipboard.writeText(campaignUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) }}><Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : 'Copy'}</button>{qrData && <a href={qrData} download={`${campaign.publicIdentifier}-qr.png`} className="marketing-button-secondary"><Download className="w-3.5 h-3.5" /></a>}</div><a href={campaignUrl} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-1 text-[11px] text-violet-600 break-all"><ExternalLink className="w-3 h-3 shrink-0" />{campaignUrl}</a></aside></div>
+    <div className="grid lg:grid-cols-[1fr_300px] gap-5 p-5"><div className="space-y-5"><div className="grid sm:grid-cols-3 gap-3"><Info label="Campaign period" value={`${formatDate(campaign.startsAt)} – ${formatDate(campaign.endsAt)}`} /><Info label="Budget" value={formatAud(campaign.budgetCents)} sub={`${formatAud(campaign.reservedBudgetCents + campaign.authorizedBudgetCents + campaign.redeemedBudgetCents)} committed`} /><Info label="Attribution" value={[campaign.tracking?.source, campaign.tracking?.medium].filter(Boolean).join(' / ') || 'Direct'} /></div><DefaultSignupOfferControl campaign={campaign} codes={codes} canManage={canManage} busy={busy} onSave={onDefaultSignupOffer} /><div className="flex items-center justify-between"><div><h3 className="font-semibold text-gray-900">Codes and tracked offers</h3><p className="text-xs text-gray-400">Financial changes require password confirmation.</p></div>{canManage && <button onClick={onCreateCode} className="marketing-button-primary"><Plus className="w-4 h-4" /> Add code</button>}</div>{codes.length === 0 ? <div className="rounded-xl border border-dashed border-gray-200 py-10 text-center text-sm text-gray-400">No codes created for this campaign.</div> : <div className="space-y-3">{codes.map(code => <CodeCard key={code._id} code={code} canManage={canManage} onEdit={() => onEditCode(code)} onBulk={() => onBulkCode(code)} onTransition={status => onCodeTransition(code, status)} />)}</div>}<MarketingBulkJobs campaignId={campaign._id} canExport={canExport} refreshKey={bulkRefreshKey} /></div><MarketingDistributionPanel campaign={campaign} codes={codes} /></div>
   </section>
 }
 

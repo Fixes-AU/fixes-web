@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -10,7 +10,9 @@ import { Eye, EyeOff, Loader2, Info } from 'lucide-react'
 import { api, setTokens, ApiError } from '@/lib/api'
 import { VALID_CATEGORIES, CATEGORY_LABELS, ROOFING_CAPABILITIES, AUSTRALIAN_STATES } from '@/lib/constants'
 import type { RegisterTradieResponse, TradieCategory, RoofingCapability } from '@/lib/types'
-import { captureMarketingTouch, clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { useMarketingRegistrationEntry } from '@/hooks/use-marketing-registration-entry'
+import MarketingRegistrationField from '@/components/marketing/MarketingRegistrationField'
 
 export default function RegisterTradiePage() {
   const router = useRouter()
@@ -31,13 +33,7 @@ export default function RegisterTradiePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState('')
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const campaign = params.get('campaign')
-    const code = params.get('code')
-    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : params.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
-  }, [])
+  const { marketingCode, setMarketingCode, marketingStatus, marketingMessage, waitForMarketingCapture } = useMarketingRegistrationEntry()
 
   const completeRegistration = async (signupToken: string) => {
     const res = await api.post<RegisterTradieResponse>('/api/auth/register/tradie', {
@@ -96,10 +92,11 @@ export default function RegisterTradiePage() {
     setIsSubmitting(true)
 
     try {
+      await waitForMarketingCapture()
       await api.post('/api/auth/register/tradie/init', {
         email,
         phone,
-        marketingAttribution: registrationAttributionPayload(),
+        marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode }),
       }, true)
       setOtpSent(true)
     } catch (err) {
@@ -192,6 +189,14 @@ export default function RegisterTradiePage() {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl text-(--upwork-navy) placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-(--upwork-green) focus:border-transparent transition-shadow"
                 />
               </div>
+
+              <MarketingRegistrationField
+                id="tradie-marketing-code"
+                value={marketingCode}
+                onChange={setMarketingCode}
+                status={marketingStatus}
+                message={marketingMessage}
+              />
 
               <div>
                 <label

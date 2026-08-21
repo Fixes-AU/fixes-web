@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { createFragmentHref } from "@/lib/fragmentState"
+import { createFragmentRedirectHref } from "@/lib/fragmentState"
 
 const IGNORED_PREFIXES = ["/_next", "/api", "/_vercel"]
 const STATIC_EXT =
@@ -41,15 +41,18 @@ export function proxy(request: NextRequest) {
   const fragmentKeys = fragmentKeysByPath[request.nextUrl.pathname]
   if (!fragmentKeys) return NextResponse.next()
 
-  const fragmentState = Object.fromEntries(
-    fragmentKeys.map((key) => [key, request.nextUrl.searchParams.get(key)]),
+  const destinationHref = createFragmentRedirectHref(
+    request.nextUrl.pathname,
+    request.nextUrl.search,
+    fragmentKeys,
   )
-  const destination = new URL(
-    createFragmentHref(request.nextUrl.pathname, fragmentState),
-    request.url,
-  )
+  if (!destinationHref) return NextResponse.next()
 
-  return NextResponse.redirect(destination, 301)
+  const destination = new URL(destinationHref, request.url)
+
+  // Query-to-fragment migration is client-state compatibility behavior, not a permanent URL move.
+  // A temporary redirect prevents browsers from caching a parameter rewrite indefinitely.
+  return NextResponse.redirect(destination, 307)
 }
 
 export const config = {

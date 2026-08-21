@@ -6,7 +6,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Eye, EyeOff, Loader2, Sparkles, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { api, setTokens, ApiError } from '@/lib/api'
-import { captureMarketingTouch, clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { clearRegistrationAttribution, registrationAttributionPayload } from '@/lib/marketing-attribution'
+import { useMarketingRegistrationEntry } from '@/hooks/use-marketing-registration-entry'
+import MarketingRegistrationField from '@/components/marketing/MarketingRegistrationField'
  
 interface InvitePreview {
   category: 'cleaning' | 'waste_removal'
@@ -56,6 +58,7 @@ function CleanerRegisterForm() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const { marketingCode, setMarketingCode, marketingStatus, marketingMessage, waitForMarketingCapture } = useMarketingRegistrationEntry()
 
   useEffect(() => {
     if (!token) {
@@ -76,12 +79,6 @@ function CleanerRegisterForm() {
       .finally(() => setIsValidating(false))
   }, [token])
 
-  useEffect(() => {
-    const campaign = searchParams.get('campaign')
-    const code = searchParams.get('code')
-    if (campaign || code) void captureMarketingTouch({ campaignIdentifier: campaign, manualCode: code, method: code ? 'manual_code' : searchParams.get('via') === 'qr' ? 'qr' : 'url' }).catch(() => {})
-  }, [searchParams])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -101,9 +98,10 @@ function CleanerRegisterForm() {
 
     setIsSubmitting(true)
     try {
+      await waitForMarketingCapture()
       const res = await api.post<RegisterAgencyResponse>(
         '/api/auth/register/cleaning',
-        { name, email, phone, password, inviteToken: token, marketingAttribution: registrationAttributionPayload() },
+        { name, email, phone, password, inviteToken: token, marketingAttribution: registrationAttributionPayload({ manualCode: marketingCode }) },
         true
       )
       setTokens(res.data.accessToken, res.data.refreshToken)
@@ -253,6 +251,14 @@ function CleanerRegisterForm() {
                     </button>
                   </div>
                 </div>
+                <MarketingRegistrationField
+                  id="cleaner-marketing-code"
+                  value={marketingCode}
+                  onChange={setMarketingCode}
+                  status={marketingStatus}
+                  message={marketingMessage}
+                  accent="teal"
+                />
                 <div>
                   <label htmlFor="cleaner-confirm" className="block text-sm font-medium text-gray-700 mb-1.5">Confirm password</label>
                   <input

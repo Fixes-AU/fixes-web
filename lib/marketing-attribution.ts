@@ -9,6 +9,62 @@ interface StoredAttribution {
   expiresAt: string
 }
 
+export interface MarketingEntry {
+  campaignIdentifier?: string
+  manualCode?: string
+  method: 'url' | 'qr'
+}
+
+export interface PublicMarketingOffer {
+  code: string
+  purpose: 'attribution_only' | 'discount_only' | 'attribution_and_discount'
+  discountType: 'percentage' | 'fixed_aud'
+  percentageBasisPoints: number | null
+  fixedAmountCents: number | null
+  maximumDiscountCents: number | null
+  minimumSubtotalCents: number
+  firstJobOnly: boolean
+  expiresAt: string
+  restrictionsSummary?: string
+}
+
+export interface PublicMarketingCampaign {
+  campaign: {
+    identifier: string
+    name: string
+    audiences: string[]
+    startsAt: string
+    endsAt: string
+    termsSummary?: string
+  }
+  offers: PublicMarketingOffer[]
+}
+
+const normalizeMarketingCode = (value: string | null) => (
+  value?.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 64) || undefined
+)
+
+export function marketingEntryFromSearch(search: string): MarketingEntry | null {
+  const params = new URLSearchParams(search)
+  const campaignIdentifier = params.get('campaign')?.trim().slice(0, 100) || undefined
+  const manualCode = normalizeMarketingCode(params.get('code'))
+  if (!campaignIdentifier && !manualCode) return null
+
+  return {
+    campaignIdentifier,
+    manualCode,
+    method: params.get('via') === 'qr' ? 'qr' : 'url',
+  }
+}
+
+export async function loadPublicMarketingCampaign(identifier: string) {
+  const response = await api.get<PublicMarketingCampaign>(
+    `/api/marketing/c/${encodeURIComponent(identifier)}`,
+    true,
+  )
+  return response.data
+}
+
 const uuid = () => crypto.randomUUID()
 const read = (): StoredAttribution | null => {
   if (typeof window === 'undefined') return null
