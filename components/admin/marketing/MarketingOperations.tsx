@@ -1,16 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, CircleOff, Loader2, RefreshCw, ShieldAlert, Wrench } from 'lucide-react'
 import { ApiError } from '@/lib/api'
 import { MarketingOperations as Operations, marketingApi } from '@/lib/marketing'
 
 const label = (value: string) => value.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase())
 
-export default function MarketingOperations() {
+export default function MarketingOperations({ refreshToken = 0, onRefreshComplete }: { refreshToken?: number; onRefreshComplete?: (token: number) => void }) {
   const [operations, setOperations] = useState<Operations | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
+  const handledRefresh = useRef(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -26,11 +27,16 @@ export default function MarketingOperations() {
   }, [])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    if (!refreshToken || handledRefresh.current === refreshToken) return
+    handledRefresh.current = refreshToken
+    void load().finally(() => onRefreshComplete?.(refreshToken))
+  }, [load, onRefreshComplete, refreshToken])
 
   return <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
     <header className="flex flex-col gap-3 border-b border-gray-100 p-5 sm:flex-row sm:items-start sm:justify-between">
       <div><h2 className="flex items-center gap-2 text-lg font-bold text-gray-900"><ShieldAlert className="h-5 w-5 text-violet-600" /> Payment operations and rollout safety</h2><p className="mt-1 text-sm text-gray-500">Read-only reconciliation facts and activation blockers. Pause affected campaigns when needed; Engineering owns technical recovery.</p></div>
-      <button type="button" onClick={() => void load()} className="marketing-button-secondary"><RefreshCw className="h-4 w-4" /> Refresh</button>
+      <button type="button" disabled={loading} onClick={() => void load()} className="marketing-button-secondary"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> {loading ? 'Refreshing' : 'Refresh'}</button>
     </header>
     {error && <div className="m-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error.message}{error.requestId && <span className="ml-2 text-[10px]">Request {error.requestId}</span>}</div>}
     {loading && !operations ? <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-violet-600" /></div> : operations && <div className="space-y-5 p-5">

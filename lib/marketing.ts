@@ -124,6 +124,39 @@ export interface MarketingAuditEntry {
   createdAt: string
 }
 
+export interface MarketingRegistrationIdentity {
+  subjectType: 'user' | 'waitlist_lead' | 'agency_application'
+  subjectId: string
+  fixId: string | null
+  displayName: string
+  companyName: string | null
+  email: string | null
+  phone: string | null
+  directMarketingConsent: boolean
+  status: string | null
+  emailVerified: boolean | null
+  phoneVerified: boolean | null
+  role: string | null
+  suburb: string | null
+  postcode: string | null
+  tradeCategory: string | null
+}
+
+export interface MarketingRegistration {
+  _id: string
+  occurredAt: string
+  registrationType: string | null
+  audience: CampaignAudience | null
+  surface: string
+  attributionMethod: string
+  campaign: Pick<MarketingCampaign, '_id' | 'internalName' | 'publicName' | 'publicIdentifier'> | null
+  code: Pick<DiscountCode, '_id' | 'displayCode' | 'purpose' | 'status'> | null
+  identity: MarketingRegistrationIdentity | null
+  utm: { id?: string | null; source?: string | null; medium?: string | null; campaign?: string | null; content?: string | null }
+  requestId: string | null
+  legacyIdentityUnavailable: boolean
+}
+
 export interface MarketingBulkJob {
   _id: string
   campaignId: string
@@ -280,9 +313,10 @@ export const marketingApi = {
     method: 'POST', headers: { 'If-Match': `"${version}"`, 'X-Admin-Action-Token': token }, body: { nextStatus, reason },
   }),
   analytics: (params: URLSearchParams) => api.get<MarketingAnalytics>(`/api/admin/marketing/analytics?${params}`),
+  registrations: (params: URLSearchParams) => api.get<{ items: MarketingRegistration[]; pagination: { page: number; limit: number; total: number; totalPages: number }; range: { from: string; to: string } }>(`/api/admin/marketing/registrations?${params}`),
   operations: () => api.get<MarketingOperations>('/api/admin/marketing/operations?limit=50'),
   audit: (params: URLSearchParams) => api.get<{ items: MarketingAuditEntry[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(`/api/admin/marketing/audit?${params}`),
-  export: (type: 'campaigns' | 'codes' | 'funnel', params: URLSearchParams) => api.getBlob(`/api/admin/marketing/exports/${type}?${params}`),
+  export: (type: 'campaigns' | 'codes' | 'funnel' | 'registrations', params: URLSearchParams) => api.getBlob(`/api/admin/marketing/exports/${type}?${params}`),
   bulkJobs: (campaignId: string) => api.get<{ jobs: MarketingBulkJob[] }>(`/api/admin/marketing/campaigns/${campaignId}/bulk-jobs`),
   createBulkJob: (campaignId: string, version: number, count: number, prefix: string, template: DiscountCodeDraft, batchId: string, token: string) => api.raw<{ data: { job: MarketingBulkJob } }>(`/api/admin/marketing/campaigns/${campaignId}/codes/bulk`, {
     method: 'POST', headers: { 'If-Match': `"${version}"`, 'X-Admin-Action-Token': token },

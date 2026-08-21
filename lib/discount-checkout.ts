@@ -161,6 +161,7 @@ export const beginDiscountCheckout = async (request: PersistedDiscountCheckout) 
         optionSet: selection.optionSet,
         ...(selection.scheduledFor ? { scheduledFor: selection.scheduledFor } : {}),
         discountCode: selection.discountCode,
+        surface: 'web',
       },
     }
   )

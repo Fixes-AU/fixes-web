@@ -17,6 +17,7 @@ export interface MarketingWorkspaceState {
   totalPages: number
   total: number
   loading: boolean
+  refreshing: boolean
   detailLoading: boolean
   mutating: boolean
   stale: boolean
@@ -30,6 +31,7 @@ type Action =
   | { type: 'SELECT_START' }
   | { type: 'SELECT_SUCCESS'; campaign: MarketingCampaign; codes: DiscountCode[] }
   | { type: 'SELECT_ERROR'; error: ApiError }
+  | { type: 'CLEAR_SELECTION' }
   | { type: 'SET_FILTER'; statusFilter: string }
   | { type: 'SET_SEARCH'; search: string }
   | { type: 'SET_PAGE'; page: number }
@@ -41,26 +43,28 @@ type Action =
 export const initialMarketingWorkspaceState: MarketingWorkspaceState = {
   access: null, campaigns: [], selectedCampaign: null, codes: [],
   statusFilter: 'all', search: '', page: 1, totalPages: 1, total: 0,
-  loading: true, detailLoading: false, mutating: false, stale: false, error: null,
+  loading: true, refreshing: false, detailLoading: false, mutating: false, stale: false, error: null,
 }
 
 export function marketingWorkspaceReducer(state: MarketingWorkspaceState, action: Action): MarketingWorkspaceState {
   switch (action.type) {
     case 'LOAD_START':
-      return { ...state, loading: !action.refreshing, stale: action.refreshing ? state.stale : false, error: null }
+      return { ...state, loading: !action.refreshing, refreshing: action.refreshing, stale: action.refreshing ? state.stale : false, error: null }
     case 'LOAD_SUCCESS':
       return {
-        ...state, loading: false, stale: false, error: null, access: action.access,
+        ...state, loading: false, refreshing: false, stale: false, error: null, access: action.access,
         campaigns: action.campaigns, total: action.total, totalPages: Math.max(1, action.totalPages),
       }
     case 'LOAD_ERROR':
-      return { ...state, loading: false, stale: state.campaigns.length > 0, error: action.error }
+      return { ...state, loading: false, refreshing: false, stale: state.campaigns.length > 0, error: action.error }
     case 'SELECT_START':
       return { ...state, detailLoading: true, error: null }
     case 'SELECT_SUCCESS':
       return { ...state, detailLoading: false, selectedCampaign: action.campaign, codes: action.codes, error: null, stale: false }
     case 'SELECT_ERROR':
       return { ...state, detailLoading: false, stale: Boolean(state.selectedCampaign), error: action.error }
+    case 'CLEAR_SELECTION':
+      return { ...state, selectedCampaign: null, codes: [], detailLoading: false }
     case 'SET_FILTER':
       return { ...state, statusFilter: action.statusFilter, page: 1 }
     case 'SET_SEARCH':
@@ -156,6 +160,7 @@ export function useMarketingWorkspace() {
       loadCampaigns,
       selectCampaign,
       refreshSelected,
+      clearSelection: () => dispatch({ type: 'CLEAR_SELECTION' }),
       runMutation,
       setStatusFilter: (statusFilter: string) => dispatch({ type: 'SET_FILTER', statusFilter }),
       setSearch: (search: string) => dispatch({ type: 'SET_SEARCH', search }),

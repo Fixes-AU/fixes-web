@@ -8,11 +8,13 @@ import { MarketingBulkJob, marketingApi } from '@/lib/marketing'
 export default function MarketingBulkJobs({ campaignId, canExport, refreshKey }: { campaignId: string; canExport: boolean; refreshKey: number }) {
   const [jobs, setJobs] = useState<MarketingBulkJob[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
-  const load = useCallback(async () => {
+  const load = useCallback(async (background = false) => {
+    if (background) setRefreshing(true)
     try { const response = await marketingApi.bulkJobs(campaignId); setJobs(response.data.jobs); setError('') }
     catch (cause) { setError(cause instanceof ApiError ? cause.message : 'Bulk jobs could not be loaded.') }
-    finally { setLoading(false) }
+    finally { setLoading(false); setRefreshing(false) }
   }, [campaignId])
   useEffect(() => { setLoading(true); void load() }, [load, refreshKey])
   useEffect(() => {
@@ -30,5 +32,5 @@ export default function MarketingBulkJobs({ campaignId, canExport, refreshKey }:
   }
   if (loading) return <div className="py-5 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>
   if (!jobs.length && !error) return null
-  return <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="px-4 py-3 bg-gray-50 flex items-center justify-between"><div><h3 className="text-sm font-semibold text-gray-800">Bulk generation jobs</h3><p className="text-[10px] text-gray-400">Results remain downloadable for seven days.</p></div><button onClick={load} className="marketing-button-secondary"><RefreshCw className="w-3.5 h-3.5" /></button></div>{error && <p className="px-4 py-2 text-xs text-red-600">{error}</p>}<div className="divide-y divide-gray-100">{jobs.map(job => <div key={job._id} className="px-4 py-3 flex items-center justify-between gap-3"><div><p className="text-xs font-semibold text-gray-700">{job.codePrefix}-… · {job.generatedCount}/{job.requestedCount}</p><p className="text-[10px] text-gray-400">{job.status.replaceAll('_', ' ')} · {new Date(job.createdAt).toLocaleString('en-AU')}</p>{job.lastErrorCode && <p className="text-[10px] text-red-500">{job.lastErrorCode}</p>}</div>{canExport && ['completed', 'partial_failed'].includes(job.status) && <button onClick={() => download(job)} className="marketing-button-secondary"><Download className="w-3.5 h-3.5" /> CSV</button>}{['pending', 'processing', 'retry_scheduled'].includes(job.status) && <Loader2 className="w-4 h-4 animate-spin text-violet-500" />}</div>)}</div></div>
+  return <div className="rounded-xl border border-gray-200 overflow-hidden"><div className="px-4 py-3 bg-gray-50 flex items-center justify-between"><div><h3 className="text-sm font-semibold text-gray-800">Bulk generation jobs</h3><p className="text-[10px] text-gray-400">Results remain downloadable for seven days.</p></div><button disabled={refreshing} onClick={() => void load(true)} className="marketing-button-secondary"><RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} /></button></div>{error && <p className="px-4 py-2 text-xs text-red-600">{error}</p>}<div className="divide-y divide-gray-100">{jobs.map(job => <div key={job._id} className="px-4 py-3 flex items-center justify-between gap-3"><div><p className="text-xs font-semibold text-gray-700">{job.codePrefix}-… · {job.generatedCount}/{job.requestedCount}</p><p className="text-[10px] text-gray-400">{job.status.replaceAll('_', ' ')} · {new Date(job.createdAt).toLocaleString('en-AU')}</p>{job.lastErrorCode && <p className="text-[10px] text-red-500">{job.lastErrorCode}</p>}</div>{canExport && ['completed', 'partial_failed'].includes(job.status) && <button onClick={() => download(job)} className="marketing-button-secondary"><Download className="w-3.5 h-3.5" /> CSV</button>}{['pending', 'processing', 'retry_scheduled'].includes(job.status) && <Loader2 className="w-4 h-4 animate-spin text-violet-500" />}</div>)}</div></div>
 }
