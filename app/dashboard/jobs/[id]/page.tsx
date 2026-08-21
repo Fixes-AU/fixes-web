@@ -1104,7 +1104,9 @@ export default function JobDetailPage() {
       refundAmount = preview.data?.refundAmount ?? 0
     } catch {
       const matrix = CANCEL_MATRIX[job.status]
-      const price  = selectedQuoteOption ? quoteBreakdown(selectedQuoteOption).totalIncGst : 0
+      const price = job.discountFinancialSnapshot
+        ? job.discountFinancialSnapshot.clientChargeIncGstCents / 100
+        : selectedQuoteOption ? quoteBreakdown(selectedQuoteOption).totalIncGst : 0
       feeAmount    = Math.round(price * (matrix?.clientLoss ?? 0) * 100) / 100
       refundAmount = Math.round((price - feeAmount) * 100) / 100
     }
@@ -1286,10 +1288,36 @@ export default function JobDetailPage() {
   }
 
   const quote = typeof job.quote === 'object' ? (job.quote as Quote) : null
-  const selectedQuoteOption = quote
-    ? quote.options?.find((o) => o.tier === quote.selectedTier) || quote.options?.[0]
-    : null
+  const persistedQuoteSelection = job.appliedDiscountPreview?.selection || (job.discountFinancialSnapshot ? {
+    tier: job.discountFinancialSnapshot.selectedTier,
+    optionSet: job.discountFinancialSnapshot.selectedOptionSet,
+  } : null)
+  const persistedOptionPool = persistedQuoteSelection?.optionSet === 'morning'
+    ? quote?.morningOptions
+    : persistedQuoteSelection?.optionSet === 'weekday'
+      ? quote?.weekdayOptions
+      : quote?.options
+  const selectedQuoteOption = persistedOptionPool?.find((option) => option.tier === persistedQuoteSelection?.tier)
+    || quote?.options?.find((option) => option.tier === quote.selectedTier)
+    || quote?.options?.[0]
+    || null
   const selectedQuoteBreakdown = quoteBreakdown(selectedQuoteOption)
+  const activeDiscountPreview = job.appliedDiscountPreview || null
+  const financialDiscount = job.discountFinancialSnapshot
+  const displayedDiscountPricing = activeDiscountPreview?.pricing || (financialDiscount ? {
+    originalSubtotalExGstCents: financialDiscount.originalServiceSubtotalExGstCents,
+    discountExGstCents: financialDiscount.discountExGstCents,
+    discountedSubtotalExGstCents: financialDiscount.discountedTaxableSubtotalExGstCents + financialDiscount.scopeVariationSubtotalExGstCents,
+    originalGstCents: financialDiscount.originalGstCents,
+    finalGstCents: financialDiscount.gstCents,
+    originalTotalIncGstCents: financialDiscount.originalTotalIncGstCents,
+    finalChargeCents: financialDiscount.clientChargeIncGstCents,
+    platformSubsidyCents: financialDiscount.platformSubsidyCents,
+  } : null)
+  const displayedDiscountCode = activeDiscountPreview?.offer?.code || financialDiscount?.customerFacingCodeDisplay || null
+  const displayedDiscountExGst = (displayedDiscountPricing?.discountExGstCents || 0) / 100
+  const displayedRangeMin = Math.max(0, roundMoney((selectedQuoteOption?.price.min || 0) - displayedDiscountExGst))
+  const displayedRangeMax = Math.max(0, roundMoney((selectedQuoteOption?.price.max || 0) - displayedDiscountExGst))
   const assignedTradie =
     typeof job.assignedTradieId === 'object' ? (job.assignedTradieId as User) : null
   const isDirectAgencyJob = job.fulfillmentType === 'agency_direct_contract'
@@ -1522,11 +1550,12 @@ export default function JobDetailPage() {
             <div>
               <p className="text-sm font-semibold text-amber-800 mb-0.5">Quote Ready — Your Decision</p>
               <p className="text-xs text-amber-600">
-                Total incl. GST: <span className="font-bold">{formatMoney(selectedQuoteBreakdown.totalIncGst)}</span> •
+                Total incl. GST: <span className="font-bold">{formatMoney(displayedDiscountPricing ? displayedDiscountPricing.finalChargeCents / 100 : selectedQuoteBreakdown.totalIncGst)}</span> •
                 Est. {selectedQuoteOption?.estimatedHours.min}–{selectedQuoteOption?.estimatedHours.max}h work
               </p>
               <p className="text-xs text-amber-600 mt-0.5">
-                Subtotal {formatMoney(selectedQuoteBreakdown.subtotal)} + GST {formatMoney(selectedQuoteBreakdown.gstAmount)}
+                Subtotal {formatMoney(displayedDiscountPricing ? displayedDiscountPricing.discountedSubtotalExGstCents / 100 : selectedQuoteBreakdown.subtotal)} + GST {formatMoney(displayedDiscountPricing ? displayedDiscountPricing.finalGstCents / 100 : selectedQuoteBreakdown.gstAmount)}
+                {displayedDiscountPricing && ` · ${displayedDiscountCode || 'Discount'} saves ${formatMoney(displayedDiscountPricing.platformSubsidyCents / 100)}`}
               </p>
               {rejectError && (
                 <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1700,27 +1729,41 @@ export default function JobDetailPage() {
               </h3>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-(--upwork-gray)">Price Range (ex GST)</span>
+                  <span className="text-(--upwork-gray)">{displayedDiscountPricing ? 'Discounted Range (ex GST)' : 'Price Range (ex GST)'}</span>
                   <span className="font-medium text-(--upwork-navy)">
-                    ${selectedQuoteOption?.price.min} – ${selectedQuoteOption?.price.max}
+                    {displayedDiscountPricing
+                      ? `${formatMoney(displayedRangeMin)} – ${formatMoney(displayedRangeMax)}`
+                      : `$${selectedQuoteOption?.price.min} – $${selectedQuoteOption?.price.max}`}
                   </span>
                 </div>
+                {displayedDiscountPricing && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-(--upwork-gray)">Original Total</span>
+                      <span className="text-gray-400 line-through">{formatMoney(displayedDiscountPricing.originalTotalIncGstCents / 100)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-(--upwork-gray)">{displayedDiscountCode ? `Discount (${displayedDiscountCode})` : 'Discount'}</span>
+                      <span className="font-medium text-(--upwork-green)">−{formatMoney(displayedDiscountPricing.platformSubsidyCents / 100)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-(--upwork-gray)">Subtotal</span>
                   <span className="text-(--upwork-navy)">
-                    {formatMoney(selectedQuoteBreakdown.subtotal)}
+                    {formatMoney(displayedDiscountPricing ? displayedDiscountPricing.discountedSubtotalExGstCents / 100 : selectedQuoteBreakdown.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-(--upwork-gray)">GST (10%)</span>
                   <span className="text-(--upwork-navy)">
-                    {formatMoney(selectedQuoteBreakdown.gstAmount)}
+                    {formatMoney(displayedDiscountPricing ? displayedDiscountPricing.finalGstCents / 100 : selectedQuoteBreakdown.gstAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-(--upwork-gray)">Total incl. GST</span>
                   <span className="font-semibold text-(--upwork-green)">
-                    {formatMoney(selectedQuoteBreakdown.totalIncGst)}
+                    {formatMoney(displayedDiscountPricing ? displayedDiscountPricing.finalChargeCents / 100 : selectedQuoteBreakdown.totalIncGst)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

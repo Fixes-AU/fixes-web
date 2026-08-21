@@ -216,6 +216,23 @@ export interface JobPaymentSummary {
   createdAt?: string
 }
 
+export interface DiscountFinancialSnapshot {
+  originalServiceSubtotalExGstCents: number
+  scopeVariationSubtotalExGstCents: number
+  discountExGstCents: number
+  discountedTaxableSubtotalExGstCents: number
+  originalGstCents: number
+  gstCents: number
+  originalTotalIncGstCents: number
+  clientChargeIncGstCents: number
+  platformSubsidyCents: number
+  customerFacingCampaignLabel?: string | null
+  customerFacingCodeDisplay?: string | null
+  selectedTier: SkillLevel
+  selectedOptionSet: 'standard' | 'morning' | 'weekday'
+  scheduledFor?: string | null
+}
+
 export interface Job {
   _id: string
   jobCode: string
@@ -240,6 +257,8 @@ export interface Job {
   clientAgencyLabel?: string | null
   visibleWorkerPrice?: boolean
   payment: string | JobPaymentSummary | null
+  appliedDiscountPreview?: import('./discount-preview').DiscountPreview | null
+  discountFinancialSnapshot?: DiscountFinancialSnapshot | null
   clientReview: string | Review | null
   tradieReview: string | Review | null
   disputeId?: string | null

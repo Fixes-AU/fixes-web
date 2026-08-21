@@ -57,6 +57,7 @@ import { VALID_CATEGORIES, CATEGORY_LABELS, AUSTRALIAN_STATES, AGENCY_CATEGORIES
 import {
   applyStateScheduleChange,
   datetimeLocalInStateToISO,
+  formatDatetimeLocalInState,
   getMaxScheduledDatetimeLocal,
   getMinScheduledDatetimeLocal,
   getStateTimeLabel,
@@ -1705,9 +1706,14 @@ function StepQuote({
   acceptError: string
 }) {
   const [showSchedulePicker, setShowSchedulePicker] = useState(false)
-  const [selectedMorningTier, setSelectedMorningTier] = useState<SkillLevel | null>(null)
-  const [selectedWeekdayTier, setSelectedWeekdayTier] = useState<SkillLevel | null>(null)
-  const [discountPreview, setDiscountPreview] = useState<DiscountPreview | null>(null)
+  const restoredDiscount = job.appliedDiscountPreview || null
+  const [selectedMorningTier, setSelectedMorningTier] = useState<SkillLevel | null>(
+    restoredDiscount?.selection.optionSet === 'morning' ? restoredDiscount.selection.tier as SkillLevel : null
+  )
+  const [selectedWeekdayTier, setSelectedWeekdayTier] = useState<SkillLevel | null>(
+    restoredDiscount?.selection.optionSet === 'weekday' ? restoredDiscount.selection.tier as SkillLevel : null
+  )
+  const [discountPreview, setDiscountPreview] = useState<DiscountPreview | null>(restoredDiscount)
 
   const handleSelectMainTier = (tier: SkillLevel) => {
     setSelectedMorningTier(null)
@@ -1720,7 +1726,9 @@ function StepQuote({
     d.setHours(9, 0, 0, 0)
     return d.toISOString().slice(0, 16)
   }
-  const [pickedTime, setPickedTime] = useState(getTomorrowNineAM)
+  const [pickedTime, setPickedTime] = useState(() => restoredDiscount?.selection.scheduledFor
+    ? formatDatetimeLocalInState(new Date(restoredDiscount.selection.scheduledFor), job.location?.state)
+    : getTomorrowNineAM())
 
 
   const isPickedTimeAfterHours = (isoTime: string): boolean => {
@@ -1812,6 +1820,7 @@ function StepQuote({
         tier={discountTier}
         optionSet={discountOptionSet}
         scheduledFor={discountScheduledFor}
+        initialPreview={job.appliedDiscountPreview}
         onPreviewChange={setDiscountPreview}
       />
 
@@ -2501,6 +2510,12 @@ export function PostJobWizard({ searchQuery, preselectedCategory, existingJobId 
         try {
           const res = await api.get<{ job: Job }>(`/api/jobs/${existingJobId}`)
           setCreatedJob(res.data.job)
+          const restoredDiscount = res.data.job.appliedDiscountPreview
+          if (restoredDiscount) {
+            setSelectedTier(restoredDiscount.selection.optionSet === 'standard'
+              ? restoredDiscount.selection.tier as SkillLevel
+              : null)
+          }
           if (res.data.job.quote) {
             setCreatedQuote(res.data.job.quote as Quote)
           } else {

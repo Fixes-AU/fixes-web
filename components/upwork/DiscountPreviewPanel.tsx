@@ -25,6 +25,7 @@ type Action =
   | { type: 'SELECTION_CHANGED' }
   | { type: 'VALIDATING' }
   | { type: 'VALID'; preview: DiscountPreview }
+  | { type: 'HYDRATE'; preview: DiscountPreview }
   | { type: 'ERROR'; error: string }
 
 const initialState: State = {
@@ -43,6 +44,9 @@ const reducer = (state: State, action: Action): State => {
       : state
     case 'VALIDATING': return { ...state, status: 'validating', preview: null, error: '' }
     case 'VALID': return { ...state, status: 'valid', preview: action.preview, error: '' }
+    case 'HYDRATE': return {
+      ...state, code: action.preview.offer.code, status: 'valid', preview: action.preview, error: '',
+    }
     case 'ERROR': return { ...state, status: 'error', preview: null, error: action.error }
   }
 }
@@ -52,12 +56,14 @@ export function DiscountPreviewPanel({
   tier,
   optionSet,
   scheduledFor,
+  initialPreview,
   onPreviewChange,
 }: {
   jobId: string
   tier: string | null
   optionSet: DiscountOptionSet
   scheduledFor?: string
+  initialPreview?: DiscountPreview | null
   onPreviewChange?: (preview: DiscountPreview | null) => void
 }) {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -79,6 +85,22 @@ export function DiscountPreviewPanel({
     dispatch({ type: 'SELECTION_CHANGED' })
     onPreviewChange?.(null)
   }, [selectionKey])
+
+  useEffect(() => {
+    const scheduleMatches = optionSet === 'standard' || (
+      initialPreview?.selection.scheduledFor && scheduledFor &&
+      new Date(initialPreview.selection.scheduledFor).getTime() === new Date(scheduledFor).getTime()
+    )
+    if (
+      initialPreview &&
+      initialPreview.selection.jobId === jobId &&
+      initialPreview.selection.tier === tier &&
+      initialPreview.selection.optionSet === optionSet &&
+      scheduleMatches
+    ) {
+      dispatch({ type: 'HYDRATE', preview: initialPreview })
+    }
+  }, [initialPreview, jobId, tier, optionSet, scheduledFor])
 
   useEffect(() => {
     onPreviewChange?.(state.preview)
