@@ -133,7 +133,7 @@ export default function DashboardPage() {
               return (
                 <Link
                   key={job._id}
-                  href={`/dashboard/jobs/${job.jobCode}`}
+                  href={`/dashboard/jobs/${job._id}`}
                   className="flex items-center justify-between px-3 sm:px-5 py-3 sm:py-4 hover:bg-gray-50 transition-colors group"
                 >
                   <div className="flex-1 min-w-0 mr-4">
