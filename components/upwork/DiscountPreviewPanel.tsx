@@ -85,6 +85,7 @@ export function DiscountPreviewPanel({
   }, [state.preview, onPreviewChange])
 
   if (state.access !== 'ready') return null
+  const isApplied = state.status === 'valid' && Boolean(state.preview)
 
   const handleValidate = async () => {
     if (!tier || !state.code.trim()) return
@@ -122,11 +123,19 @@ export function DiscountPreviewPanel({
         <button
           type="button"
           onClick={handleValidate}
-          disabled={!tier || !state.code.trim() || state.status === 'validating'}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--upwork-green)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--upwork-green-dark)] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!tier || !state.code.trim() || state.status === 'validating' || isApplied}
+          className={`inline-flex min-w-28 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors ${isApplied
+            ? 'cursor-default bg-gray-200 text-gray-600'
+            : 'bg-[var(--upwork-green)] text-white hover:bg-[var(--upwork-green-dark)] disabled:cursor-not-allowed disabled:opacity-50'
+            }`}
         >
-          {state.status === 'validating' ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgePercent className="h-4 w-4" />}
-          Apply
+          {state.status === 'validating' ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Applying</>
+          ) : isApplied ? (
+            <><CheckCircle2 className="h-4 w-4" /> Applied</>
+          ) : (
+            <><BadgePercent className="h-4 w-4" /> Apply</>
+          )}
         </button>
       </div>
 
