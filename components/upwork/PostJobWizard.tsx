@@ -1567,7 +1567,54 @@ function formatMoney(value: number | undefined | null) {
   return `$${roundMoney(value).toFixed(2)}`
 }
 
-function PremiumQuoteCard({ option }: { option: QuoteOption }) {
+function QuotePriceSummary({
+  breakdown,
+  discountPreview,
+  priceClassName = 'text-[var(--upwork-navy)]',
+  comparisonTotal,
+}: {
+  breakdown: ReturnType<typeof quoteBreakdown>
+  discountPreview?: DiscountPreview | null
+  priceClassName?: string
+  comparisonTotal?: number
+}) {
+  if (discountPreview) {
+    const { pricing, offer } = discountPreview
+    const savedCents = pricing.originalTotalIncGstCents - pricing.finalChargeCents
+    return (
+      <div>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className={`text-2xl font-bold ${priceClassName}`}>{formatMoney(pricing.finalChargeCents / 100)}</span>
+          <span className="text-sm text-gray-400 line-through">{formatMoney(pricing.originalTotalIncGstCents / 100)}</span>
+          <span className="text-sm font-normal text-gray-400">AUD</span>
+        </div>
+        <div className="mt-1 text-xs font-semibold text-green-700">
+          {offer.code} applied · You save {formatMoney(savedCents / 100)}
+        </div>
+        <div className="mt-0.5 text-xs text-gray-400">
+          Subtotal {formatMoney(pricing.discountedSubtotalExGstCents / 100)} + GST {formatMoney(pricing.finalGstCents / 100)}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span className={`text-2xl font-bold ${priceClassName}`}>{formatMoney(breakdown.totalIncGst)}</span>
+        {comparisonTotal !== undefined && (
+          <span className="text-sm text-gray-400 line-through">{formatMoney(comparisonTotal)}</span>
+        )}
+        <span className="text-sm font-normal text-gray-400">AUD</span>
+      </div>
+      <div className="mt-0.5 text-xs text-gray-400">
+        Subtotal {formatMoney(breakdown.subtotal)} + GST {formatMoney(breakdown.gstAmount)}
+      </div>
+    </div>
+  )
+}
+
+function PremiumQuoteCard({ option, discountPreview = null }: { option: QuoteOption; discountPreview?: DiscountPreview | null }) {
   const breakdown = quoteBreakdown(option)
   return (
     <div className="w-full text-left rounded-2xl border-2 border-[var(--upwork-green)] bg-green-50 shadow-md p-5">
@@ -1582,13 +1629,7 @@ function PremiumQuoteCard({ option }: { option: QuoteOption }) {
       </div>
 
       <div className="mb-3">
-        <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-          {formatMoney(breakdown.totalIncGst)}
-          <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
-        </div>
-        <div className="text-xs text-gray-400 mt-0.5">
-          Subtotal {formatMoney(breakdown.subtotal)} + GST {formatMoney(breakdown.gstAmount)}
-        </div>
+        <QuotePriceSummary breakdown={breakdown} discountPreview={discountPreview} />
         <div className="text-xs text-gray-400 mt-0.5">
           Range ex GST: ${option.price.min} – ${option.price.max}
         </div>
@@ -1715,6 +1756,14 @@ function StepQuote({
       discountScheduledFor = undefined
     }
   }
+  const activeDiscountPreview = discountPreview &&
+    discountPreview.selection.tier === discountTier &&
+    discountPreview.selection.optionSet === discountOptionSet
+    ? discountPreview
+    : null
+  const selectedPayable = (fallback: number) => activeDiscountPreview
+    ? activeDiscountPreview.pricing.finalChargeCents / 100
+    : fallback
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -1758,6 +1807,14 @@ function StepQuote({
         </div>
       )}
 
+      <DiscountPreviewPanel
+        jobId={job._id}
+        tier={discountTier}
+        optionSet={discountOptionSet}
+        scheduledFor={discountScheduledFor}
+        onPreviewChange={setDiscountPreview}
+      />
+
       {showRescheduleSection && morningOptions[0] ? (
         (() => {
           const mo = morningOptions[0]
@@ -1788,13 +1845,10 @@ function StepQuote({
                     )}
                   </div>
                   <div className="mb-2">
-                    <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-                      {formatMoney(eveningBreakdown.totalIncGst)}
-                      <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      Subtotal {formatMoney(eveningBreakdown.subtotal)} + GST {formatMoney(eveningBreakdown.gstAmount)}
-                    </div>
+                    <QuotePriceSummary
+                      breakdown={eveningBreakdown}
+                      discountPreview={selectedTier === 'premium' && !selectedMorningTier ? activeDiscountPreview : null}
+                    />
                     <div className="text-xs text-gray-400 mt-0.5">
                       Range ex GST: ${quote.options[0]?.price.min} – ${quote.options[0]?.price.max}
                     </div>
@@ -1836,16 +1890,12 @@ function StepQuote({
                     </div>
                   </div>
                   <div className="mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-blue-900">
-                        {formatMoney(morningBreakdown.totalIncGst)}
-                        <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
-                      </span>
-                      <span className="text-sm text-gray-400 line-through">{formatMoney(eveningBreakdown.totalIncGst)}</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      Subtotal {formatMoney(morningBreakdown.subtotal)} + GST {formatMoney(morningBreakdown.gstAmount)}
-                    </div>
+                    <QuotePriceSummary
+                      breakdown={morningBreakdown}
+                      discountPreview={selectedMorningTier ? activeDiscountPreview : null}
+                      priceClassName="text-blue-900"
+                      comparisonTotal={eveningBreakdown.totalIncGst}
+                    />
                     <div className="text-xs text-gray-400 mt-0.5">
                       Range ex GST: ${mo.price.min} – ${mo.price.max}
                     </div>
@@ -1901,7 +1951,7 @@ function StepQuote({
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => {
-                        onReschedule(pickedTime, mo.tier as SkillLevel ?? 'premium', mo.suggestedFixedPrice, discountPreview)
+                        onReschedule(pickedTime, mo.tier as SkillLevel ?? 'premium', mo.suggestedFixedPrice, activeDiscountPreview)
                       }}
                       disabled={isRescheduling || !pickedTime}
                       className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white"
@@ -1912,7 +1962,7 @@ function StepQuote({
                       ) : pickedIsAfterHours ? (
                         <><Moon className="w-4 h-4" /> Book at After-Hours Rate</>
                       ) : (
-                        <><Sunrise className="w-4 h-4" /> Book Morning at {formatMoney(morningBreakdown.totalIncGst)}</>
+                        <><Sunrise className="w-4 h-4" /> Book Morning at {formatMoney(selectedPayable(morningBreakdown.totalIncGst))}</>
                       )}
                     </button>
                     <button
@@ -1927,14 +1977,14 @@ function StepQuote({
               ) : (
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                   <button
-                    onClick={() => onAccept(discountPreview)}
+                    onClick={() => onAccept(activeDiscountPreview)}
                     disabled={isAccepting}
                     className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                   >
                     {isAccepting ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
                     ) : (
-                      <>Accept Tonight at {formatMoney(eveningBreakdown.totalIncGst)} <ChevronRight className="w-4 h-4" /></>
+                      <>Accept Tonight at {formatMoney(selectedPayable(eveningBreakdown.totalIncGst))} <ChevronRight className="w-4 h-4" /></>
                     )}
                   </button>
                   <button
@@ -1955,7 +2005,7 @@ function StepQuote({
         <>
           <div className="space-y-3 mb-5">
             {quote.options[0] && (
-              <PremiumQuoteCard option={quote.options[0]} />
+              <PremiumQuoteCard option={quote.options[0]} discountPreview={activeDiscountPreview} />
             )}
           </div>
 
@@ -1974,7 +2024,7 @@ function StepQuote({
 
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <button
-              onClick={() => onAccept(discountPreview)}
+              onClick={() => onAccept(activeDiscountPreview)}
               disabled={isAccepting}
               className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
@@ -1985,7 +2035,7 @@ function StepQuote({
                 </>
               ) : (
                 <>
-                  Accept Premium Quote
+                  Accept Premium Quote at {formatMoney(selectedPayable(quoteBreakdown(quote.options[0]).totalIncGst))}
                   <ChevronRight className="w-4 h-4" />
                 </>
               )}
@@ -2033,13 +2083,10 @@ function StepQuote({
                   )}
                 </div>
                 <div className="mb-2">
-                  <div className="text-2xl font-bold text-[var(--upwork-navy)]">
-                    {formatMoney(weekendBreakdown.totalIncGst)}
-                    <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    Subtotal {formatMoney(weekendBreakdown.subtotal)} + GST {formatMoney(weekendBreakdown.gstAmount)}
-                  </div>
+                  <QuotePriceSummary
+                    breakdown={weekendBreakdown}
+                    discountPreview={!isWeekdaySelected ? activeDiscountPreview : null}
+                  />
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
                   <Calendar className="w-3 h-3" />
@@ -2075,16 +2122,12 @@ function StepQuote({
                   </div>
                 </div>
                 <div className="mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-purple-900">
-                    {formatMoney(weekdayBreakdown.totalIncGst)}
-                      <span className="text-sm font-normal text-gray-400 ml-1">AUD</span>
-                    </span>
-                    <span className="text-sm text-gray-400 line-through">{formatMoney(weekendBreakdown.totalIncGst)}</span>
-                  </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    Subtotal {formatMoney(weekdayBreakdown.subtotal)} + GST {formatMoney(weekdayBreakdown.gstAmount)}
-                  </div>
+                  <QuotePriceSummary
+                    breakdown={weekdayBreakdown}
+                    discountPreview={isWeekdaySelected ? activeDiscountPreview : null}
+                    priceClassName="text-purple-900"
+                    comparisonTotal={weekendBreakdown.totalIncGst}
+                  />
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-purple-600 mb-2">
                   <Calendar className="w-3 h-3" />
@@ -2129,7 +2172,7 @@ function StepQuote({
               {isWeekdaySelected ? (
                 <button
                   onClick={() => {
-                    onReschedule(pickedTime, wo.tier as SkillLevel ?? 'premium', wo.suggestedFixedPrice, discountPreview)
+                    onReschedule(pickedTime, wo.tier as SkillLevel ?? 'premium', wo.suggestedFixedPrice, activeDiscountPreview)
                   }}
                   disabled={isRescheduling || !pickedTime}
                   className="flex-1 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50 text-white bg-purple-600 hover:bg-purple-700"
@@ -2137,19 +2180,19 @@ function StepQuote({
                   {isRescheduling ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Rescheduling...</>
                   ) : (
-                    <><Calendar className="w-4 h-4" /> Book Weekday at {formatMoney(weekdayBreakdown.totalIncGst)}</>
+                    <><Calendar className="w-4 h-4" /> Book Weekday at {formatMoney(selectedPayable(weekdayBreakdown.totalIncGst))}</>
                   )}
                 </button>
               ) : (
                 <button
-                  onClick={() => onAccept(discountPreview)}
+                  onClick={() => onAccept(activeDiscountPreview)}
                   disabled={isAccepting}
                   className="flex-1 bg-[var(--upwork-green)] hover:bg-[var(--upwork-green-dark)] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {isAccepting ? (
                     <><Loader2 className="w-4 h-4 animate-spin" /> Accepting...</>
                   ) : (
-                    <>Accept Weekend at {formatMoney(weekendBreakdown.totalIncGst)} <ChevronRight className="w-4 h-4" /></>
+                    <>Accept Weekend at {formatMoney(selectedPayable(weekendBreakdown.totalIncGst))} <ChevronRight className="w-4 h-4" /></>
                   )}
                 </button>
               )}
@@ -2168,13 +2211,6 @@ function StepQuote({
         )
       })()}
 
-      <DiscountPreviewPanel
-        jobId={job._id}
-        tier={discountTier}
-        optionSet={discountOptionSet}
-        scheduledFor={discountScheduledFor}
-        onPreviewChange={setDiscountPreview}
-      />
     </div>
   )
 }
