@@ -86,18 +86,20 @@ export function Header({ deferNavigationPrefetch = false, campaign = false }: He
                   {item.label}
                   <ChevronDown className="size-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180" />
                 </button>
-                <div className="invisible absolute left-0 top-full z-50 w-72 translate-y-1 rounded-2xl border border-black/8 bg-white p-2 opacity-0 shadow-[0_18px_50px_rgba(3,28,25,0.12)] transition group-hover:visible group-hover:translate-y-2 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-2 group-focus-within:opacity-100">
-                  {item.items.map((subItem) => (
-                    <Link
-                      key={subItem.title}
-                      href={subItem.href}
-                      prefetch={navigationPrefetch}
-                      className="block rounded-xl px-4 py-3 transition hover:bg-[#F4F9EF] focus-visible:bg-[#F4F9EF] focus-visible:outline-none"
-                    >
-                      <span className="block text-sm font-semibold text-[#031C19]">{subItem.title}</span>
-                      <span className="mt-0.5 block text-xs text-[#616161]">{subItem.desc}</span>
-                    </Link>
-                  ))}
+                <div className="invisible absolute left-0 top-full z-50 w-72 pt-2 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                  <div className="rounded-2xl border border-black/8 bg-white p-2 shadow-[0_18px_50px_rgba(3,28,25,0.12)]">
+                    {item.items.map((subItem) => (
+                      <Link
+                        key={subItem.title}
+                        href={subItem.href}
+                        prefetch={navigationPrefetch}
+                        className="block rounded-xl px-4 py-3 transition hover:bg-[#F4F9EF] focus-visible:bg-[#F4F9EF] focus-visible:outline-none"
+                      >
+                        <span className="block text-sm font-semibold text-[#031C19]">{subItem.title}</span>
+                        <span className="mt-0.5 block text-xs text-[#616161]">{subItem.desc}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
